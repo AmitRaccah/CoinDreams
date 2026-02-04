@@ -1,9 +1,9 @@
 using System;
-using UnityEngine;
+//using UnityEngine;
 
 namespace Game.Services.Energy
 {
-    public class EnergyRegenCalculator : MonoBehaviour
+    public sealed class EnergyRegenCalculator
     {
         //HOW MANY ENERGY POINTS FROM LastTicks to nowTicks
         public int CalculateGainedEnergy(long nowTicks, long lastTicks, int intervalSeconds)
@@ -45,7 +45,7 @@ namespace Game.Services.Energy
 
             if (intervalSeconds <= 0)
             {
-                return intervalSeconds = 1;
+                intervalSeconds = 1;
             }
             long intervalTicks = TimeSpan.FromSeconds(intervalSeconds).Ticks;
             long advanceTicks = (long)gainedEnergy * intervalTicks;
@@ -78,21 +78,6 @@ namespace Game.Services.Energy
             }
 
             return seconds;
-        }
-
-
-
-
-        // Start is called once before the first execution of Update after the MonoBehaviour is created
-        void Start()
-        {
-
-        }
-
-        // Update is called once per frame
-        void Update()
-        {
-
         }
     }
 }

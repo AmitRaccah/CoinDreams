@@ -1,12 +1,10 @@
 using Game.Common.Time;
-using Game.Services.Energy;
 
 namespace Game.Services.Energy
-
 {
     public class EnergyService
     {
-        private TimeProvider timeProvider;
+        private ITimeProvider timeProvider;
         private EnergyRegenCalculator calculator;
 
         private int currentEnergy;
@@ -16,7 +14,7 @@ namespace Game.Services.Energy
 
         private long lastRegenUtcTicks;
 
-        public EnergyService(TimeProvider timeProvider, int startEnergy, int maxEnergy, int regenIntervalSeconds, long lastRegenUtcTicks)
+        public EnergyService(ITimeProvider timeProvider, int startEnergy, int maxEnergy, int regenIntervalSeconds, long lastRegenUtcTicks)
         {
             this.timeProvider = timeProvider;
             this.calculator = new EnergyRegenCalculator();
@@ -31,8 +29,8 @@ namespace Game.Services.Energy
             {
                 this.lastRegenUtcTicks = this.timeProvider.GetUtcNowTicks();
             }
-
         }
+
         public int GetCurrent()
         {
             return currentEnergy;
@@ -71,8 +69,8 @@ namespace Game.Services.Energy
             {
                 currentEnergy = maxEnergy;
             }
-            //UPDATE LastRegen INCLUDING TIME LEFTOVERS
 
+            //UPDATE LastRegen INCLUDING TIME LEFTOVERS
             lastRegenUtcTicks = calculator.AdvanceLastTicks(lastRegenUtcTicks, gained, regenIntervalSeconds);
 
             if (currentEnergy >= maxEnergy)
@@ -80,6 +78,7 @@ namespace Game.Services.Energy
                 lastRegenUtcTicks = nowTicks;
             }
         }
+
         //TRY PAY ENERGY
         public bool TrySpend(int cost)
         {
@@ -130,6 +129,5 @@ namespace Game.Services.Energy
             long nowTicks = timeProvider.GetUtcNowTicks();
             return calculator.SecondsUntilNext(nowTicks, lastRegenUtcTicks, regenIntervalSeconds);
         }
-
     }
 }

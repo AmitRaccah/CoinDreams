@@ -17,12 +17,11 @@ namespace Game.Runtime.Energy
         {
             TimeProvider timeProvider = new TimeProvider();
 
-            // כאן בעתיד תכניס lastRegenUtcTicks מה-save.
             long lastRegenTicksFromSave = 0;
 
             energyService = new EnergyService(timeProvider, startEnergy, maxEnergy, regenIntervalSeconds, lastRegenTicksFromSave);
 
-            // פעם אחת בתחילת המשחק - כדי לעדכן אנרגיה אם עבר זמן מאז הסשן הקודם
+            //UPDATE ENERTY
             energyService.ApplyRegen();
 
             Debug.Log("Energy on start: " + energyService.GetCurrent() + "/" + energyService.GetMax());
@@ -37,7 +36,7 @@ namespace Game.Runtime.Energy
             }
         }
 
-        // כשהאפליקציה יוצאת/חוזרת מהשהייה
+        // WHEN STOPPING PUSE
         private void OnApplicationPause(bool pause)
         {
             if (pause == false)
@@ -46,8 +45,7 @@ namespace Game.Runtime.Energy
             }
             else
             {
-                // פה בעתיד תעשה Save (כשתהיה לך מערכת שמירה)
-                // Save should store currentEnergy + lastRegenUtcTicks
+                //SAVE SYSTEM
             }
         }
 
