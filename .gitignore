@@ -97,3 +97,39 @@ InitTestScene*.unity*
 
 # Auto-generated scenes by play mode tests
 /[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*
+
+
+# ============================================================
+# Firebase / EDM4U (External Dependency Manager) additions
+# ============================================================
+
+# External Dependency Manager for Unity (EDM4U) - installed assets (safe to reimport, avoids noise)
+[Aa]ssets/ExternalDependencyManager/
+[Aa]ssets/ExternalDependencyManager.meta
+
+# Android Resolver output (auto-generated, changes often)
+ProjectSettings/AndroidResolverDependencies.xml
+ProjectSettings/AndroidResolverDependencies.xml.meta
+ProjectSettings/GvhProjectSettings.xml
+ProjectSettings/GvhProjectSettings.xml.meta
+
+# Firebase Unity SDK native plugins (the files that often exceed GitHub 100MB)
+# Keep your config json/plist, but ignore the heavy platform binaries.
+[Aa]ssets/Firebase/Plugins/
+[Aa]ssets/Firebase/Plugins.meta
+
+# If Firebase plugins end up under Assets/Plugins as well, ignore them too.
+[Aa]ssets/Plugins/**/Firebase/
+[Aa]ssets/Plugins/**/Firebase.meta
+
+# Explicitly ignore Firebase C++ app binaries regardless of folder
+**/FirebaseCppApp*.dll
+**/FirebaseCppApp*.so
+**/FirebaseCppApp*.a
+**/FirebaseCppApp*.bundle
+**/FirebaseCppApp*.dylib
+**/FirebaseCppApp*.framework
+
+# (Optional) If you are NOT targeting iOS/tvOS right now and want to avoid huge binaries entirely:
+# [Aa]ssets/Plugins/iOS/
+# [Aa]ssets/Plugins/tvOS/
