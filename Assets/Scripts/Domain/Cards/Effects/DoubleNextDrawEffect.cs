@@ -4,7 +4,7 @@ namespace Game.Cards.Effects
     {
         public void Apply(Game.Cards.RewardContext context)
         {
-            context.Modifiers.SetNextDrawMultiplier(2f);
+            context.Modifiers.AddDoubleNextDrawMultiplier();
         }
     }
 }

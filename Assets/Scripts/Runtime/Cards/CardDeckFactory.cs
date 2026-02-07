@@ -62,7 +62,7 @@ namespace Game.Runtime.Cards
         private static CardDefinition CreateFallbackCard()
         {
             List<IRewardEffect> effects = new List<IRewardEffect>();
-            effects.Add(new AddCoinsEffect(FallbackCoinsAmount));
+            effects.Add(new AddResourceEffect(RewardResourceType.Currency, FallbackCoinsAmount));
             return new CardDefinition(FallbackCardId, FallbackWeight, effects);
         }
     }

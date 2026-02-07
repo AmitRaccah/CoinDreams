@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 
 namespace Game.Cards
 {
@@ -46,14 +46,23 @@ namespace Game.Cards
                 return false;
             }
 
-            int i;
-            for (i = 0; i < drawnCard.Effects.Count; i++)
+            context.BeginDraw();
+
+            try
             {
-                IRewardEffect effect = drawnCard.Effects[i];
-                if (effect != null)
+                int i;
+                for (i = 0; i < drawnCard.Effects.Count; i++)
                 {
-                    effect.Apply(context);
+                    IRewardEffect effect = drawnCard.Effects[i];
+                    if (effect != null)
+                    {
+                        effect.Apply(context);
+                    }
                 }
+            }
+            finally
+            {
+                context.EndDraw();
             }
 
             return true;

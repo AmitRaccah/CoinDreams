@@ -4,23 +4,37 @@ namespace Game.Services.Energy
 {
     public class EnergyService
     {
-        private ITimeProvider timeProvider;
-        private EnergyRegenCalculator calculator;
+        private readonly ITimeProvider timeProvider;
+        private readonly EnergyRegenCalculator calculator;
 
         private int currentEnergy;
-        private int maxEnergy;
+        private int regenMaxEnergy;
+        private int storageMaxEnergy;
 
         private int regenIntervalSeconds;
 
         private long lastRegenUtcTicks;
 
         public EnergyService(ITimeProvider timeProvider, int startEnergy, int maxEnergy, int regenIntervalSeconds, long lastRegenUtcTicks)
+            : this(timeProvider, startEnergy, maxEnergy, maxEnergy, regenIntervalSeconds, lastRegenUtcTicks)
+        {
+        }
+
+        public EnergyService(
+            ITimeProvider timeProvider,
+            int startEnergy,
+            int regenMaxEnergy,
+            int storageMaxEnergy,
+            int regenIntervalSeconds,
+            long lastRegenUtcTicks)
         {
             this.timeProvider = timeProvider;
-            this.calculator = new EnergyRegenCalculator();
+            calculator = new EnergyRegenCalculator();
 
-            this.currentEnergy = startEnergy;
-            this.maxEnergy = maxEnergy;
+            this.regenMaxEnergy = NormalizeRegenMax(regenMaxEnergy);
+            this.storageMaxEnergy = NormalizeStorageMax(storageMaxEnergy, this.regenMaxEnergy);
+
+            currentEnergy = Clamp(startEnergy, 0, this.storageMaxEnergy);
 
             this.regenIntervalSeconds = regenIntervalSeconds;
             this.lastRegenUtcTicks = lastRegenUtcTicks;
@@ -38,7 +52,22 @@ namespace Game.Services.Energy
 
         public int GetMax()
         {
-            return maxEnergy;
+            return regenMaxEnergy;
+        }
+
+        public int GetStorageMax()
+        {
+            return storageMaxEnergy;
+        }
+
+        public int GetExtra()
+        {
+            if (currentEnergy <= regenMaxEnergy)
+            {
+                return 0;
+            }
+
+            return currentEnergy - regenMaxEnergy;
         }
 
         public long GetLastRegenTicks()
@@ -48,14 +77,13 @@ namespace Game.Services.Energy
 
         public void ApplyRegen()
         {
-            long nowTicks = timeProvider.GetUtcNowTicks();
-
-            if (currentEnergy >= maxEnergy)
+            if (currentEnergy >= regenMaxEnergy)
             {
-                lastRegenUtcTicks = nowTicks;
+                UpdateRegenAnchorWithoutGain();
                 return;
             }
 
+            long nowTicks = timeProvider.GetUtcNowTicks();
             int gained = calculator.CalculateGainedEnergy(nowTicks, lastRegenUtcTicks, regenIntervalSeconds);
 
             if (gained <= 0)
@@ -63,23 +91,29 @@ namespace Game.Services.Energy
                 return;
             }
 
-            currentEnergy += gained;
+            int missingToRegenMax = regenMaxEnergy - currentEnergy;
+            int appliedGain = gained;
 
-            if (currentEnergy > maxEnergy)
+            if (appliedGain > missingToRegenMax)
             {
-                currentEnergy = maxEnergy;
+                appliedGain = missingToRegenMax;
             }
 
-            //UPDATE LastRegen INCLUDING TIME LEFTOVERS
-            lastRegenUtcTicks = calculator.AdvanceLastTicks(lastRegenUtcTicks, gained, regenIntervalSeconds);
+            currentEnergy += appliedGain;
 
-            if (currentEnergy >= maxEnergy)
+            if (currentEnergy > regenMaxEnergy)
             {
-                lastRegenUtcTicks = nowTicks;
+                currentEnergy = regenMaxEnergy;
+            }
+
+            lastRegenUtcTicks = calculator.AdvanceLastTicks(lastRegenUtcTicks, appliedGain, regenIntervalSeconds);
+
+            if (currentEnergy >= regenMaxEnergy)
+            {
+                UpdateRegenAnchorWithoutGain();
             }
         }
 
-        //TRY PAY ENERGY
         public bool TrySpend(int cost)
         {
             if (cost <= 0)
@@ -95,10 +129,10 @@ namespace Game.Services.Energy
             }
 
             currentEnergy -= cost;
+
             return true;
         }
 
-        // ADDING ENERGY BY Add()
         public void Add(int amount)
         {
             if (amount == 0)
@@ -110,9 +144,9 @@ namespace Game.Services.Energy
 
             currentEnergy += amount;
 
-            if (currentEnergy > maxEnergy)
+            if (currentEnergy > storageMaxEnergy)
             {
-                currentEnergy = maxEnergy;
+                currentEnergy = storageMaxEnergy;
             }
 
             if (currentEnergy < 0)
@@ -121,13 +155,56 @@ namespace Game.Services.Energy
             }
         }
 
-        // UI: HOW MANY SECOND BEFORE NEXT ENERGY
         public int GetSecondsUntilNext()
         {
-            ApplyRegen();
-
             long nowTicks = timeProvider.GetUtcNowTicks();
             return calculator.SecondsUntilNext(nowTicks, lastRegenUtcTicks, regenIntervalSeconds);
+        }
+
+        private static int NormalizeRegenMax(int value)
+        {
+            if (value <= 0)
+            {
+                return 1;
+            }
+
+            return value;
+        }
+
+        private static int NormalizeStorageMax(int storageMax, int regenMax)
+        {
+            if (storageMax < regenMax)
+            {
+                return regenMax;
+            }
+
+            return storageMax;
+        }
+
+        private static int Clamp(int value, int min, int max)
+        {
+            if (value < min)
+            {
+                return min;
+            }
+
+            if (value > max)
+            {
+                return max;
+            }
+
+            return value;
+        }
+
+        private void UpdateRegenAnchorWithoutGain()
+        {
+            long nowTicks = timeProvider.GetUtcNowTicks();
+            int skipped = calculator.CalculateGainedEnergy(nowTicks, lastRegenUtcTicks, regenIntervalSeconds);
+
+            if (skipped > 0)
+            {
+                lastRegenUtcTicks = calculator.AdvanceLastTicks(lastRegenUtcTicks, skipped, regenIntervalSeconds);
+            }
         }
     }
 }

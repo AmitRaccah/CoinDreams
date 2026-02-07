@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 92cfc8d205bc5aa46aab0012a78766d6, type: 3}
   m_Name: CardDefinition 3
   m_EditorClassIdentifier: Assembly-CSharp::Game.Cards.Config.CardDefinitionSO
-  cardId: card2
+  cardId: X2 NEXT ROUND
   weight: 1
   effectConfigs:
   - effectType: 3

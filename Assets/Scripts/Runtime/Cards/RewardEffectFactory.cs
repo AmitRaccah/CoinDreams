@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using Game.Cards;
 using Game.Cards.Config;
 using Game.Cards.Effects;
@@ -27,11 +27,11 @@ namespace Game.Runtime.Cards
 
                 if (config.EffectType == RewardEffectType.AddCoins)
                 {
-                    effects.Add(new AddCoinsEffect(config.IntValue));
+                    effects.Add(new AddResourceEffect(RewardResourceType.Currency, config.IntValue));
                 }
                 else if (config.EffectType == RewardEffectType.AddEnergy)
                 {
-                    effects.Add(new AddEnergyEffect(config.IntValue));
+                    effects.Add(new AddResourceEffect(RewardResourceType.Energy, config.IntValue));
                 }
                 else if (config.EffectType == RewardEffectType.LaunchMinigame)
                 {

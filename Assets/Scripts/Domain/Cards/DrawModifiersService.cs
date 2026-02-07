@@ -2,19 +2,60 @@ namespace Game.Services.Cards
 {
     public class DrawModifiersService
     {
-        private float nextDrawMultiplier = 1f;
+        private const int DoubleStep = 2;
 
-        public float ConsumeNextDrawMultiplier()
+        private int pendingMultiplier;
+        private int drawStartMultiplier;
+        private int addedDuringDraw;
+
+        public DrawModifiersService()
         {
-            float value = nextDrawMultiplier;
-            nextDrawMultiplier = 1f;
-            return value;
+            pendingMultiplier = 0;
+            drawStartMultiplier = 0;
+            addedDuringDraw = 0;
         }
 
-        public void SetNextDrawMultiplier(float multiplier)
+        public void BeginDraw()
         {
-            if (multiplier <= 0f) multiplier = 1f;
-            nextDrawMultiplier = multiplier;
+            drawStartMultiplier = pendingMultiplier;
+            addedDuringDraw = 0;
+        }
+
+        public int GetCurrentDrawMultiplier()
+        {
+            if (drawStartMultiplier <= 0)
+            {
+                return 1;
+            }
+
+            return drawStartMultiplier;
+        }
+
+        public void AddDoubleNextDrawMultiplier()
+        {
+            pendingMultiplier = SafeAdd(pendingMultiplier, DoubleStep);
+            addedDuringDraw = SafeAdd(addedDuringDraw, DoubleStep);
+        }
+
+        public void CompleteDraw(bool usedMultiplierByResourceReward)
+        {
+            if (usedMultiplierByResourceReward && drawStartMultiplier > 0)
+            {
+                pendingMultiplier = addedDuringDraw;
+            }
+
+            drawStartMultiplier = 0;
+            addedDuringDraw = 0;
+        }
+
+        private static int SafeAdd(int value, int increment)
+        {
+            if (value > int.MaxValue - increment)
+            {
+                return int.MaxValue;
+            }
+
+            return value + increment;
         }
     }
 }

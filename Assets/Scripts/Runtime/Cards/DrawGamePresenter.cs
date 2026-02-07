@@ -17,19 +17,18 @@ namespace Game.Runtime.Cards
         [Header("Config")]
         [SerializeField] private int startEnergy = 5;
         [SerializeField] private int maxEnergy = 10;
+        [SerializeField] private int maxStoredEnergy = 20;
         [SerializeField] private int regenIntervalSeconds = 300;
         [SerializeField] private int drawCost = 1;
         [SerializeField] private int startingCoins = 0;
         [SerializeField] private CardDeckSO deckConfig;
-        [SerializeField] private string fallbackDeckResourcePath = "Cards/DefaultCardDeck";
-        [SerializeField] private bool drawOnStartWithoutUi = true;
-        [SerializeField] private bool autoRefreshUi = true;
         [SerializeField] private float uiRefreshIntervalSeconds = 1f;
 
         [Header("UI")]
         [SerializeField] private Slider energySlider;
         [SerializeField] private TMP_Text energyText;
         [SerializeField] private TMP_Text energyTimerText;
+        [SerializeField] private TMP_Text extraEnergyText;
         [SerializeField] private TMP_Text coinsText;
         [SerializeField] private TMP_Text resultText;
 
@@ -46,6 +45,7 @@ namespace Game.Runtime.Cards
                 timeProvider,
                 startEnergy,
                 maxEnergy,
+                maxStoredEnergy,
                 regenIntervalSeconds,
                 0);
 
@@ -63,19 +63,7 @@ namespace Game.Runtime.Cards
 
             RewardEffectFactory rewardEffectFactory = new RewardEffectFactory();
             CardDeckFactory cardDeckFactory = new CardDeckFactory(rewardEffectFactory);
-
-            CardDeckSO resolvedDeckConfig = deckConfig;
-            if (resolvedDeckConfig == null && string.IsNullOrWhiteSpace(fallbackDeckResourcePath) == false)
-            {
-                resolvedDeckConfig = Resources.Load<CardDeckSO>(fallbackDeckResourcePath);
-            }
-
-            if (resolvedDeckConfig == null)
-            {
-                Debug.LogWarning("No CardDeckSO was found. Using fallback in-memory deck.");
-            }
-
-            ICardDeck deck = cardDeckFactory.Create(resolvedDeckConfig);
+            ICardDeck deck = cardDeckFactory.Create(deckConfig);
 
             drawCardUseCase = new DrawCardUseCase(
                 energyService,
@@ -86,24 +74,9 @@ namespace Game.Runtime.Cards
             RefreshUi();
         }
 
-        private void Start()
-        {
-            if (drawOnStartWithoutUi == false)
-            {
-                return;
-            }
-
-            if (HasAnyUiBinding())
-            {
-                return;
-            }
-
-            OnDrawButtonClicked();
-        }
-
         private void OnEnable()
         {
-            TryStartUiRefreshLoop();
+            StartUiRefreshLoop();
         }
 
         private void OnDisable()
@@ -115,7 +88,7 @@ namespace Game.Runtime.Cards
         {
             if (drawCardUseCase == null)
             {
-                SetResult("Draw failed. Presenter is not initialized.");
+                SetResult("Draw failed.");
                 return;
             }
 
@@ -124,13 +97,15 @@ namespace Game.Runtime.Cards
 
             if (success == false)
             {
-                SetResult("Draw failed. Check energy.");
+                SetResult("Not enough energy.");
                 RefreshUi();
+                Debug.LogWarning("[DRAW] Failed: not enough energy.");
                 return;
             }
 
             RefreshUi();
-            SetResult("Card: " + drawnCard.Id + " | Coins: " + currencyService.GetCoins());
+            SetResult("Card: " + drawnCard.Id);
+            Debug.Log("[DRAW] Card=" + drawnCard.Id + " | Coins=" + currencyService.GetCoins());
         }
 
         private void RefreshUi()
@@ -144,30 +119,31 @@ namespace Game.Runtime.Cards
 
             int currentEnergy = energyService.GetCurrent();
             int maxEnergyValue = energyService.GetMax();
+            int extraEnergy = energyService.GetExtra();
+            int baseEnergy = currentEnergy - extraEnergy;
 
             if (energySlider != null)
             {
                 energySlider.wholeNumbers = true;
                 energySlider.minValue = 0f;
                 energySlider.maxValue = Mathf.Max(1, maxEnergyValue);
-                energySlider.value = Mathf.Clamp(currentEnergy, 0, maxEnergyValue);
+                energySlider.value = Mathf.Clamp(baseEnergy, 0, maxEnergyValue);
             }
 
             if (energyText != null)
             {
-                energyText.text = "Energy: " + currentEnergy + "/" + maxEnergyValue;
+                energyText.text = "Energy: " + baseEnergy + "/" + maxEnergyValue;
+            }
+
+            if (extraEnergyText != null)
+            {
+                extraEnergyText.text = "Extra: +" + extraEnergy;
             }
 
             if (energyTimerText != null)
             {
-                if (currentEnergy >= maxEnergyValue)
-                {
-                    energyTimerText.text = "Energy Full";
-                }
-                else
-                {
-                    energyTimerText.text = "Next in: " + energyService.GetSecondsUntilNext() + "s";
-                }
+                int secondsUntilNext = energyService.GetSecondsUntilNext();
+                energyTimerText.text = "Next in: " + secondsUntilNext + "s";
             }
 
             if (coinsText != null)
@@ -182,38 +158,10 @@ namespace Game.Runtime.Cards
             {
                 resultText.text = message;
             }
-
-            Debug.Log(message);
         }
 
-        private bool HasAnyUiBinding()
+        private void StartUiRefreshLoop()
         {
-            return energySlider != null || energyText != null || energyTimerText != null || coinsText != null || resultText != null;
-        }
-
-        private void OnApplicationFocus(bool hasFocus)
-        {
-            if (hasFocus == true)
-            {
-                RefreshUi();
-            }
-        }
-
-        private void OnApplicationPause(bool pause)
-        {
-            if (pause == false)
-            {
-                RefreshUi();
-            }
-        }
-
-        private void TryStartUiRefreshLoop()
-        {
-            if (autoRefreshUi == false)
-            {
-                return;
-            }
-
             if (uiRefreshRoutine != null)
             {
                 return;
@@ -247,6 +195,22 @@ namespace Game.Runtime.Cards
             {
                 RefreshUi();
                 yield return delay;
+            }
+        }
+
+        private void OnApplicationFocus(bool hasFocus)
+        {
+            if (hasFocus)
+            {
+                RefreshUi();
+            }
+        }
+
+        private void OnApplicationPause(bool pause)
+        {
+            if (pause == false)
+            {
+                RefreshUi();
             }
         }
     }
