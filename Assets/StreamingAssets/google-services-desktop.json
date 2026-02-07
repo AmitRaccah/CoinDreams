@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "878016808472",
+    "project_id": "coindream-2b741",
+    "storage_bucket": "coindream-2b741.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:878016808472:android:f66f8cec23cb186f3f656d",
+        "android_client_info": {
+          "package_name": "com.UnityTechnologies.com.unity.template.urpblank"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCTR0xnbTRQqRR_hsInUGupGC0u40aycQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
