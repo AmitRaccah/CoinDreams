@@ -1,4 +1,4 @@
-﻿namespace Game.Cards.Config
+namespace Game.Config.Cards
 {
     public enum RewardEffectType
     {

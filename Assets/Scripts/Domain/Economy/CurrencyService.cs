@@ -1,18 +1,30 @@
-namespace Game.Services.Economy
+namespace Game.Domain.Economy
 {
     public class CurrencyService
     {
         private int coins;
 
-        public int GetCoins()
-        {
-            return coins;
-        }
+        public int GetCoins() => coins;
 
         public void Add(int amount)
         {
+            if (amount <= 0) return;
             coins += amount;
-            if (coins < 0) coins = 0;
+        }
+
+        public bool CanAfford(int amount)
+        {
+            if (amount <= 0) return true;
+            return coins >= amount;
+        }
+
+        public bool TrySpend(int amount)
+        {
+            if (amount <= 0) return true;
+            if (coins < amount) return false;
+
+            coins -= amount;
+            return true;
         }
     }
 }

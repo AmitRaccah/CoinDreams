@@ -1,6 +1,6 @@
-using Game.Common.Time;
+using Game.Domain.Time;
 
-namespace Game.Services.Energy
+namespace Game.Domain.Energy
 {
     public class EnergyService
     {

@@ -1,7 +1,7 @@
-namespace Game.Cards
+namespace Game.Domain.Cards
 {
     public interface ICardDeck
     {
-        CardDefinition Draw();
+        bool TryDraw(out CardDefinition drawnCard);
     }
 }

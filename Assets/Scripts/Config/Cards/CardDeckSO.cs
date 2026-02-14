@@ -1,7 +1,7 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using UnityEngine;
 
-namespace Game.Cards.Config
+namespace Game.Config.Cards
 {
     [CreateAssetMenu(fileName = "CardDeck", menuName = "Cards/Card Deck")]
     public sealed class CardDeckSO : ScriptableObject

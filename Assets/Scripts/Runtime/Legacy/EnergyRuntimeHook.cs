@@ -1,8 +1,8 @@
 using UnityEngine;
-using Game.Common.Time;
-using Game.Services.Energy;
+using Game.Domain.Time;
+using Game.Domain.Energy;
 
-namespace Game.Runtime.Energy
+namespace Game.Runtime.Legacy
 {
     public class EnergyRuntimeHook : MonoBehaviour
     {

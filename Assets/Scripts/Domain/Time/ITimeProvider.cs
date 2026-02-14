@@ -1,4 +1,4 @@
-namespace Game.Common.Time
+namespace Game.Domain.Time
 {
     public interface ITimeProvider
     {

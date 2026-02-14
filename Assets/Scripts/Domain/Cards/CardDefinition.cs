@@ -1,15 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+using System;
 
-namespace Game.Cards
+namespace Game.Domain.Cards
 {
     public sealed class CardDefinition
     {
         private readonly string id;
         private readonly int weight;
-        private readonly List<IRewardEffect> effects;
+        private readonly IRewardEffect[] effects;
 
-        public CardDefinition(string id, int weight, List<IRewardEffect> effects)
+        public CardDefinition(string id, int weight, IRewardEffect[] effects)
         {
             if (string.IsNullOrEmpty(id))
             {
@@ -18,7 +17,7 @@ namespace Game.Cards
 
             this.id = id;
             this.weight = weight;
-            this.effects = effects ?? new List<IRewardEffect>();
+            this.effects = effects ?? Array.Empty<IRewardEffect>();
         }
 
         public string Id
@@ -31,7 +30,7 @@ namespace Game.Cards
             get { return weight; }
         }
 
-        public IList<IRewardEffect> Effects
+        public IRewardEffect[] Effects
         {
             get { return effects; }
         }

@@ -1,7 +1,7 @@
-﻿using System;
+using System;
 using UnityEngine;
 
-namespace Game.Cards.Config
+namespace Game.Config.Cards
 {
     [Serializable]
     public sealed class RewardEffectConfig

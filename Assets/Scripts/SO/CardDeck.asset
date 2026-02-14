@@ -11,7 +11,7 @@ MonoBehaviour:
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 443091928776f42459614be92f76fb48, type: 3}
   m_Name: CardDeck
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Cards.Config.CardDeckSO
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Config.Cards.CardDeckSO
   cards:
   - {fileID: 11400000, guid: 61bd93685835d3249952c03540b8c1d6, type: 2}
   - {fileID: 11400000, guid: 1f77f98448408f848b2e39638b9da451, type: 2}

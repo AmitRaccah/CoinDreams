@@ -1,6 +1,6 @@
-namespace Game.Cards.Effects
+namespace Game.Domain.Cards.Effects
 {
-    public sealed class LaunchMinigameEffect : Game.Cards.IRewardEffect
+    public sealed class LaunchMinigameEffect : Game.Domain.Cards.IRewardEffect
     {
         private readonly string minigameId;
 
@@ -9,7 +9,7 @@ namespace Game.Cards.Effects
             this.minigameId = minigameId;
         }
 
-        public void Apply(Game.Cards.RewardContext context)
+        public void Apply(Game.Domain.Cards.RewardContext context)
         {
             context.Minigames.Launch(minigameId);
         }

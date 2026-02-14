@@ -1,8 +1,8 @@
-namespace Game.Cards.Effects
+namespace Game.Domain.Cards.Effects
 {
-    public sealed class DoubleNextDrawEffect : Game.Cards.IRewardEffect
+    public sealed class DoubleNextDrawEffect : Game.Domain.Cards.IRewardEffect
     {
-        public void Apply(Game.Cards.RewardContext context)
+        public void Apply(Game.Domain.Cards.RewardContext context)
         {
             context.Modifiers.AddDoubleNextDrawMultiplier();
         }

@@ -1,4 +1,4 @@
-namespace Game.Persistence
+namespace Game.Infrastructure.Persistence
 {
     [System.Serializable]
     public class PlayerSaveData

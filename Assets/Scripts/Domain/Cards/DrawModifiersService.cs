@@ -1,4 +1,4 @@
-namespace Game.Services.Cards
+namespace Game.Domain.Cards
 {
     public class DrawModifiersService
     {

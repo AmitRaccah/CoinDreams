@@ -1,4 +1,4 @@
-namespace Game.Services.Minigames
+namespace Game.Domain.Minigames
 {
     public interface IMinigameLauncher
     {

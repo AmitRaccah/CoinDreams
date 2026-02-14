@@ -1,4 +1,4 @@
-namespace Game.Cards
+namespace Game.Domain.Cards
 {
     public enum RewardResourceType
     {

@@ -1,11 +1,10 @@
 using System.Collections;
-using Game.Cards;
-using Game.Cards.Config;
-using Game.Common.Time;
-using Game.Services.Cards;
-using Game.Services.Economy;
-using Game.Services.Energy;
-using Game.Services.Minigames;
+using Game.Domain.Cards;
+using Game.Config.Cards;
+using Game.Domain.Time;
+using Game.Domain.Economy;
+using Game.Domain.Energy;
+using Game.Domain.Minigames;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -36,6 +35,12 @@ namespace Game.Runtime.Cards
         private CurrencyService currencyService;
         private DrawCardUseCase drawCardUseCase;
         private Coroutine uiRefreshRoutine;
+        private bool uiCacheInitialized;
+        private int cachedBaseEnergy;
+        private int cachedMaxEnergy;
+        private int cachedExtraEnergy;
+        private int cachedCoins;
+        private int cachedSecondsUntilNext;
 
         private void Awake()
         {
@@ -53,7 +58,7 @@ namespace Game.Runtime.Cards
             currencyService.Add(startingCoins);
 
             DrawModifiersService modifiersService = new DrawModifiersService();
-            IMinigameLauncher minigameLauncher = new NullMinigameLauncher();
+            IMinigameLauncher minigameLauncher = NullMinigameLauncher.Instance;
 
             RewardContext rewardContext = new RewardContext(
                 energyService,
@@ -121,35 +126,57 @@ namespace Game.Runtime.Cards
             int maxEnergyValue = energyService.GetMax();
             int extraEnergy = energyService.GetExtra();
             int baseEnergy = currentEnergy - extraEnergy;
+            int secondsUntilNext = energyService.GetSecondsUntilNext();
+            int coins = currencyService.GetCoins();
+
+            bool energyChanged = !uiCacheInitialized
+                || cachedBaseEnergy != baseEnergy
+                || cachedMaxEnergy != maxEnergyValue;
+            bool extraChanged = !uiCacheInitialized || cachedExtraEnergy != extraEnergy;
+            bool timerChanged = !uiCacheInitialized || cachedSecondsUntilNext != secondsUntilNext;
+            bool coinsChanged = !uiCacheInitialized || cachedCoins != coins;
 
             if (energySlider != null)
             {
-                energySlider.wholeNumbers = true;
-                energySlider.minValue = 0f;
-                energySlider.maxValue = Mathf.Max(1, maxEnergyValue);
-                energySlider.value = Mathf.Clamp(baseEnergy, 0, maxEnergyValue);
+                if (!uiCacheInitialized || cachedMaxEnergy != maxEnergyValue)
+                {
+                    energySlider.wholeNumbers = true;
+                    energySlider.minValue = 0f;
+                    energySlider.maxValue = Mathf.Max(1, maxEnergyValue);
+                }
+
+                if (energyChanged)
+                {
+                    energySlider.value = Mathf.Clamp(baseEnergy, 0, maxEnergyValue);
+                }
             }
 
-            if (energyText != null)
+            if (energyText != null && energyChanged)
             {
-                energyText.text = "Energy: " + baseEnergy + "/" + maxEnergyValue;
+                energyText.SetText("Energy: {0:0}/{1:0}", baseEnergy, maxEnergyValue);
             }
 
-            if (extraEnergyText != null)
+            if (extraEnergyText != null && extraChanged)
             {
-                extraEnergyText.text = "Extra: +" + extraEnergy;
+                extraEnergyText.SetText("Extra: +{0:0}", extraEnergy);
             }
 
-            if (energyTimerText != null)
+            if (energyTimerText != null && timerChanged)
             {
-                int secondsUntilNext = energyService.GetSecondsUntilNext();
-                energyTimerText.text = "Next in: " + secondsUntilNext + "s";
+                energyTimerText.SetText("Next in: {0:0}s", secondsUntilNext);
             }
 
-            if (coinsText != null)
+            if (coinsText != null && coinsChanged)
             {
-                coinsText.text = "Coins: " + currencyService.GetCoins();
+                coinsText.SetText("Coins: {0:0}", coins);
             }
+
+            cachedBaseEnergy = baseEnergy;
+            cachedMaxEnergy = maxEnergyValue;
+            cachedExtraEnergy = extraEnergy;
+            cachedCoins = coins;
+            cachedSecondsUntilNext = secondsUntilNext;
+            uiCacheInitialized = true;
         }
 
         private void SetResult(string message)

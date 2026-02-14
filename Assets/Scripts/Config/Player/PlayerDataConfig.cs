@@ -1,10 +1,13 @@
 using UnityEngine;
 
-[CreateAssetMenu(fileName = "PlayerData", menuName = "Player/PlayerData")]
-public class PlayerDataConfig : ScriptableObject
+namespace Game.Config.Player
 {
-    public int startingCurrency;
-    public int startingEnergy;
-    public int maxEnergy;
-    public int rollCost;
+    [CreateAssetMenu(fileName = "PlayerData", menuName = "Player/PlayerData")]
+    public class PlayerDataConfig : ScriptableObject
+    {
+        public int startingCurrency;
+        public int startingEnergy;
+        public int maxEnergy;
+        public int rollCost;
+    }
 }

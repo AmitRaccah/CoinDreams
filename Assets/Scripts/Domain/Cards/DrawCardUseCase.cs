@@ -1,16 +1,14 @@
-using System;
-
-namespace Game.Cards
+namespace Game.Domain.Cards
 {
     public sealed class DrawCardUseCase
     {
-        private readonly Game.Services.Energy.EnergyService energy;
+        private readonly Game.Domain.Energy.EnergyService energy;
         private readonly ICardDeck deck;
         private readonly RewardContext context;
         private readonly int drawCost;
 
         public DrawCardUseCase(
-            Game.Services.Energy.EnergyService energy,
+            Game.Domain.Energy.EnergyService energy,
             ICardDeck deck,
             RewardContext context,
             int drawCost)
@@ -30,17 +28,7 @@ namespace Game.Cards
                 return false;
             }
 
-            try
-            {
-                drawnCard = deck.Draw();
-            }
-            catch (Exception)
-            {
-                energy.Add(drawCost);
-                return false;
-            }
-
-            if (drawnCard == null)
+            if (!deck.TryDraw(out drawnCard))
             {
                 energy.Add(drawCost);
                 return false;
@@ -51,7 +39,7 @@ namespace Game.Cards
             try
             {
                 int i;
-                for (i = 0; i < drawnCard.Effects.Count; i++)
+                for (i = 0; i < drawnCard.Effects.Length; i++)
                 {
                     IRewardEffect effect = drawnCard.Effects[i];
                     if (effect != null)

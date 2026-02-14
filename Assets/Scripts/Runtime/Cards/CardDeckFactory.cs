@@ -1,7 +1,7 @@
 using System.Collections.Generic;
-using Game.Cards;
-using Game.Cards.Config;
-using Game.Cards.Effects;
+using Game.Domain.Cards;
+using Game.Config.Cards;
+using Game.Domain.Cards.Effects;
 
 namespace Game.Runtime.Cards
 {
@@ -20,7 +20,18 @@ namespace Game.Runtime.Cards
 
         public ICardDeck Create(CardDeckSO deckConfig)
         {
-            List<CardDefinition> runtimeCards = new List<CardDefinition>();
+            int sourceCount = 0;
+            if (deckConfig != null && deckConfig.Cards != null)
+            {
+                sourceCount = deckConfig.Cards.Count;
+            }
+
+            if (sourceCount <= 0)
+            {
+                sourceCount = 1;
+            }
+
+            List<CardDefinition> runtimeCards = new List<CardDefinition>(sourceCount);
 
             if (deckConfig != null && deckConfig.Cards != null)
             {
@@ -38,7 +49,7 @@ namespace Game.Runtime.Cards
                         continue;
                     }
 
-                    List<IRewardEffect> effects = rewardEffectFactory.Create(cardSo.EffectConfigs);
+                    IRewardEffect[] effects = rewardEffectFactory.Create(cardSo.EffectConfigs);
 
                     int weight = cardSo.Weight;
                     if (weight <= 0)
@@ -56,13 +67,13 @@ namespace Game.Runtime.Cards
                 runtimeCards.Add(CreateFallbackCard());
             }
 
-            return new WeightedRandomCardDeck(runtimeCards);
+            return new WeightedRandomCardDeck(runtimeCards.ToArray());
         }
 
         private static CardDefinition CreateFallbackCard()
         {
-            List<IRewardEffect> effects = new List<IRewardEffect>();
-            effects.Add(new AddResourceEffect(RewardResourceType.Currency, FallbackCoinsAmount));
+            IRewardEffect[] effects = new IRewardEffect[1];
+            effects[0] = new AddResourceEffect(RewardResourceType.Currency, FallbackCoinsAmount);
             return new CardDefinition(FallbackCardId, FallbackWeight, effects);
         }
     }

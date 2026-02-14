@@ -1,6 +1,6 @@
 using System;
 
-namespace Game.Common.Time
+namespace Game.Domain.Time
 {
     public sealed class TimeProvider : ITimeProvider
     {

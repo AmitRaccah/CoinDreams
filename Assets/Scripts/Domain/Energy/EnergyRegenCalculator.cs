@@ -1,7 +1,7 @@
 using System;
 //using UnityEngine;
 
-namespace Game.Services.Energy
+namespace Game.Domain.Energy
 {
     public sealed class EnergyRegenCalculator
     {
