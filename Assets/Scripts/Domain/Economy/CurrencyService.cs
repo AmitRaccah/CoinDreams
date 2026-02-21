@@ -1,6 +1,6 @@
 namespace Game.Domain.Economy
 {
-    public class CurrencyService
+    public class CurrencyService : ICurrencyWallet
     {
         private int coins;
 

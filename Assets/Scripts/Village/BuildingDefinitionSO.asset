@@ -12,9 +12,57 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f5f8413613ab8842a8326c139902611, type: 3}
   m_Name: BuildingDefinitionSO
   m_EditorClassIdentifier: Assembly-CSharp::BuildingDefinitionSO
-  DisplayName: Tree
-  BuildingID: Tree
-  levels:
+  DisplayName: 
+  BuildingID: 0
+  upgradeSteps:
   - upgradeCost: 10
-  - upgradeCost: 50
-  - upgradeCost: 100
+    nextLevelPartStates:
+    - partId: 0
+      isActive: 1
+      texture: {fileID: 0}
+    - partId: 1
+      isActive: 0
+      texture: {fileID: 0}
+    - partId: 2
+      isActive: 0
+      texture: {fileID: 0}
+    - partId: 3
+      isActive: 0
+      texture: {fileID: 0}
+    - partId: 4
+      isActive: 0
+      texture: {fileID: 0}
+  - upgradeCost: 20
+    nextLevelPartStates:
+    - partId: 0
+      isActive: 1
+      texture: {fileID: 2800000, guid: dffef66376be4fa480fb02b19edbe903, type: 3}
+    - partId: 1
+      isActive: 1
+      texture: {fileID: 0}
+    - partId: 2
+      isActive: 0
+      texture: {fileID: 0}
+    - partId: 3
+      isActive: 0
+      texture: {fileID: 0}
+    - partId: 4
+      isActive: 0
+      texture: {fileID: 0}
+  - upgradeCost: 20
+    nextLevelPartStates:
+    - partId: 0
+      isActive: 1
+      texture: {fileID: 2800000, guid: dffef66376be4fa480fb02b19edbe903, type: 3}
+    - partId: 1
+      isActive: 0
+      texture: {fileID: 0}
+    - partId: 2
+      isActive: 0
+      texture: {fileID: 0}
+    - partId: 3
+      isActive: 0
+      texture: {fileID: 0}
+    - partId: 4
+      isActive: 0
+      texture: {fileID: 0}

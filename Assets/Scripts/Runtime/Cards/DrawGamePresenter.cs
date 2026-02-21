@@ -5,6 +5,7 @@ using Game.Domain.Time;
 using Game.Domain.Economy;
 using Game.Domain.Energy;
 using Game.Domain.Minigames;
+using Game.Runtime.Economy;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -22,6 +23,7 @@ namespace Game.Runtime.Cards
         [SerializeField] private int startingCoins = 0;
         [SerializeField] private CardDeckSO deckConfig;
         [SerializeField] private float uiRefreshIntervalSeconds = 1f;
+        [SerializeField] private EconomyContext economyContext;
 
         [Header("UI")]
         [SerializeField] private Slider energySlider;
@@ -54,8 +56,7 @@ namespace Game.Runtime.Cards
                 regenIntervalSeconds,
                 0);
 
-            currencyService = new CurrencyService();
-            currencyService.Add(startingCoins);
+            currencyService = ResolveCurrencyService();
 
             DrawModifiersService modifiersService = new DrawModifiersService();
             IMinigameLauncher minigameLauncher = NullMinigameLauncher.Instance;
@@ -185,6 +186,19 @@ namespace Game.Runtime.Cards
             {
                 resultText.text = message;
             }
+        }
+
+        private CurrencyService ResolveCurrencyService()
+        {
+            EconomyContext context = economyContext;
+            if (context != null)
+            {
+                return context.CurrencyService;
+            }
+
+            CurrencyService localService = new CurrencyService();
+            localService.Add(startingCoins);
+            return localService;
         }
 
         private void StartUiRefreshLoop()
