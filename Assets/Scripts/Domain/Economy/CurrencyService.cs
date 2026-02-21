@@ -4,24 +4,42 @@ namespace Game.Domain.Economy
     {
         private int coins;
 
-        public int GetCoins() => coins;
+        public int GetCoins()
+        {
+            return coins;
+        }
 
         public void Add(int amount)
         {
-            if (amount <= 0) return;
+            if (amount <= 0)
+            {
+                return;
+            }
+
             coins += amount;
         }
 
         public bool CanAfford(int amount)
         {
-            if (amount <= 0) return true;
+            if (amount <= 0)
+            {
+                return true;
+            }
+
             return coins >= amount;
         }
 
         public bool TrySpend(int amount)
         {
-            if (amount <= 0) return true;
-            if (coins < amount) return false;
+            if (amount <= 0)
+            {
+                return true;
+            }
+
+            if (coins < amount)
+            {
+                return false;
+            }
 
             coins -= amount;
             return true;

@@ -9,7 +9,6 @@ namespace Game.Runtime.Economy
     {
         [Header("Initial Currency")]
         [SerializeField] private PlayerDataConfig playerDataConfig;
-        [SerializeField] private int fallbackStartingCoins;
         [SerializeField] private bool persistAcrossScenes;
 
         private CurrencyService currencyService;
@@ -49,11 +48,9 @@ namespace Game.Runtime.Economy
             initialized = true;
             currencyService = new CurrencyService();
 
-            int startingCoins = fallbackStartingCoins;
-            if (playerDataConfig != null)
-            {
-                startingCoins = playerDataConfig.startingCurrency;
-            }
+            int startingCoins = playerDataConfig != null
+                ? playerDataConfig.startingCurrency
+                : 0;
 
             currencyService.Add(startingCoins);
         }
