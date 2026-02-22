@@ -1,3 +1,4 @@
+using System;
 using Game.Domain.Time;
 
 namespace Game.Domain.Energy
@@ -6,6 +7,7 @@ namespace Game.Domain.Energy
     {
         private readonly ITimeProvider timeProvider;
         private readonly EnergyRegenCalculator calculator;
+        public event Action<int, int, int> EnergyChanged;
 
         private int currentEnergy;
         private int regenMaxEnergy;
@@ -60,6 +62,11 @@ namespace Game.Domain.Energy
             return storageMaxEnergy;
         }
 
+        public int GetRegenIntervalSeconds()
+        {
+            return regenIntervalSeconds;
+        }
+
         public int GetExtra()
         {
             if (currentEnergy <= regenMaxEnergy)
@@ -77,40 +84,12 @@ namespace Game.Domain.Energy
 
         public void ApplyRegen()
         {
-            if (currentEnergy >= regenMaxEnergy)
+            int before = currentEnergy;
+            ApplyRegenInternal();
+
+            if (currentEnergy != before)
             {
-                UpdateRegenAnchorWithoutGain();
-                return;
-            }
-
-            long nowTicks = timeProvider.GetUtcNowTicks();
-            int gained = calculator.CalculateGainedEnergy(nowTicks, lastRegenUtcTicks, regenIntervalSeconds);
-
-            if (gained <= 0)
-            {
-                return;
-            }
-
-            int missingToRegenMax = regenMaxEnergy - currentEnergy;
-            int appliedGain = gained;
-
-            if (appliedGain > missingToRegenMax)
-            {
-                appliedGain = missingToRegenMax;
-            }
-
-            currentEnergy += appliedGain;
-
-            if (currentEnergy > regenMaxEnergy)
-            {
-                currentEnergy = regenMaxEnergy;
-            }
-
-            lastRegenUtcTicks = calculator.AdvanceLastTicks(lastRegenUtcTicks, appliedGain, regenIntervalSeconds);
-
-            if (currentEnergy >= regenMaxEnergy)
-            {
-                UpdateRegenAnchorWithoutGain();
+                NotifyEnergyChanged();
             }
         }
 
@@ -121,14 +100,21 @@ namespace Game.Domain.Energy
                 return true;
             }
 
-            ApplyRegen();
+            int before = currentEnergy;
+            ApplyRegenInternal();
 
             if (currentEnergy < cost)
             {
+                if (currentEnergy != before)
+                {
+                    NotifyEnergyChanged();
+                }
+
                 return false;
             }
 
             currentEnergy -= cost;
+            NotifyEnergyChanged();
 
             return true;
         }
@@ -140,9 +126,22 @@ namespace Game.Domain.Energy
                 return;
             }
 
-            ApplyRegen();
+            int before = currentEnergy;
+            ApplyRegenInternal();
 
-            currentEnergy += amount;
+            long nextEnergy = (long)currentEnergy + amount;
+            if (nextEnergy > int.MaxValue)
+            {
+                currentEnergy = int.MaxValue;
+            }
+            else if (nextEnergy < int.MinValue)
+            {
+                currentEnergy = int.MinValue;
+            }
+            else
+            {
+                currentEnergy = (int)nextEnergy;
+            }
 
             if (currentEnergy > storageMaxEnergy)
             {
@@ -152,6 +151,11 @@ namespace Game.Domain.Energy
             if (currentEnergy < 0)
             {
                 currentEnergy = 0;
+            }
+
+            if (currentEnergy != before)
+            {
+                NotifyEnergyChanged();
             }
         }
 
@@ -204,6 +208,54 @@ namespace Game.Domain.Energy
             if (skipped > 0)
             {
                 lastRegenUtcTicks = calculator.AdvanceLastTicks(lastRegenUtcTicks, skipped, regenIntervalSeconds);
+            }
+        }
+
+        private void ApplyRegenInternal()
+        {
+            if (currentEnergy >= regenMaxEnergy)
+            {
+                UpdateRegenAnchorWithoutGain();
+                return;
+            }
+
+            long nowTicks = timeProvider.GetUtcNowTicks();
+            int gained = calculator.CalculateGainedEnergy(nowTicks, lastRegenUtcTicks, regenIntervalSeconds);
+
+            if (gained <= 0)
+            {
+                return;
+            }
+
+            int missingToRegenMax = regenMaxEnergy - currentEnergy;
+            int appliedGain = gained;
+
+            if (appliedGain > missingToRegenMax)
+            {
+                appliedGain = missingToRegenMax;
+            }
+
+            currentEnergy += appliedGain;
+
+            if (currentEnergy > regenMaxEnergy)
+            {
+                currentEnergy = regenMaxEnergy;
+            }
+
+            lastRegenUtcTicks = calculator.AdvanceLastTicks(lastRegenUtcTicks, appliedGain, regenIntervalSeconds);
+
+            if (currentEnergy >= regenMaxEnergy)
+            {
+                UpdateRegenAnchorWithoutGain();
+            }
+        }
+
+        private void NotifyEnergyChanged()
+        {
+            Action<int, int, int> handler = EnergyChanged;
+            if (handler != null)
+            {
+                handler(currentEnergy, regenMaxEnergy, GetExtra());
             }
         }
     }

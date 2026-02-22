@@ -2,7 +2,7 @@ using System;
 using System.Collections.Generic;
 using Game.Domain.Economy;
 using Game.Domain.Village;
-using Game.Runtime.Economy;
+using Game.Runtime.Player;
 using UnityEngine;
 
 namespace Game.Runtime.Village
@@ -12,7 +12,7 @@ namespace Game.Runtime.Village
     {
         [Header("Config")]
         [SerializeField] private VillageDefinitionSO villageDefinition;
-        [SerializeField] private EconomyContext economyContext;
+        [SerializeField] private PlayerRuntimeContext playerRuntimeContext;
         [SerializeField] private bool applyVisualsOnAwake = true;
 
         [Header("Building Roots")]
@@ -29,6 +29,13 @@ namespace Game.Runtime.Village
 
         private void Awake()
         {
+            if (!TryResolvePlayerContext())
+            {
+                Debug.LogError("[VillageUpgradeRuntime] Missing PlayerRuntimeContext. Assign PlayerRuntimeContext to use a single player source of truth.", this);
+                enabled = false;
+                return;
+            }
+
             InitializeRuntime();
         }
 
@@ -44,7 +51,7 @@ namespace Game.Runtime.Village
             ICurrencyWallet wallet = ResolveWallet();
             if (wallet == null)
             {
-                Debug.LogError("[VillageUpgradeRuntime] EconomyContext is missing. Assign EconomyContext to use shared currency.", this);
+                Debug.LogError("[VillageUpgradeRuntime] Missing PlayerRuntimeContext wallet.", this);
                 return;
             }
 
@@ -54,7 +61,13 @@ namespace Game.Runtime.Village
                 return;
             }
 
-            VillageProgressState progressState = new VillageProgressState(catalog.BuildingCount);
+            VillageProgressState progressState = ResolveProgressState(catalog.BuildingCount);
+            if (progressState == null)
+            {
+                Debug.LogError("[VillageUpgradeRuntime] Missing PlayerRuntimeContext village progress state.", this);
+                return;
+            }
+
             upgradeService = new VillageUpgradeService(catalog, progressState, wallet);
 
             if (!upgradeService.IsValid)
@@ -289,13 +302,41 @@ namespace Game.Runtime.Village
 
         private ICurrencyWallet ResolveWallet()
         {
-            EconomyContext context = economyContext;
-            if (context == null)
+            PlayerRuntimeContext playerContext = playerRuntimeContext;
+            if (playerContext != null)
             {
-                return null;
+                return playerContext.Wallet;
+            }
+            return null;
+        }
+
+        private VillageProgressState ResolveProgressState(int buildingCount)
+        {
+            PlayerRuntimeContext playerContext = playerRuntimeContext;
+            if (playerContext != null)
+            {
+                playerContext.EnsureVillageCapacity(buildingCount);
+                return playerContext.VillageProgressState;
+            }
+            return null;
+        }
+
+        private bool TryResolvePlayerContext()
+        {
+            if (playerRuntimeContext != null)
+            {
+                return true;
             }
 
-            return context.Wallet;
+            playerRuntimeContext = FindFirstObjectByType<PlayerRuntimeContext>();
+            if (playerRuntimeContext != null)
+            {
+                return true;
+            }
+
+            GameObject runtimeContextObject = new GameObject("PlayerRuntimeContext");
+            playerRuntimeContext = runtimeContextObject.AddComponent<PlayerRuntimeContext>();
+            return playerRuntimeContext != null;
         }
 
         private bool TryBuildCatalog(out VillageUpgradeCatalog catalog, out string error)

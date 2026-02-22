@@ -829,8 +829,9 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 245205527}
+  - component: {fileID: 245205528}
   m_Layer: 0
-  m_Name: GameConfig
+  m_Name: Player
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -851,6 +852,27 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2060570681}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &245205528
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 245205526}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b51ffd11a5fa8de4ba974da5a5297653, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Player.PlayerRuntimeContext
+  playerId: local_player
+  startingCoins: 10
+  startingEnergy: 5
+  maxEnergy: 10
+  maxStoredEnergy: 20
+  regenIntervalSeconds: 300
+  lastRegenUtcTicks: 0
+  initialVillageBuildingCount: 1
+  persistAcrossScenes: 1
 --- !u!1 &350882472 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: da15dda4098a4a04697f5ee16dac9694, type: 3}
@@ -1304,15 +1326,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 13cb72a8d89f07840b5151c181eb7c89, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Cards.DrawGamePresenter
-  startEnergy: 5
-  maxEnergy: 10
-  maxStoredEnergy: 20
-  regenIntervalSeconds: 300
   drawCost: 1
-  startingCoins: 0
   deckConfig: {fileID: 11400000, guid: b9f48a734afb6804d86c0c6636ae8d22, type: 2}
   uiRefreshIntervalSeconds: 1
-  economyContext: {fileID: 2076768698}
+  playerRuntimeContext: {fileID: 245205528}
   energySlider: {fileID: 1079855075}
   energyText: {fileID: 951559933}
   energyTimerText: {fileID: 2104717523}
@@ -1694,10 +1711,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 21c84670e68348d89187658692fb9c51, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingTextureBinding
-  textureSlotId: 
-  targetRenderer: {fileID: 0}
-  texturePropertyName: _BaseMap
-  materialIndex: 0
 --- !u!114 &962827650
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1710,7 +1723,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ea5591c61144e9da749e2e3b0a32cd4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingPartBinding
-  partId: 2
 --- !u!1 &1079855073
 GameObject:
   m_ObjectHideFlags: 0
@@ -1969,10 +1981,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 21c84670e68348d89187658692fb9c51, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingTextureBinding
-  textureSlotId: 
-  targetRenderer: {fileID: 0}
-  texturePropertyName: _BaseMap
-  materialIndex: 0
 --- !u!114 &1273392289
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1985,7 +1993,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1ea5591c61144e9da749e2e3b0a32cd4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingPartBinding
-  partId: 1
 --- !u!1 &1294220512
 GameObject:
   m_ObjectHideFlags: 0
@@ -2837,8 +2844,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 18c2d6edfe9d5ce4c99989deeb702451, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Economy.EconomyContext
-  playerDataConfig: {fileID: 0}
-  fallbackStartingCoins: 0
+  playerDataConfig: {fileID: 11400000, guid: 96c106bbac0c387419168f7db501f455, type: 2}
   persistAcrossScenes: 0
 --- !u!114 &2076768699
 MonoBehaviour:
@@ -2853,7 +2859,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.VillageUpgradeRuntime
   villageDefinition: {fileID: 11400000, guid: 03dbec92c331c2e48a8842e3ee8a5ec0, type: 2}
-  economyContext: {fileID: 2076768698}
+  playerRuntimeContext: {fileID: 245205528}
   applyVisualsOnAwake: 1
   buildingVisualControllers:
   - {fileID: 350882475}

@@ -1,11 +1,10 @@
 using System.Collections;
 using Game.Domain.Cards;
 using Game.Config.Cards;
-using Game.Domain.Time;
 using Game.Domain.Economy;
 using Game.Domain.Energy;
 using Game.Domain.Minigames;
-using Game.Runtime.Economy;
+using Game.Runtime.Player;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -15,15 +14,10 @@ namespace Game.Runtime.Cards
     public sealed class DrawGamePresenter : MonoBehaviour
     {
         [Header("Config")]
-        [SerializeField] private int startEnergy = 5;
-        [SerializeField] private int maxEnergy = 10;
-        [SerializeField] private int maxStoredEnergy = 20;
-        [SerializeField] private int regenIntervalSeconds = 300;
         [SerializeField] private int drawCost = 1;
-        [SerializeField] private int startingCoins = 0;
         [SerializeField] private CardDeckSO deckConfig;
         [SerializeField] private float uiRefreshIntervalSeconds = 1f;
-        [SerializeField] private EconomyContext economyContext;
+        [SerializeField] private PlayerRuntimeContext playerRuntimeContext;
 
         [Header("UI")]
         [SerializeField] private Slider energySlider;
@@ -37,7 +31,10 @@ namespace Game.Runtime.Cards
         private CurrencyService currencyService;
         private DrawCardUseCase drawCardUseCase;
         private Coroutine uiRefreshRoutine;
-        private bool uiCacheInitialized;
+        private bool isSubscribed;
+        private bool energyUiCacheInitialized;
+        private bool coinsUiCacheInitialized;
+        private bool timerUiCacheInitialized;
         private int cachedBaseEnergy;
         private int cachedMaxEnergy;
         private int cachedExtraEnergy;
@@ -46,17 +43,15 @@ namespace Game.Runtime.Cards
 
         private void Awake()
         {
-            TimeProvider timeProvider = new TimeProvider();
+            if (!TryResolvePlayerContext())
+            {
+                Debug.LogError("[DrawGamePresenter] Missing PlayerRuntimeContext. Assign PlayerRuntimeContext to use a single player source of truth.", this);
+                enabled = false;
+                return;
+            }
 
-            energyService = new EnergyService(
-                timeProvider,
-                startEnergy,
-                maxEnergy,
-                maxStoredEnergy,
-                regenIntervalSeconds,
-                0);
-
-            currencyService = ResolveCurrencyService();
+            energyService = playerRuntimeContext.EnergyService;
+            currencyService = playerRuntimeContext.CurrencyService;
 
             DrawModifiersService modifiersService = new DrawModifiersService();
             IMinigameLauncher minigameLauncher = NullMinigameLauncher.Instance;
@@ -77,17 +72,21 @@ namespace Game.Runtime.Cards
                 rewardContext,
                 drawCost);
 
-            RefreshUi();
+            energyService.ApplyRegen();
+            RefreshAllUi();
         }
 
         private void OnEnable()
         {
+            SubscribeToStateEvents();
             StartUiRefreshLoop();
+            RefreshAllUi();
         }
 
         private void OnDisable()
         {
             StopUiRefreshLoop();
+            UnsubscribeFromStateEvents();
         }
 
         public void OnDrawButtonClicked()
@@ -104,42 +103,44 @@ namespace Game.Runtime.Cards
             if (success == false)
             {
                 SetResult("Not enough energy.");
-                RefreshUi();
                 Debug.LogWarning("[DRAW] Failed: not enough energy.");
                 return;
             }
 
-            RefreshUi();
             SetResult("Card: " + drawnCard.Id);
             Debug.Log("[DRAW] Card=" + drawnCard.Id + " | Coins=" + currencyService.GetCoins());
         }
 
-        private void RefreshUi()
+        private void RefreshAllUi()
         {
             if (energyService == null || currencyService == null)
             {
                 return;
             }
 
-            energyService.ApplyRegen();
-
             int currentEnergy = energyService.GetCurrent();
             int maxEnergyValue = energyService.GetMax();
             int extraEnergy = energyService.GetExtra();
-            int baseEnergy = currentEnergy - extraEnergy;
-            int secondsUntilNext = energyService.GetSecondsUntilNext();
             int coins = currencyService.GetCoins();
+            int secondsUntilNext = energyService.GetSecondsUntilNext();
 
-            bool energyChanged = !uiCacheInitialized
+            RefreshEnergyUi(currentEnergy, maxEnergyValue, extraEnergy);
+            RefreshCoinsUi(coins);
+            RefreshTimerUi(secondsUntilNext);
+        }
+
+        private void RefreshEnergyUi(int currentEnergy, int maxEnergyValue, int extraEnergy)
+        {
+            int baseEnergy = currentEnergy - extraEnergy;
+
+            bool energyChanged = !energyUiCacheInitialized
                 || cachedBaseEnergy != baseEnergy
                 || cachedMaxEnergy != maxEnergyValue;
-            bool extraChanged = !uiCacheInitialized || cachedExtraEnergy != extraEnergy;
-            bool timerChanged = !uiCacheInitialized || cachedSecondsUntilNext != secondsUntilNext;
-            bool coinsChanged = !uiCacheInitialized || cachedCoins != coins;
+            bool extraChanged = !energyUiCacheInitialized || cachedExtraEnergy != extraEnergy;
 
             if (energySlider != null)
             {
-                if (!uiCacheInitialized || cachedMaxEnergy != maxEnergyValue)
+                if (!energyUiCacheInitialized || cachedMaxEnergy != maxEnergyValue)
                 {
                     energySlider.wholeNumbers = true;
                     energySlider.minValue = 0f;
@@ -162,22 +163,69 @@ namespace Game.Runtime.Cards
                 extraEnergyText.SetText("Extra: +{0:0}", extraEnergy);
             }
 
-            if (energyTimerText != null && timerChanged)
-            {
-                energyTimerText.SetText("Next in: {0:0}s", secondsUntilNext);
-            }
+            cachedBaseEnergy = baseEnergy;
+            cachedMaxEnergy = maxEnergyValue;
+            cachedExtraEnergy = extraEnergy;
+            energyUiCacheInitialized = true;
+        }
 
+        private void RefreshCoinsUi(int coins)
+        {
+            bool coinsChanged = !coinsUiCacheInitialized || cachedCoins != coins;
             if (coinsText != null && coinsChanged)
             {
                 coinsText.SetText("Coins: {0:0}", coins);
             }
 
-            cachedBaseEnergy = baseEnergy;
-            cachedMaxEnergy = maxEnergyValue;
-            cachedExtraEnergy = extraEnergy;
             cachedCoins = coins;
+            coinsUiCacheInitialized = true;
+        }
+
+        private void RefreshTimerUi(int secondsUntilNext)
+        {
+            bool timerChanged = !timerUiCacheInitialized || cachedSecondsUntilNext != secondsUntilNext;
+            if (energyTimerText != null && timerChanged)
+            {
+                energyTimerText.SetText("Next in: {0:0}s", secondsUntilNext);
+            }
+
             cachedSecondsUntilNext = secondsUntilNext;
-            uiCacheInitialized = true;
+            timerUiCacheInitialized = true;
+        }
+
+        private void HandleEnergyChanged(int currentEnergy, int maxEnergyValue, int extraEnergy)
+        {
+            RefreshEnergyUi(currentEnergy, maxEnergyValue, extraEnergy);
+            RefreshTimerUi(energyService.GetSecondsUntilNext());
+        }
+
+        private void HandleCoinsChanged(int coins)
+        {
+            RefreshCoinsUi(coins);
+        }
+
+        private void SubscribeToStateEvents()
+        {
+            if (isSubscribed || energyService == null || currencyService == null)
+            {
+                return;
+            }
+
+            energyService.EnergyChanged += HandleEnergyChanged;
+            currencyService.CoinsChanged += HandleCoinsChanged;
+            isSubscribed = true;
+        }
+
+        private void UnsubscribeFromStateEvents()
+        {
+            if (!isSubscribed || energyService == null || currencyService == null)
+            {
+                return;
+            }
+
+            energyService.EnergyChanged -= HandleEnergyChanged;
+            currencyService.CoinsChanged -= HandleCoinsChanged;
+            isSubscribed = false;
         }
 
         private void SetResult(string message)
@@ -188,17 +236,22 @@ namespace Game.Runtime.Cards
             }
         }
 
-        private CurrencyService ResolveCurrencyService()
+        private bool TryResolvePlayerContext()
         {
-            EconomyContext context = economyContext;
-            if (context != null)
+            if (playerRuntimeContext != null)
             {
-                return context.CurrencyService;
+                return true;
             }
 
-            CurrencyService localService = new CurrencyService();
-            localService.Add(startingCoins);
-            return localService;
+            playerRuntimeContext = FindFirstObjectByType<PlayerRuntimeContext>();
+            if (playerRuntimeContext != null)
+            {
+                return true;
+            }
+
+            GameObject runtimeContextObject = new GameObject("PlayerRuntimeContext");
+            playerRuntimeContext = runtimeContextObject.AddComponent<PlayerRuntimeContext>();
+            return playerRuntimeContext != null;
         }
 
         private void StartUiRefreshLoop()
@@ -234,24 +287,31 @@ namespace Game.Runtime.Cards
 
             while (true)
             {
-                RefreshUi();
+                if (energyService != null)
+                {
+                    energyService.ApplyRegen();
+                    RefreshTimerUi(energyService.GetSecondsUntilNext());
+                }
+
                 yield return delay;
             }
         }
 
         private void OnApplicationFocus(bool hasFocus)
         {
-            if (hasFocus)
+            if (hasFocus && energyService != null)
             {
-                RefreshUi();
+                energyService.ApplyRegen();
+                RefreshAllUi();
             }
         }
 
         private void OnApplicationPause(bool pause)
         {
-            if (pause == false)
+            if (pause == false && energyService != null)
             {
-                RefreshUi();
+                energyService.ApplyRegen();
+                RefreshAllUi();
             }
         }
     }

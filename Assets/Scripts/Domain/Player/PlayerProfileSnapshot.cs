@@ -1,40 +1,33 @@
 using System;
 
-namespace Game.Infrastructure.Persistence
+namespace Game.Domain.Player
 {
-    [System.Serializable]
-    public class PlayerSaveData
+    [Serializable]
+    public sealed class PlayerProfileSnapshot
     {
-        // Identity / Sync
         public string playerId;
         public int revision;
 
-        // Currency
         public int coins;
 
-        // Energy
         public int currentEnergy;
-        public int maxEnergy;
+        public int regenMaxEnergy;
         public int storageMaxEnergy;
         public int regenIntervalSeconds;
         public long lastRegenUtcTicks;
 
-        // Progress
         public int[] villageLevels;
-
-        // Idempotency for async external impacts
         public string[] processedImpactIds;
 
-        public PlayerSaveData()
+        public PlayerProfileSnapshot()
         {
-            //Default values
-            playerId = "local_player";
+            playerId = string.Empty;
             revision = 0;
             coins = 0;
 
-            currentEnergy = 5;
-            maxEnergy = 10;
-            storageMaxEnergy = 20;
+            currentEnergy = 0;
+            regenMaxEnergy = 10;
+            storageMaxEnergy = 10;
             regenIntervalSeconds = 300;
             lastRegenUtcTicks = 0;
 

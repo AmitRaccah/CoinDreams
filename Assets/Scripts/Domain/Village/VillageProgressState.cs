@@ -1,8 +1,10 @@
+using System;
+
 namespace Game.Domain.Village
 {
     public sealed class VillageProgressState
     {
-        private readonly int[] buildingLevels;
+        private int[] buildingLevels;
 
         public VillageProgressState(int buildingCount)
         {
@@ -56,6 +58,57 @@ namespace Game.Domain.Village
 
             buildingLevels[index] = level;
             return true;
+        }
+
+        public void EnsureCapacity(int buildingCount)
+        {
+            if (buildingCount < 0)
+            {
+                buildingCount = 0;
+            }
+
+            if (buildingLevels.Length >= buildingCount)
+            {
+                return;
+            }
+
+            Array.Resize(ref buildingLevels, buildingCount);
+        }
+
+        public int[] GetLevelsSnapshot()
+        {
+            if (buildingLevels.Length == 0)
+            {
+                return Array.Empty<int>();
+            }
+
+            int[] snapshot = new int[buildingLevels.Length];
+            Array.Copy(buildingLevels, snapshot, buildingLevels.Length);
+            return snapshot;
+        }
+
+        public void SetLevels(int[] levels)
+        {
+            if (levels == null || levels.Length == 0)
+            {
+                buildingLevels = Array.Empty<int>();
+                return;
+            }
+
+            int[] copy = new int[levels.Length];
+            int i;
+            for (i = 0; i < levels.Length; i++)
+            {
+                int level = levels[i];
+                if (level < 0)
+                {
+                    level = 0;
+                }
+
+                copy[i] = level;
+            }
+
+            buildingLevels = copy;
         }
     }
 }
