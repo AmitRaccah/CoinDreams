@@ -15,6 +15,9 @@ namespace Game.Domain.Player
         private readonly VillageProgressState village;
         private readonly HashSet<string> processedImpactIds;
         private int revision;
+        private int batchedMutationDepth;
+        private bool hasBatchedMutation;
+        public event Action Changed;
 
         public PlayerProfile(
             string playerId,
@@ -46,6 +49,7 @@ namespace Game.Domain.Player
             this.revision = revision < 0 ? 0 : revision;
             processedImpactIds = new HashSet<string>(StringComparer.Ordinal);
             SeedProcessedImpactIds(seedProcessedImpactIds);
+            SubscribeToStateChanges();
         }
 
         public string PlayerId
@@ -128,43 +132,51 @@ namespace Game.Domain.Player
             int coinsDelta = 0;
             int energyDelta = 0;
 
-            if (impact.impactType == PlayerImpactType.CoinsGranted)
+            BeginMutationBatch();
+            try
             {
-                int beforeCoins = currency.GetCoins();
-                currency.Add(requestedAmount);
-                int afterCoins = currency.GetCoins();
-                appliedAmount = afterCoins - beforeCoins;
-                coinsDelta = appliedAmount;
-            }
-            else if (impact.impactType == PlayerImpactType.CoinsStolen)
-            {
-                appliedAmount = SpendCoinsUpTo(requestedAmount);
-                coinsDelta = -appliedAmount;
-            }
-            else if (impact.impactType == PlayerImpactType.EnergyGranted)
-            {
-                int beforeEnergy = energy.GetCurrent();
-                energy.Add(requestedAmount);
-                int afterEnergy = energy.GetCurrent();
-                appliedAmount = afterEnergy - beforeEnergy;
-                energyDelta = appliedAmount;
-            }
-            else if (impact.impactType == PlayerImpactType.EnergyRemoved)
-            {
-                appliedAmount = SpendEnergyUpTo(requestedAmount);
-                energyDelta = -appliedAmount;
-            }
-            else
-            {
-                return PlayerImpactApplyResult.Invalid(
-                    impactId,
-                    impact.impactType,
-                    requestedAmount,
-                    "Unsupported impact type.");
-            }
+                if (impact.impactType == PlayerImpactType.CoinsGranted)
+                {
+                    int beforeCoins = currency.GetCoins();
+                    currency.Add(requestedAmount);
+                    int afterCoins = currency.GetCoins();
+                    appliedAmount = afterCoins - beforeCoins;
+                    coinsDelta = appliedAmount;
+                }
+                else if (impact.impactType == PlayerImpactType.CoinsStolen)
+                {
+                    appliedAmount = SpendCoinsUpTo(requestedAmount);
+                    coinsDelta = -appliedAmount;
+                }
+                else if (impact.impactType == PlayerImpactType.EnergyGranted)
+                {
+                    int beforeEnergy = energy.GetCurrent();
+                    energy.Add(requestedAmount);
+                    int afterEnergy = energy.GetCurrent();
+                    appliedAmount = afterEnergy - beforeEnergy;
+                    energyDelta = appliedAmount;
+                }
+                else if (impact.impactType == PlayerImpactType.EnergyRemoved)
+                {
+                    appliedAmount = SpendEnergyUpTo(requestedAmount);
+                    energyDelta = -appliedAmount;
+                }
+                else
+                {
+                    return PlayerImpactApplyResult.Invalid(
+                        impactId,
+                        impact.impactType,
+                        requestedAmount,
+                        "Unsupported impact type.");
+                }
 
-            processedImpactIds.Add(impactId);
-            revision++;
+                processedImpactIds.Add(impactId);
+                MarkChanged();
+            }
+            finally
+            {
+                EndMutationBatch();
+            }
 
             bool isPartial = appliedAmount < requestedAmount;
             return PlayerImpactApplyResult.Applied(
@@ -305,6 +317,72 @@ namespace Game.Domain.Player
                 }
 
                 processedImpactIds.Add(impactId.Trim());
+            }
+        }
+
+        private void SubscribeToStateChanges()
+        {
+            currency.CoinsChanged += HandleCoinsChanged;
+            energy.EnergyChanged += HandleEnergyChanged;
+            village.Changed += HandleVillageChanged;
+        }
+
+        private void HandleCoinsChanged(int _)
+        {
+            MarkChanged();
+        }
+
+        private void HandleEnergyChanged(int _, int __, int ___)
+        {
+            MarkChanged();
+        }
+
+        private void HandleVillageChanged()
+        {
+            MarkChanged();
+        }
+
+        private void BeginMutationBatch()
+        {
+            batchedMutationDepth++;
+        }
+
+        private void EndMutationBatch()
+        {
+            if (batchedMutationDepth <= 0)
+            {
+                batchedMutationDepth = 0;
+                hasBatchedMutation = false;
+                return;
+            }
+
+            batchedMutationDepth--;
+            if (batchedMutationDepth == 0 && hasBatchedMutation)
+            {
+                hasBatchedMutation = false;
+                IncrementRevisionAndNotify();
+            }
+        }
+
+        private void MarkChanged()
+        {
+            if (batchedMutationDepth > 0)
+            {
+                hasBatchedMutation = true;
+                return;
+            }
+
+            IncrementRevisionAndNotify();
+        }
+
+        private void IncrementRevisionAndNotify()
+        {
+            revision++;
+
+            Action handler = Changed;
+            if (handler != null)
+            {
+                handler();
             }
         }
 

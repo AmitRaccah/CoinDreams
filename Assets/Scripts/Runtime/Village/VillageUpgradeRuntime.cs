@@ -21,6 +21,7 @@ namespace Game.Runtime.Village
         private VillageUpgradeService upgradeService;
         private BuildingVisualController[] visualsByBuildingIndex = Array.Empty<BuildingVisualController>();
         private bool initialized;
+        private bool isContextSubscribed;
 
         public bool IsReady
         {
@@ -37,6 +38,16 @@ namespace Game.Runtime.Village
             }
 
             InitializeRuntime();
+        }
+
+        private void OnEnable()
+        {
+            SubscribeToRuntimeContextEvents();
+        }
+
+        private void OnDisable()
+        {
+            UnsubscribeFromRuntimeContextEvents();
         }
 
         public void InitializeRuntime()
@@ -415,6 +426,36 @@ namespace Game.Runtime.Village
             {
                 InitializeRuntime();
             }
+        }
+
+        private void HandleProfileReplaced()
+        {
+            initialized = false;
+            upgradeService = null;
+            visualsByBuildingIndex = Array.Empty<BuildingVisualController>();
+            InitializeRuntime();
+        }
+
+        private void SubscribeToRuntimeContextEvents()
+        {
+            if (isContextSubscribed || playerRuntimeContext == null)
+            {
+                return;
+            }
+
+            playerRuntimeContext.ProfileReplaced += HandleProfileReplaced;
+            isContextSubscribed = true;
+        }
+
+        private void UnsubscribeFromRuntimeContextEvents()
+        {
+            if (!isContextSubscribed || playerRuntimeContext == null)
+            {
+                return;
+            }
+
+            playerRuntimeContext.ProfileReplaced -= HandleProfileReplaced;
+            isContextSubscribed = false;
         }
     }
 }

@@ -5,6 +5,7 @@ namespace Game.Domain.Village
     public sealed class VillageProgressState
     {
         private int[] buildingLevels;
+        public event Action Changed;
 
         public VillageProgressState(int buildingCount)
         {
@@ -56,7 +57,13 @@ namespace Game.Domain.Village
                 return false;
             }
 
+            if (buildingLevels[index] == level)
+            {
+                return true;
+            }
+
             buildingLevels[index] = level;
+            NotifyChanged();
             return true;
         }
 
@@ -73,6 +80,7 @@ namespace Game.Domain.Village
             }
 
             Array.Resize(ref buildingLevels, buildingCount);
+            NotifyChanged();
         }
 
         public int[] GetLevelsSnapshot()
@@ -91,7 +99,13 @@ namespace Game.Domain.Village
         {
             if (levels == null || levels.Length == 0)
             {
+                if (buildingLevels.Length == 0)
+                {
+                    return;
+                }
+
                 buildingLevels = Array.Empty<int>();
+                NotifyChanged();
                 return;
             }
 
@@ -108,7 +122,46 @@ namespace Game.Domain.Village
                 copy[i] = level;
             }
 
+            if (AreEqual(buildingLevels, copy))
+            {
+                return;
+            }
+
             buildingLevels = copy;
+            NotifyChanged();
+        }
+
+        private static bool AreEqual(int[] a, int[] b)
+        {
+            if (ReferenceEquals(a, b))
+            {
+                return true;
+            }
+
+            if (a == null || b == null || a.Length != b.Length)
+            {
+                return false;
+            }
+
+            int i;
+            for (i = 0; i < a.Length; i++)
+            {
+                if (a[i] != b[i])
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        private void NotifyChanged()
+        {
+            Action handler = Changed;
+            if (handler != null)
+            {
+                handler();
+            }
         }
     }
 }

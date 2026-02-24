@@ -32,6 +32,8 @@ namespace Game.Runtime.Player
 
         private PlayerProfile profile;
         private bool initialized;
+        public event Action ProfileReplaced;
+        public event Action StateChanged;
 
         public PlayerProfile Profile
         {
@@ -60,6 +62,11 @@ namespace Game.Runtime.Player
         public VillageProgressState VillageProgressState
         {
             get { return Profile.Village; }
+        }
+
+        public string PlayerId
+        {
+            get { return Profile.PlayerId; }
         }
 
         private void Awake()
@@ -119,8 +126,8 @@ namespace Game.Runtime.Player
             }
 
             TimeProvider timeProvider = new TimeProvider();
-            profile = PlayerProfile.FromSnapshot(snapshot, timeProvider);
-            initialized = true;
+            PlayerProfile loadedProfile = PlayerProfile.FromSnapshot(snapshot, timeProvider);
+            ReplaceProfile(loadedProfile, true);
         }
 
         private void EnsureInitialized()
@@ -150,13 +157,57 @@ namespace Game.Runtime.Player
 
             VillageProgressState village = new VillageProgressState(initialVillageBuildingCount);
 
-            profile = new PlayerProfile(
+            PlayerProfile initialProfile = new PlayerProfile(
                 playerId,
                 currency,
                 energy,
                 village,
                 0,
                 null);
+
+            ReplaceProfile(initialProfile, false);
+        }
+
+        private void ReplaceProfile(PlayerProfile newProfile, bool notifyReplacement)
+        {
+            if (newProfile == null)
+            {
+                return;
+            }
+
+            if (profile != null)
+            {
+                profile.Changed -= HandleProfileChanged;
+            }
+
+            profile = newProfile;
+            profile.Changed += HandleProfileChanged;
+            initialized = true;
+
+            if (notifyReplacement)
+            {
+                Action replacementHandler = ProfileReplaced;
+                if (replacementHandler != null)
+                {
+                    replacementHandler();
+                }
+            }
+
+            NotifyStateChanged();
+        }
+
+        private void HandleProfileChanged()
+        {
+            NotifyStateChanged();
+        }
+
+        private void NotifyStateChanged()
+        {
+            Action handler = StateChanged;
+            if (handler != null)
+            {
+                handler();
+            }
         }
     }
 }

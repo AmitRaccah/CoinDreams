@@ -40,6 +40,7 @@ namespace Game.Runtime.Cards
         private int cachedExtraEnergy;
         private int cachedCoins;
         private int cachedSecondsUntilNext;
+        private bool isContextSubscribed;
 
         private void Awake()
         {
@@ -50,34 +51,13 @@ namespace Game.Runtime.Cards
                 return;
             }
 
-            energyService = playerRuntimeContext.EnergyService;
-            currencyService = playerRuntimeContext.CurrencyService;
-
-            DrawModifiersService modifiersService = new DrawModifiersService();
-            IMinigameLauncher minigameLauncher = NullMinigameLauncher.Instance;
-
-            RewardContext rewardContext = new RewardContext(
-                energyService,
-                currencyService,
-                modifiersService,
-                minigameLauncher);
-
-            RewardEffectFactory rewardEffectFactory = new RewardEffectFactory();
-            CardDeckFactory cardDeckFactory = new CardDeckFactory(rewardEffectFactory);
-            ICardDeck deck = cardDeckFactory.Create(deckConfig);
-
-            drawCardUseCase = new DrawCardUseCase(
-                energyService,
-                deck,
-                rewardContext,
-                drawCost);
-
-            energyService.ApplyRegen();
+            RebuildRuntimeBindings();
             RefreshAllUi();
         }
 
         private void OnEnable()
         {
+            SubscribeToRuntimeContextEvents();
             SubscribeToStateEvents();
             StartUiRefreshLoop();
             RefreshAllUi();
@@ -87,6 +67,7 @@ namespace Game.Runtime.Cards
         {
             StopUiRefreshLoop();
             UnsubscribeFromStateEvents();
+            UnsubscribeFromRuntimeContextEvents();
         }
 
         public void OnDrawButtonClicked()
@@ -204,6 +185,14 @@ namespace Game.Runtime.Cards
             RefreshCoinsUi(coins);
         }
 
+        private void HandleProfileReplaced()
+        {
+            UnsubscribeFromStateEvents();
+            RebuildRuntimeBindings();
+            SubscribeToStateEvents();
+            RefreshAllUi();
+        }
+
         private void SubscribeToStateEvents()
         {
             if (isSubscribed || energyService == null || currencyService == null)
@@ -252,6 +241,66 @@ namespace Game.Runtime.Cards
             GameObject runtimeContextObject = new GameObject("PlayerRuntimeContext");
             playerRuntimeContext = runtimeContextObject.AddComponent<PlayerRuntimeContext>();
             return playerRuntimeContext != null;
+        }
+
+        private void RebuildRuntimeBindings()
+        {
+            if (playerRuntimeContext == null)
+            {
+                energyService = null;
+                currencyService = null;
+                drawCardUseCase = null;
+                return;
+            }
+
+            energyService = playerRuntimeContext.EnergyService;
+            currencyService = playerRuntimeContext.CurrencyService;
+
+            DrawModifiersService modifiersService = new DrawModifiersService();
+            IMinigameLauncher minigameLauncher = NullMinigameLauncher.Instance;
+
+            RewardContext rewardContext = new RewardContext(
+                energyService,
+                currencyService,
+                modifiersService,
+                minigameLauncher);
+
+            RewardEffectFactory rewardEffectFactory = new RewardEffectFactory();
+            CardDeckFactory cardDeckFactory = new CardDeckFactory(rewardEffectFactory);
+            ICardDeck deck = cardDeckFactory.Create(deckConfig);
+
+            drawCardUseCase = new DrawCardUseCase(
+                energyService,
+                deck,
+                rewardContext,
+                drawCost);
+
+            if (energyService != null)
+            {
+                energyService.ApplyRegen();
+            }
+        }
+
+        private void SubscribeToRuntimeContextEvents()
+        {
+            if (isContextSubscribed || playerRuntimeContext == null)
+            {
+                return;
+            }
+
+            playerRuntimeContext.ProfileReplaced += HandleProfileReplaced;
+            isContextSubscribed = true;
+        }
+
+        private void UnsubscribeFromRuntimeContextEvents()
+        {
+            if (!isContextSubscribed || playerRuntimeContext == null)
+            {
+                return;
+            }
+
+            playerRuntimeContext.ProfileReplaced -= HandleProfileReplaced;
+            isContextSubscribed = false;
         }
 
         private void StartUiRefreshLoop()
