@@ -31,6 +31,9 @@ namespace Game.Infrastructure.Persistence
         [FirestoreProperty("lastRegenUtcTicks")]
         public long LastRegenUtcTicks { get; set; }
 
+        [FirestoreProperty("pendingDrawMultiplier")]
+        public int PendingDrawMultiplier { get; set; }
+
         [FirestoreProperty("villageLevels")]
         public List<int> VillageLevels { get; set; } = new List<int>(0);
 
@@ -57,6 +60,7 @@ namespace Game.Infrastructure.Persistence
                 StorageMaxEnergy = saveData.storageMaxEnergy,
                 RegenIntervalSeconds = saveData.regenIntervalSeconds,
                 LastRegenUtcTicks = saveData.lastRegenUtcTicks,
+                PendingDrawMultiplier = saveData.pendingDrawMultiplier,
                 VillageLevels = ToIntList(saveData.villageLevels),
                 ProcessedImpactIds = ToStringList(saveData.processedImpactIds),
                 UpdatedAtUtcTicks = DateTime.UtcNow.Ticks
@@ -74,6 +78,7 @@ namespace Game.Infrastructure.Persistence
             saveData.storageMaxEnergy = StorageMaxEnergy;
             saveData.regenIntervalSeconds = RegenIntervalSeconds;
             saveData.lastRegenUtcTicks = LastRegenUtcTicks;
+            saveData.pendingDrawMultiplier = PendingDrawMultiplier;
             saveData.villageLevels = ToIntArray(VillageLevels);
             saveData.processedImpactIds = ToStringArray(ProcessedImpactIds);
             return saveData;

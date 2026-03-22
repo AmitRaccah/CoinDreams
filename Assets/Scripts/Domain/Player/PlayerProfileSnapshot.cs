@@ -15,6 +15,7 @@ namespace Game.Domain.Player
         public int storageMaxEnergy;
         public int regenIntervalSeconds;
         public long lastRegenUtcTicks;
+        public int pendingDrawMultiplier;
 
         public int[] villageLevels;
         public string[] processedImpactIds;
@@ -30,6 +31,7 @@ namespace Game.Domain.Player
             storageMaxEnergy = 10;
             regenIntervalSeconds = 300;
             lastRegenUtcTicks = 0;
+            pendingDrawMultiplier = 0;
 
             villageLevels = Array.Empty<int>();
             processedImpactIds = Array.Empty<string>();

@@ -23,7 +23,7 @@ namespace Game.Runtime.Village
         [Header("Debug")]
         [SerializeField] private bool logResult = true;
 
-        public void OnUpgradeClicked()
+        public async void OnUpgradeClicked()
         {
             if (villageUpgradeRuntime == null)
             {
@@ -32,8 +32,8 @@ namespace Game.Runtime.Village
             }
 
             BuildingUpgradeResult result = targetMode == TargetMode.ByBuildingIndex
-                ? villageUpgradeRuntime.TryUpgradeByIndex(buildingIndex)
-                : villageUpgradeRuntime.TryUpgrade(buildingId);
+                ? await villageUpgradeRuntime.TryUpgradeByIndex(buildingIndex)
+                : await villageUpgradeRuntime.TryUpgrade(buildingId);
 
             if (logResult)
             {

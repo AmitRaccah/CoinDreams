@@ -18,6 +18,7 @@ namespace Game.Infrastructure.Persistence
         public int storageMaxEnergy;
         public int regenIntervalSeconds;
         public long lastRegenUtcTicks;
+        public int pendingDrawMultiplier;
 
         // Progress
         public int[] villageLevels;
@@ -37,6 +38,7 @@ namespace Game.Infrastructure.Persistence
             storageMaxEnergy = 20;
             regenIntervalSeconds = 300;
             lastRegenUtcTicks = 0;
+            pendingDrawMultiplier = 0;
 
             villageLevels = Array.Empty<int>();
             processedImpactIds = Array.Empty<string>();

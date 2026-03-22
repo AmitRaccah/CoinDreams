@@ -24,7 +24,7 @@ public sealed class BuildingUpgradeStepConfig
 [Serializable]
 public sealed class BuildingPartVisualStateConfig
 {
-    public int partId;
+    public int partIndex;
     public bool isActive;
 
     // Optional: if null, texture will not change for this part in this step.

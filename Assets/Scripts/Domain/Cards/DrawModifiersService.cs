@@ -9,8 +9,13 @@ namespace Game.Domain.Cards
         private int addedDuringDraw;
 
         public DrawModifiersService()
+            : this(0)
         {
-            pendingMultiplier = 0;
+        }
+
+        public DrawModifiersService(int pendingMultiplier)
+        {
+            this.pendingMultiplier = NormalizePendingMultiplier(pendingMultiplier);
             drawStartMultiplier = 0;
             addedDuringDraw = 0;
         }
@@ -29,6 +34,11 @@ namespace Game.Domain.Cards
             }
 
             return drawStartMultiplier;
+        }
+
+        public int GetPendingMultiplier()
+        {
+            return pendingMultiplier;
         }
 
         public void AddDoubleNextDrawMultiplier()
@@ -56,6 +66,16 @@ namespace Game.Domain.Cards
             }
 
             return value + increment;
+        }
+
+        private static int NormalizePendingMultiplier(int value)
+        {
+            if (value < 0)
+            {
+                return 0;
+            }
+
+            return value;
         }
     }
 }

@@ -21,6 +21,7 @@ namespace Game.Infrastructure.Persistence
             saveData.storageMaxEnergy = snapshot.storageMaxEnergy;
             saveData.regenIntervalSeconds = snapshot.regenIntervalSeconds;
             saveData.lastRegenUtcTicks = snapshot.lastRegenUtcTicks;
+            saveData.pendingDrawMultiplier = snapshot.pendingDrawMultiplier;
             saveData.villageLevels = CopyIntArray(snapshot.villageLevels);
             saveData.processedImpactIds = CopyStringArray(snapshot.processedImpactIds);
             return saveData;
@@ -42,6 +43,7 @@ namespace Game.Infrastructure.Persistence
             snapshot.storageMaxEnergy = saveData.storageMaxEnergy;
             snapshot.regenIntervalSeconds = saveData.regenIntervalSeconds;
             snapshot.lastRegenUtcTicks = saveData.lastRegenUtcTicks;
+            snapshot.pendingDrawMultiplier = saveData.pendingDrawMultiplier;
             snapshot.villageLevels = CopyIntArray(saveData.villageLevels);
             snapshot.processedImpactIds = CopyStringArray(saveData.processedImpactIds);
             return snapshot;

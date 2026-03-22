@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Game.Domain.Economy;
 using Game.Domain.Village;
 using Game.Runtime.Player;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Game.Runtime.Village
 {
@@ -13,15 +15,19 @@ namespace Game.Runtime.Village
         [Header("Config")]
         [SerializeField] private VillageDefinitionSO villageDefinition;
         [SerializeField] private PlayerRuntimeContext playerRuntimeContext;
+        [SerializeField] private MonoBehaviour authoritativeVillageUpgradeServiceSource;
         [SerializeField] private bool applyVisualsOnAwake = true;
 
         [Header("Building Roots")]
         [SerializeField] private BuildingVisualController[] buildingVisualControllers = new BuildingVisualController[0];
 
         private VillageUpgradeService upgradeService;
+        private IAuthoritativeVillageUpgradeService authoritativeUpgradeService;
+        private AuthoritativeVillageUpgradeCatalogData authoritativeCatalogData;
         private BuildingVisualController[] visualsByBuildingIndex = Array.Empty<BuildingVisualController>();
         private bool initialized;
         private bool isContextSubscribed;
+        private bool isUpgradeInFlight;
 
         public bool IsReady
         {
@@ -37,6 +43,7 @@ namespace Game.Runtime.Village
                 return;
             }
 
+            ResolveAuthoritativeUpgradeService();
             InitializeRuntime();
         }
 
@@ -66,11 +73,29 @@ namespace Game.Runtime.Village
                 return;
             }
 
-            if (!TryBuildCatalog(out VillageUpgradeCatalog catalog, out string error))
+            if (!TryBuildCatalogData(
+                    out string[] buildingIds,
+                    out int[][] upgradeCosts,
+                    out string error))
             {
                 Debug.LogError("[VillageUpgradeRuntime] " + error, this);
                 return;
             }
+
+            VillageUpgradeCatalog catalog;
+            try
+            {
+                catalog = new VillageUpgradeCatalog(buildingIds, upgradeCosts);
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError("[VillageUpgradeRuntime] " + exception.Message, this);
+                return;
+            }
+
+            authoritativeCatalogData = new AuthoritativeVillageUpgradeCatalogData(
+                buildingIds,
+                upgradeCosts);
 
             VillageProgressState progressState = ResolveProgressState(catalog.BuildingCount);
             if (progressState == null)
@@ -95,7 +120,7 @@ namespace Game.Runtime.Village
             }
         }
 
-        public BuildingUpgradeResult TryUpgrade(string buildingId)
+        public async Task<BuildingUpgradeResult> TryUpgrade(string buildingId)
         {
             EnsureInitialized();
 
@@ -110,10 +135,10 @@ namespace Game.Runtime.Village
                 return BuildingUpgradeResult.InvalidConfiguration();
             }
 
-            return TryUpgradeInternal(buildingIndex);
+            return await TryUpgradeAuthoritativeByIndexInternal(buildingIndex);
         }
 
-        public BuildingUpgradeResult TryUpgradeByIndex(int buildingIndex)
+        public async Task<BuildingUpgradeResult> TryUpgradeByIndex(int buildingIndex)
         {
             EnsureInitialized();
 
@@ -122,7 +147,7 @@ namespace Game.Runtime.Village
                 return BuildingUpgradeResult.InvalidConfiguration(buildingIndex);
             }
 
-            return TryUpgradeInternal(buildingIndex);
+            return await TryUpgradeAuthoritativeByIndexInternal(buildingIndex);
         }
 
         public int GetCurrentLevel(string buildingId)
@@ -202,15 +227,75 @@ namespace Game.Runtime.Village
             }
         }
 
-        private BuildingUpgradeResult TryUpgradeInternal(int buildingIndex)
+        private async Task<BuildingUpgradeResult> TryUpgradeAuthoritativeByIndexInternal(int buildingIndex)
         {
-            BuildingUpgradeResult result = upgradeService.TryUpgradeByIndex(buildingIndex);
-            if (result.Status == BuildingUpgradeStatus.Success)
+            if (isUpgradeInFlight)
             {
-                ApplyVisualForIndex(buildingIndex, result.NewLevel);
+                return BuildingUpgradeResult.InvalidConfiguration(buildingIndex);
             }
 
-            return result;
+            if (authoritativeCatalogData == null)
+            {
+                return BuildingUpgradeResult.InvalidConfiguration(buildingIndex);
+            }
+
+            if (authoritativeUpgradeService == null)
+            {
+                ResolveAuthoritativeUpgradeService();
+            }
+
+            if (authoritativeUpgradeService == null || !authoritativeUpgradeService.IsReady)
+            {
+                Debug.LogWarning(
+                    "[VillageUpgradeRuntime] Authoritative village upgrade service is not ready.",
+                    this);
+                return BuildingUpgradeResult.InvalidConfiguration(buildingIndex);
+            }
+
+            isUpgradeInFlight = true;
+            try
+            {
+                AuthoritativeVillageUpgradeRequest request =
+                    AuthoritativeVillageUpgradeRequest.ForBuildingIndex(
+                        authoritativeCatalogData,
+                        buildingIndex);
+
+                AuthoritativeVillageUpgradeResult authoritativeResult =
+                    await authoritativeUpgradeService.TryUpgradeAsync(request);
+
+                if (authoritativeResult == null)
+                {
+                    return BuildingUpgradeResult.InvalidConfiguration(buildingIndex);
+                }
+
+                if (!string.IsNullOrEmpty(authoritativeResult.Message))
+                {
+                    Debug.LogWarning(
+                        "[VillageUpgradeRuntime] Authoritative upgrade message: "
+                        + authoritativeResult.Message,
+                        this);
+                }
+
+                BuildingUpgradeResult result = authoritativeResult.UpgradeResult;
+                if (result.Status == BuildingUpgradeStatus.Success)
+                {
+                    ApplyVisualForIndex(result.BuildingIndex, result.NewLevel);
+                }
+
+                return result;
+            }
+            catch (Exception exception)
+            {
+                Debug.LogError(
+                    "[VillageUpgradeRuntime] Authoritative village upgrade failed: "
+                    + exception.Message,
+                    this);
+                return BuildingUpgradeResult.InvalidConfiguration(buildingIndex);
+            }
+            finally
+            {
+                isUpgradeInFlight = false;
+            }
         }
 
         private void ApplyVisualForIndex(int buildingIndex, int level)
@@ -274,11 +359,7 @@ namespace Game.Runtime.Village
 
         private Dictionary<string, BuildingVisualController> BuildVisualLookup()
         {
-            BuildingVisualController[] source = buildingVisualControllers;
-            if (source == null || source.Length == 0)
-            {
-                source = GetComponentsInChildren<BuildingVisualController>(true);
-            }
+            BuildingVisualController[] source = ResolveVisualSources();
 
             Dictionary<string, BuildingVisualController> lookup =
                 new Dictionary<string, BuildingVisualController>(StringComparer.Ordinal);
@@ -311,6 +392,129 @@ namespace Game.Runtime.Village
             return lookup;
         }
 
+        private BuildingVisualController[] ResolveVisualSources()
+        {
+            BuildingVisualController[] configured = buildingVisualControllers;
+            if (configured != null && configured.Length > 0)
+            {
+                int validConfiguredCount = CountNonNullVisuals(configured);
+                if (validConfiguredCount > 0)
+                {
+                    if (validConfiguredCount != configured.Length)
+                    {
+                        Debug.LogWarning(
+                            "[VillageUpgradeRuntime] buildingVisualControllers contains null entries. Ignoring null entries.",
+                            this);
+                    }
+
+                    return CopyNonNullVisuals(configured, validConfiguredCount);
+                }
+
+                Debug.LogWarning(
+                    "[VillageUpgradeRuntime] buildingVisualControllers is configured but all entries are null. Falling back to auto-discovery.",
+                    this);
+            }
+
+            BuildingVisualController[] inChildren = GetComponentsInChildren<BuildingVisualController>(true);
+            if (inChildren != null && inChildren.Length > 0)
+            {
+                return inChildren;
+            }
+
+            BuildingVisualController[] inScene = FindObjectsByType<BuildingVisualController>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            if (inScene == null || inScene.Length == 0)
+            {
+                return Array.Empty<BuildingVisualController>();
+            }
+
+            Scene currentScene = gameObject.scene;
+            int validSceneCount = 0;
+
+            int i;
+            for (i = 0; i < inScene.Length; i++)
+            {
+                BuildingVisualController visual = inScene[i];
+                if (visual == null || visual.gameObject.scene != currentScene)
+                {
+                    continue;
+                }
+
+                validSceneCount++;
+            }
+
+            if (validSceneCount == 0)
+            {
+                return Array.Empty<BuildingVisualController>();
+            }
+
+            return CopyVisualsInScene(inScene, currentScene, validSceneCount);
+        }
+
+        private static int CountNonNullVisuals(BuildingVisualController[] visuals)
+        {
+            int validCount = 0;
+
+            int i;
+            for (i = 0; i < visuals.Length; i++)
+            {
+                if (visuals[i] != null)
+                {
+                    validCount++;
+                }
+            }
+
+            return validCount;
+        }
+
+        private static BuildingVisualController[] CopyNonNullVisuals(
+            BuildingVisualController[] source,
+            int count)
+        {
+            BuildingVisualController[] copy = new BuildingVisualController[count];
+            int copyIndex = 0;
+
+            int i;
+            for (i = 0; i < source.Length; i++)
+            {
+                BuildingVisualController visual = source[i];
+                if (visual == null)
+                {
+                    continue;
+                }
+
+                copy[copyIndex] = visual;
+                copyIndex++;
+            }
+
+            return copy;
+        }
+
+        private static BuildingVisualController[] CopyVisualsInScene(
+            BuildingVisualController[] source,
+            Scene scene,
+            int count)
+        {
+            BuildingVisualController[] copy = new BuildingVisualController[count];
+            int copyIndex = 0;
+
+            int i;
+            for (i = 0; i < source.Length; i++)
+            {
+                BuildingVisualController visual = source[i];
+                if (visual == null || visual.gameObject.scene != scene)
+                {
+                    continue;
+                }
+
+                copy[copyIndex] = visual;
+                copyIndex++;
+            }
+
+            return copy;
+        }
+
         private ICurrencyWallet ResolveWallet()
         {
             PlayerRuntimeContext playerContext = playerRuntimeContext;
@@ -332,6 +536,54 @@ namespace Game.Runtime.Village
             return null;
         }
 
+        private void ResolveAuthoritativeUpgradeService()
+        {
+            authoritativeUpgradeService = null;
+
+            if (authoritativeVillageUpgradeServiceSource != null)
+            {
+                authoritativeUpgradeService =
+                    authoritativeVillageUpgradeServiceSource as IAuthoritativeVillageUpgradeService;
+
+                if (authoritativeUpgradeService == null)
+                {
+                    Debug.LogError(
+                        "[VillageUpgradeRuntime] Configured authoritative service source does not implement IAuthoritativeVillageUpgradeService.",
+                        this);
+                }
+            }
+
+            if (authoritativeUpgradeService != null)
+            {
+                return;
+            }
+
+            MonoBehaviour[] behaviours = FindObjectsByType<MonoBehaviour>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            int i;
+            for (i = 0; i < behaviours.Length; i++)
+            {
+                MonoBehaviour behaviour = behaviours[i];
+                IAuthoritativeVillageUpgradeService service =
+                    behaviour as IAuthoritativeVillageUpgradeService;
+
+                if (service == null)
+                {
+                    continue;
+                }
+
+                authoritativeUpgradeService = service;
+                authoritativeVillageUpgradeServiceSource = behaviour;
+                return;
+            }
+
+            Debug.LogWarning(
+                "[VillageUpgradeRuntime] No IAuthoritativeVillageUpgradeService implementation found in scene.",
+                this);
+        }
+
         private bool TryResolvePlayerContext()
         {
             if (playerRuntimeContext != null)
@@ -350,9 +602,13 @@ namespace Game.Runtime.Village
             return playerRuntimeContext != null;
         }
 
-        private bool TryBuildCatalog(out VillageUpgradeCatalog catalog, out string error)
+        private bool TryBuildCatalogData(
+            out string[] buildingIds,
+            out int[][] upgradeCosts,
+            out string error)
         {
-            catalog = null;
+            buildingIds = Array.Empty<string>();
+            upgradeCosts = Array.Empty<int[]>();
             error = string.Empty;
 
             if (villageDefinition == null)
@@ -368,8 +624,8 @@ namespace Game.Runtime.Village
             }
 
             int buildingCount = villageDefinition.buildings.Count;
-            string[] buildingIds = new string[buildingCount];
-            int[][] upgradeCosts = new int[buildingCount][];
+            buildingIds = new string[buildingCount];
+            upgradeCosts = new int[buildingCount][];
 
             int buildingIndex;
             for (buildingIndex = 0; buildingIndex < buildingCount; buildingIndex++)
@@ -408,16 +664,7 @@ namespace Game.Runtime.Village
                 upgradeCosts[buildingIndex] = costs;
             }
 
-            try
-            {
-                catalog = new VillageUpgradeCatalog(buildingIds, upgradeCosts);
-                return true;
-            }
-            catch (Exception e)
-            {
-                error = e.Message;
-                return false;
-            }
+            return true;
         }
 
         private void EnsureInitialized()
@@ -432,7 +679,9 @@ namespace Game.Runtime.Village
         {
             initialized = false;
             upgradeService = null;
+            authoritativeCatalogData = null;
             visualsByBuildingIndex = Array.Empty<BuildingVisualController>();
+            isUpgradeInFlight = false;
             InitializeRuntime();
         }
 

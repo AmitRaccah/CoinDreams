@@ -11,12 +11,12 @@ namespace Game.Runtime.Village
         private static readonly int MainTexPropertyId = Shader.PropertyToID("_MainTex");
 
         [SerializeField] private BuildingDefinitionSO buildingDefinition;
-        [SerializeField] private BuildingPartsRegistry partsRegistry;
+        [SerializeField] private GameObject[] partObjects = new GameObject[0];
+        [SerializeField] private bool autoCollectChildrenWhenEmpty = true;
         [SerializeField] private bool applyLevelZeroOnAwake = true;
 
         private StepActivationOp[][] activationOpsByStep = Array.Empty<StepActivationOp[]>();
         private StepTextureOp[][] textureOpsByStep = Array.Empty<StepTextureOp[]>();
-        private GameObject[] partObjects = Array.Empty<GameObject>();
         private Renderer[] partRenderers = Array.Empty<Renderer>();
         private TexturePropertyState[] textureStatesByPart = Array.Empty<TexturePropertyState>();
         private MaterialPropertyBlock reusablePropertyBlock;
@@ -111,44 +111,35 @@ namespace Game.Runtime.Village
                 return false;
             }
 
-            BuildingPartsRegistry registry = partsRegistry;
-            if (registry == null)
+            GameObject[] resolvedPartObjects = BuildPartObjects();
+            if (resolvedPartObjects.Length == 0)
             {
-                registry = GetComponent<BuildingPartsRegistry>();
-                partsRegistry = registry;
-            }
-
-            if (registry == null)
-            {
-                Debug.LogError("[BuildingVisualController] Missing BuildingPartsRegistry on root " + name + ".", this);
+                Debug.LogError("[BuildingVisualController] No part objects configured on root " + name + ".", this);
                 return false;
             }
 
-            if (!registry.IsValid)
-            {
-                Debug.LogError("[BuildingVisualController] BuildingPartsRegistry invalid on root " + name + ".", this);
-                return false;
-            }
+            partObjects = resolvedPartObjects;
 
-            int partCount = registry.PartCount;
-            partObjects = new GameObject[partCount];
+            int partCount = partObjects.Length;
             partRenderers = new Renderer[partCount];
             textureStatesByPart = new TexturePropertyState[partCount];
 
             int partIndex;
             for (partIndex = 0; partIndex < partCount; partIndex++)
             {
-                if (!registry.TryGetPartObjectByIndex(partIndex, out GameObject partObject))
+                GameObject partObject = partObjects[partIndex];
+                if (partObject == null)
                 {
                     continue;
                 }
 
-                partObjects[partIndex] = partObject;
-
-                if (registry.TryGetPartRendererByIndex(partIndex, out Renderer partRenderer))
+                Renderer partRenderer = partObject.GetComponent<Renderer>();
+                if (partRenderer == null)
                 {
-                    partRenderers[partIndex] = partRenderer;
+                    partRenderer = partObject.GetComponentInChildren<Renderer>(true);
                 }
+
+                partRenderers[partIndex] = partRenderer;
 
                 textureStatesByPart[partIndex] = BuildTexturePropertyState(partRenderers[partIndex]);
             }
@@ -175,12 +166,42 @@ namespace Game.Runtime.Village
                     continue;
                 }
 
-                BuildStepOps(stepIndex, step.nextLevelPartStates, registry, out StepActivationOp[] activationOps, out StepTextureOp[] textureOps);
+                BuildStepOps(stepIndex, step.nextLevelPartStates, out StepActivationOp[] activationOps, out StepTextureOp[] textureOps);
                 activationOpsByStep[stepIndex] = activationOps;
                 textureOpsByStep[stepIndex] = textureOps;
             }
 
             return true;
+        }
+
+        private GameObject[] BuildPartObjects()
+        {
+            GameObject[] configuredParts = partObjects;
+            if (configuredParts != null && configuredParts.Length > 0)
+            {
+                return configuredParts;
+            }
+
+            if (!autoCollectChildrenWhenEmpty)
+            {
+                return Array.Empty<GameObject>();
+            }
+
+            int childCount = transform.childCount;
+            if (childCount == 0)
+            {
+                return Array.Empty<GameObject>();
+            }
+
+            GameObject[] collected = new GameObject[childCount];
+            int i;
+            for (i = 0; i < childCount; i++)
+            {
+                Transform child = transform.GetChild(i);
+                collected[i] = child != null ? child.gameObject : null;
+            }
+
+            return collected;
         }
 
         private TexturePropertyState BuildTexturePropertyState(Renderer renderer)
@@ -225,7 +246,6 @@ namespace Game.Runtime.Village
         private void BuildStepOps(
             int stepIndex,
             List<BuildingPartVisualStateConfig> partStates,
-            BuildingPartsRegistry registry,
             out StepActivationOp[] activationOps,
             out StepTextureOp[] textureOps)
         {
@@ -241,12 +261,13 @@ namespace Game.Runtime.Village
                     continue;
                 }
 
-                int partIndex;
-                if (!registry.TryGetPartIndex(stateConfig.partId, out partIndex))
+                int partIndex = stateConfig.partIndex;
+                if (partIndex < 0 || partIndex >= partObjects.Length)
                 {
-                    Debug.LogWarning("[BuildingVisualController] Part ID "
-                        + stateConfig.partId
-                        + " not found in root registry for building "
+                    Debug.LogWarning(
+                        "[BuildingVisualController] Invalid part index "
+                        + partIndex
+                        + " for building "
                         + BuildingId
                         + " at upgrade step "
                         + stepIndex
@@ -268,8 +289,9 @@ namespace Game.Runtime.Village
                 TexturePropertyState textureState = textureStatesByPart[partIndex];
                 if (textureState.propertyId == 0)
                 {
-                    Debug.LogWarning("[BuildingVisualController] Part ID "
-                        + stateConfig.partId
+                    Debug.LogWarning(
+                        "[BuildingVisualController] Part index "
+                        + partIndex
                         + " has no supported texture property (_BaseMap/_MainTex).",
                         this);
                     continue;

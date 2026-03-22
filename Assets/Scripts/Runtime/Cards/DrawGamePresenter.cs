@@ -1,9 +1,9 @@
 using System.Collections;
+using System.Collections.Generic;
 using Game.Domain.Cards;
 using Game.Config.Cards;
 using Game.Domain.Economy;
 using Game.Domain.Energy;
-using Game.Domain.Minigames;
 using Game.Runtime.Player;
 using TMPro;
 using UnityEngine;
@@ -13,11 +13,16 @@ namespace Game.Runtime.Cards
 {
     public sealed class DrawGamePresenter : MonoBehaviour
     {
+        private const int FallbackWeight = 1;
+        private const int FallbackCoinsAmount = 100;
+        private const string FallbackCardId = "fallback_add_coins";
+
         [Header("Config")]
         [SerializeField] private int drawCost = 1;
         [SerializeField] private CardDeckSO deckConfig;
         [SerializeField] private float uiRefreshIntervalSeconds = 1f;
         [SerializeField] private PlayerRuntimeContext playerRuntimeContext;
+        [SerializeField] private MonoBehaviour authoritativeDrawServiceSource;
 
         [Header("UI")]
         [SerializeField] private Slider energySlider;
@@ -29,7 +34,8 @@ namespace Game.Runtime.Cards
 
         private EnergyService energyService;
         private CurrencyService currencyService;
-        private DrawCardUseCase drawCardUseCase;
+        private IAuthoritativeDrawService authoritativeDrawService;
+        private AuthoritativeDrawRequest drawRequest;
         private Coroutine uiRefreshRoutine;
         private bool isSubscribed;
         private bool energyUiCacheInitialized;
@@ -41,6 +47,7 @@ namespace Game.Runtime.Cards
         private int cachedCoins;
         private int cachedSecondsUntilNext;
         private bool isContextSubscribed;
+        private bool isDrawInFlight;
 
         private void Awake()
         {
@@ -51,6 +58,7 @@ namespace Game.Runtime.Cards
                 return;
             }
 
+            ResolveAuthoritativeDrawService();
             RebuildRuntimeBindings();
             RefreshAllUi();
         }
@@ -70,26 +78,52 @@ namespace Game.Runtime.Cards
             UnsubscribeFromRuntimeContextEvents();
         }
 
-        public void OnDrawButtonClicked()
+        public async void OnDrawButtonClicked()
         {
-            if (drawCardUseCase == null)
+            if (isDrawInFlight)
+            {
+                return;
+            }
+
+            if (authoritativeDrawService == null)
+            {
+                ResolveAuthoritativeDrawService();
+            }
+
+            if (authoritativeDrawService == null)
+            {
+                SetResult("Draw service missing.");
+                return;
+            }
+
+            if (!authoritativeDrawService.IsReady)
+            {
+                SetResult("Syncing player state...");
+                return;
+            }
+
+            if (drawRequest == null)
+            {
+                SetResult("Draw deck is invalid.");
+                return;
+            }
+
+            isDrawInFlight = true;
+            try
+            {
+                AuthoritativeDrawResult result = await authoritativeDrawService.TryDrawAsync(drawRequest);
+                ApplyDrawResult(result);
+                RefreshAllUi();
+            }
+            catch (System.Exception exception)
             {
                 SetResult("Draw failed.");
-                return;
+                Debug.LogError("[DRAW] Failed: " + exception.Message, this);
             }
-
-            CardDefinition drawnCard;
-            bool success = drawCardUseCase.TryDraw(out drawnCard);
-
-            if (success == false)
+            finally
             {
-                SetResult("Not enough energy.");
-                Debug.LogWarning("[DRAW] Failed: not enough energy.");
-                return;
+                isDrawInFlight = false;
             }
-
-            SetResult("Card: " + drawnCard.Id);
-            Debug.Log("[DRAW] Card=" + drawnCard.Id + " | Coins=" + currencyService.GetCoins());
         }
 
         private void RefreshAllUi()
@@ -249,31 +283,13 @@ namespace Game.Runtime.Cards
             {
                 energyService = null;
                 currencyService = null;
-                drawCardUseCase = null;
+                drawRequest = null;
                 return;
             }
 
             energyService = playerRuntimeContext.EnergyService;
             currencyService = playerRuntimeContext.CurrencyService;
-
-            DrawModifiersService modifiersService = new DrawModifiersService();
-            IMinigameLauncher minigameLauncher = NullMinigameLauncher.Instance;
-
-            RewardContext rewardContext = new RewardContext(
-                energyService,
-                currencyService,
-                modifiersService,
-                minigameLauncher);
-
-            RewardEffectFactory rewardEffectFactory = new RewardEffectFactory();
-            CardDeckFactory cardDeckFactory = new CardDeckFactory(rewardEffectFactory);
-            ICardDeck deck = cardDeckFactory.Create(deckConfig);
-
-            drawCardUseCase = new DrawCardUseCase(
-                energyService,
-                deck,
-                rewardContext,
-                drawCost);
+            drawRequest = BuildDrawRequest();
 
             if (energyService != null)
             {
@@ -362,6 +378,213 @@ namespace Game.Runtime.Cards
                 energyService.ApplyRegen();
                 RefreshAllUi();
             }
+        }
+
+        private void ResolveAuthoritativeDrawService()
+        {
+            authoritativeDrawService = null;
+
+            if (authoritativeDrawServiceSource != null)
+            {
+                authoritativeDrawService = authoritativeDrawServiceSource as IAuthoritativeDrawService;
+                if (authoritativeDrawService == null)
+                {
+                    Debug.LogError(
+                        "[DrawGamePresenter] Configured authoritative draw source does not implement IAuthoritativeDrawService.",
+                        this);
+                }
+            }
+
+            if (authoritativeDrawService != null)
+            {
+                return;
+            }
+
+            MonoBehaviour[] behaviours = FindObjectsByType<MonoBehaviour>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+
+            int i;
+            for (i = 0; i < behaviours.Length; i++)
+            {
+                MonoBehaviour behaviour = behaviours[i];
+                IAuthoritativeDrawService drawService = behaviour as IAuthoritativeDrawService;
+                if (drawService == null)
+                {
+                    continue;
+                }
+
+                authoritativeDrawService = drawService;
+                authoritativeDrawServiceSource = behaviour;
+                return;
+            }
+
+            Debug.LogWarning(
+                "[DrawGamePresenter] No IAuthoritativeDrawService implementation found in scene.",
+                this);
+        }
+
+        private AuthoritativeDrawRequest BuildDrawRequest()
+        {
+            List<AuthoritativeDrawCardDefinition> cards = new List<AuthoritativeDrawCardDefinition>();
+
+            if (deckConfig != null && deckConfig.Cards != null)
+            {
+                int i;
+                for (i = 0; i < deckConfig.Cards.Count; i++)
+                {
+                    CardDefinitionSO card = deckConfig.Cards[i];
+                    if (card == null || string.IsNullOrWhiteSpace(card.CardId))
+                    {
+                        continue;
+                    }
+
+                    int weight = card.Weight;
+                    if (weight <= 0)
+                    {
+                        weight = FallbackWeight;
+                    }
+
+                    AuthoritativeDrawEffectDefinition[] effects =
+                        BuildEffects(card.EffectConfigs);
+
+                    cards.Add(new AuthoritativeDrawCardDefinition(
+                        card.CardId.Trim(),
+                        weight,
+                        effects));
+                }
+            }
+
+            if (cards.Count == 0)
+            {
+                cards.Add(CreateFallbackCard());
+            }
+
+            return new AuthoritativeDrawRequest(drawCost, cards.ToArray());
+        }
+
+        private static AuthoritativeDrawCardDefinition CreateFallbackCard()
+        {
+            AuthoritativeDrawEffectDefinition[] effects = new AuthoritativeDrawEffectDefinition[1];
+            effects[0] = new AuthoritativeDrawEffectDefinition(
+                AuthoritativeDrawEffectType.AddCoins,
+                FallbackCoinsAmount,
+                string.Empty);
+
+            return new AuthoritativeDrawCardDefinition(FallbackCardId, FallbackWeight, effects);
+        }
+
+        private static AuthoritativeDrawEffectDefinition[] BuildEffects(
+            List<RewardEffectConfig> effectConfigs)
+        {
+            if (effectConfigs == null || effectConfigs.Count == 0)
+            {
+                return System.Array.Empty<AuthoritativeDrawEffectDefinition>();
+            }
+
+            List<AuthoritativeDrawEffectDefinition> effects =
+                new List<AuthoritativeDrawEffectDefinition>(effectConfigs.Count);
+
+            int i;
+            for (i = 0; i < effectConfigs.Count; i++)
+            {
+                RewardEffectConfig config = effectConfigs[i];
+                if (config == null)
+                {
+                    continue;
+                }
+
+                if (!TryMapEffectType(config.EffectType, out AuthoritativeDrawEffectType mappedType))
+                {
+                    continue;
+                }
+
+                effects.Add(new AuthoritativeDrawEffectDefinition(
+                    mappedType,
+                    config.IntValue,
+                    config.StringValue));
+            }
+
+            if (effects.Count == 0)
+            {
+                return System.Array.Empty<AuthoritativeDrawEffectDefinition>();
+            }
+
+            return effects.ToArray();
+        }
+
+        private static bool TryMapEffectType(
+            RewardEffectType sourceType,
+            out AuthoritativeDrawEffectType mappedType)
+        {
+            mappedType = AuthoritativeDrawEffectType.AddCoins;
+
+            if (sourceType == RewardEffectType.AddCoins)
+            {
+                mappedType = AuthoritativeDrawEffectType.AddCoins;
+                return true;
+            }
+
+            if (sourceType == RewardEffectType.AddEnergy)
+            {
+                mappedType = AuthoritativeDrawEffectType.AddEnergy;
+                return true;
+            }
+
+            if (sourceType == RewardEffectType.LaunchMinigame)
+            {
+                mappedType = AuthoritativeDrawEffectType.LaunchMinigame;
+                return true;
+            }
+
+            if (sourceType == RewardEffectType.DoubleNextDraw)
+            {
+                mappedType = AuthoritativeDrawEffectType.DoubleNextDraw;
+                return true;
+            }
+
+            return false;
+        }
+
+        private void ApplyDrawResult(AuthoritativeDrawResult result)
+        {
+            if (result == null)
+            {
+                SetResult("Draw failed.");
+                return;
+            }
+
+            if (result.Status == AuthoritativeDrawStatus.Success)
+            {
+                string message = "Card: " + result.DrawnCardId;
+                if (!string.IsNullOrEmpty(result.MinigameId))
+                {
+                    message += " | Minigame: " + result.MinigameId;
+                }
+
+                SetResult(message);
+                return;
+            }
+
+            if (result.Status == AuthoritativeDrawStatus.NotEnoughEnergy)
+            {
+                SetResult("Not enough energy.");
+                return;
+            }
+
+            if (result.Status == AuthoritativeDrawStatus.DeckEmpty)
+            {
+                SetResult("Deck is empty.");
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(result.Message))
+            {
+                SetResult(result.Message);
+                return;
+            }
+
+            SetResult("Draw failed.");
         }
     }
 }

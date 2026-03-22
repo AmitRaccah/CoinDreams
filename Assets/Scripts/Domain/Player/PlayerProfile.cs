@@ -14,6 +14,7 @@ namespace Game.Domain.Player
         private readonly EnergyService energy;
         private readonly VillageProgressState village;
         private readonly HashSet<string> processedImpactIds;
+        private int pendingDrawMultiplier;
         private int revision;
         private int batchedMutationDepth;
         private bool hasBatchedMutation;
@@ -25,7 +26,8 @@ namespace Game.Domain.Player
             EnergyService energy,
             VillageProgressState village,
             int revision,
-            IEnumerable<string> seedProcessedImpactIds)
+            IEnumerable<string> seedProcessedImpactIds,
+            int pendingDrawMultiplier = 0)
         {
             if (currency == null)
             {
@@ -47,6 +49,7 @@ namespace Game.Domain.Player
             this.energy = energy;
             this.village = village;
             this.revision = revision < 0 ? 0 : revision;
+            this.pendingDrawMultiplier = NormalizePendingDrawMultiplier(pendingDrawMultiplier);
             processedImpactIds = new HashSet<string>(StringComparer.Ordinal);
             SeedProcessedImpactIds(seedProcessedImpactIds);
             SubscribeToStateChanges();
@@ -75,6 +78,23 @@ namespace Game.Domain.Player
         public int Revision
         {
             get { return revision; }
+        }
+
+        public int PendingDrawMultiplier
+        {
+            get { return pendingDrawMultiplier; }
+        }
+
+        public void SetPendingDrawMultiplier(int value)
+        {
+            int normalized = NormalizePendingDrawMultiplier(value);
+            if (pendingDrawMultiplier == normalized)
+            {
+                return;
+            }
+
+            pendingDrawMultiplier = normalized;
+            MarkChanged();
         }
 
         public void EnsureVillageCapacity(int buildingCount)
@@ -202,6 +222,7 @@ namespace Game.Domain.Player
             snapshot.storageMaxEnergy = energy.GetStorageMax();
             snapshot.regenIntervalSeconds = energy.GetRegenIntervalSeconds();
             snapshot.lastRegenUtcTicks = energy.GetLastRegenTicks();
+            snapshot.pendingDrawMultiplier = pendingDrawMultiplier;
             snapshot.villageLevels = village.GetLevelsSnapshot();
             snapshot.processedImpactIds = CreateProcessedImpactIdsSnapshot(processedImpactIds);
             return snapshot;
@@ -242,7 +263,8 @@ namespace Game.Domain.Player
                 energy,
                 village,
                 snapshot.revision,
-                snapshot.processedImpactIds);
+                snapshot.processedImpactIds,
+                snapshot.pendingDrawMultiplier);
         }
 
         private int SpendCoinsUpTo(int requestedAmount)
@@ -394,6 +416,16 @@ namespace Game.Domain.Player
             }
 
             return value.Trim();
+        }
+
+        private static int NormalizePendingDrawMultiplier(int value)
+        {
+            if (value < 0)
+            {
+                return 0;
+            }
+
+            return value;
         }
     }
 }
