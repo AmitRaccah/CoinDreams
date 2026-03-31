@@ -13,4 +13,6 @@ MonoBehaviour:
   m_Name: VillageDefinitionSO
   m_EditorClassIdentifier: Assembly-CSharp::VillageDefinitionSO
   buildings:
-  - {fileID: 11400000, guid: df74b32764b81aa43ab8ded58b016e67, type: 2}
+  - {fileID: 11400000, guid: 9d5fa2d9e1c01a14883eacb269266abc, type: 2}
+  - {fileID: 11400000, guid: d16cc7cc7300c9642915d3cf6678ac61, type: 2}
+  - {fileID: 11400000, guid: af00c2c25de169e4897d5911dd1dac57, type: 2}
