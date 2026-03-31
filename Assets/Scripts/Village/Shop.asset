@@ -18,24 +18,24 @@ MonoBehaviour:
   - upgradeCost: 10
     nextLevelPartStates:
     - partIndex: 0
+      isActive: 1
+      texture: {fileID: 0}
+    - partIndex: 1
+      isActive: 0
+      texture: {fileID: 0}
+    - partIndex: 2
+      isActive: 0
+      texture: {fileID: 0}
+  - upgradeCost: 20
+    nextLevelPartStates:
+    - partIndex: 0
       isActive: 0
       texture: {fileID: 0}
     - partIndex: 1
       isActive: 1
       texture: {fileID: 0}
     - partIndex: 2
-      isActive: 1
-      texture: {fileID: 0}
-  - upgradeCost: 20
-    nextLevelPartStates:
-    - partIndex: 0
-      isActive: 1
-      texture: {fileID: 0}
-    - partIndex: 1
-      isActive: 1
-      texture: {fileID: 0}
-    - partIndex: 2
-      isActive: 1
+      isActive: 0
       texture: {fileID: 0}
   - upgradeCost: 30
     nextLevelPartStates:
