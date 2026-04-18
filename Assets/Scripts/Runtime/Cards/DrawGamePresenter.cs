@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Game.Domain.Cards;
 using Game.Config.Cards;
 using Game.Domain.Economy;
@@ -78,7 +79,7 @@ namespace Game.Runtime.Cards
             UnsubscribeFromRuntimeContextEvents();
         }
 
-        public async void OnDrawButtonClicked()
+        private async void OnDrawButtonClicked()
         {
             if (isDrawInFlight)
             {
@@ -124,6 +125,79 @@ namespace Game.Runtime.Cards
             {
                 isDrawInFlight = false;
             }
+        }
+
+        public bool CanExecuteDraw()
+        {
+            if (isDrawInFlight)
+            {
+                return false;
+            }
+
+            if (authoritativeDrawService == null)
+            {
+                ResolveAuthoritativeDrawService();
+            }
+
+            return authoritativeDrawService != null
+                && authoritativeDrawService.IsReady
+                && drawRequest != null;
+        }
+
+        public async Task<AuthoritativeDrawResult> TryDrawAsync()
+        {
+            if (isDrawInFlight)
+            {
+                SetResult("Draw is already in progress.");
+                return null;
+            }
+
+            if (authoritativeDrawService == null)
+            {
+                ResolveAuthoritativeDrawService();
+            }
+
+            if (authoritativeDrawService == null)
+            {
+                SetResult("Draw service missing.");
+                return null;
+            }
+
+            if (!authoritativeDrawService.IsReady)
+            {
+                SetResult("Syncing player state...");
+                return null;
+            }
+
+            if (drawRequest == null)
+            {
+                SetResult("Draw deck is invalid.");
+                return null;
+            }
+
+            isDrawInFlight = true;
+            try
+            {
+                AuthoritativeDrawResult result = await authoritativeDrawService.TryDrawAsync(drawRequest);
+                ApplyDrawResult(result);
+                RefreshAllUi();
+                return result;
+            }
+            catch (System.Exception exception)
+            {
+                SetResult("Draw failed.");
+                Debug.LogError("[DRAW] Failed: " + exception.Message, this);
+                return AuthoritativeDrawResult.Error(exception.Message);
+            }
+            finally
+            {
+                isDrawInFlight = false;
+            }
+        }
+
+        public void ShowStatus(string message)
+        {
+            SetResult(message);
         }
 
         private void RefreshAllUi()
