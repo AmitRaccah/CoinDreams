@@ -6,14 +6,13 @@ using UnityEngine;
 namespace Game.Runtime.Cards
 {
     [DisallowMultipleComponent]
-    public sealed class SimpleDrawAnimator : MonoBehaviour, IDrawAnimator
+    public sealed class SimpleDrawAnimator
+        : InterruptibleAsyncOperationBehaviour,
+            IDrawAnimator
     {
         [SerializeField] private Animator animator;
         [SerializeField] private string drawTrigger = "Draw";
         [SerializeField] private float animationDuration = 0.6f;
-
-        private Coroutine animationCoroutine;
-        private TaskCompletionSource<bool> animationCompletionSource;
 
         public bool HasAnimation => animator != null && !string.IsNullOrWhiteSpace(drawTrigger) && animationDuration > 0f;
 
@@ -24,24 +23,7 @@ namespace Game.Runtime.Cards
                 return Task.CompletedTask;
             }
 
-            if (animationCoroutine != null)
-            {
-                return animationCompletionSource != null ? animationCompletionSource.Task : Task.CompletedTask;
-            }
-
-            animationCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            animationCoroutine = StartCoroutine(PlayAnimationCoroutine());
-            return animationCompletionSource.Task;
-        }
-
-        private void OnDisable()
-        {
-            CancelAnimation("Draw animation was interrupted because the animator was disabled.");
-        }
-
-        private void OnDestroy()
-        {
-            CancelAnimation("Draw animation was interrupted because the animator was destroyed.");
+            return RunOperationAsync(PlayAnimationCoroutine);
         }
 
         private IEnumerator PlayAnimationCoroutine()
@@ -58,35 +40,17 @@ namespace Game.Runtime.Cards
                 yield return null;
             }
 
-            CompleteAnimation();
+            CompleteOperation();
         }
 
-        private void CompleteAnimation()
+        protected override string GetDisableCancellationMessage()
         {
-            animationCoroutine = null;
-
-            TaskCompletionSource<bool> completionSource = animationCompletionSource;
-            animationCompletionSource = null;
-
-            completionSource?.TrySetResult(true);
+            return "Draw animation was interrupted because the animator was disabled.";
         }
 
-        private void CancelAnimation(string message)
+        protected override string GetDestroyCancellationMessage()
         {
-            if (animationCoroutine != null)
-            {
-                StopCoroutine(animationCoroutine);
-                animationCoroutine = null;
-            }
-
-            TaskCompletionSource<bool> completionSource = animationCompletionSource;
-            animationCompletionSource = null;
-            if (completionSource == null)
-            {
-                return;
-            }
-
-            completionSource.TrySetException(new OperationCanceledException(message));
+            return "Draw animation was interrupted because the animator was destroyed.";
         }
     }
 }

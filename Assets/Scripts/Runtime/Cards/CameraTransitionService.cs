@@ -6,16 +6,18 @@ using UnityEngine;
 namespace Game.Runtime.Cards
 {
     [DisallowMultipleComponent]
-    public sealed class CameraTransitionService : MonoBehaviour, ICameraTransitionService
+    public sealed class CameraTransitionService
+        : InterruptibleAsyncOperationBehaviour,
+            ICameraTransitionService
     {
         [SerializeField] private Camera targetCamera;
         [SerializeField] private float transitionDuration = 1.0f;
         [SerializeField] private AnimationCurve transitionCurve = AnimationCurve.Linear(0f, 0f, 1f, 1f);
 
-        private Coroutine activeTransition;
-        private TaskCompletionSource<bool> activeCompletionSource;
-
-        public bool IsTransitioning => activeTransition != null;
+        public bool IsTransitioning
+        {
+            get { return HasActiveOperation; }
+        }
 
         private void Awake()
         {
@@ -23,16 +25,6 @@ namespace Game.Runtime.Cards
             {
                 targetCamera = Camera.main;
             }
-        }
-
-        private void OnDisable()
-        {
-            CancelActiveTransition("Camera transition was interrupted because the service was disabled.");
-        }
-
-        private void OnDestroy()
-        {
-            CancelActiveTransition("Camera transition was interrupted because the service was destroyed.");
         }
 
         public Task StartTransitionAsync(Transform destination)
@@ -52,14 +44,7 @@ namespace Game.Runtime.Cards
                 return Task.FromException(new InvalidOperationException("No camera available for transition."));
             }
 
-            if (activeTransition != null)
-            {
-                return activeCompletionSource != null ? activeCompletionSource.Task : Task.CompletedTask;
-            }
-
-            activeCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-            activeTransition = StartCoroutine(TransitionCoroutine(destination));
-            return activeCompletionSource.Task;
+            return RunOperationAsync(() => TransitionCoroutine(destination));
         }
 
         private IEnumerator TransitionCoroutine(Transform destination)
@@ -88,35 +73,17 @@ namespace Game.Runtime.Cards
             cameraTransform.position = targetPosition;
             cameraTransform.rotation = targetRotation;
 
-            CompleteActiveTransition();
+            CompleteOperation();
         }
 
-        private void CompleteActiveTransition()
+        protected override string GetDisableCancellationMessage()
         {
-            activeTransition = null;
-
-            TaskCompletionSource<bool> completionSource = activeCompletionSource;
-            activeCompletionSource = null;
-
-            completionSource?.TrySetResult(true);
+            return "Camera transition was interrupted because the service was disabled.";
         }
 
-        private void CancelActiveTransition(string message)
+        protected override string GetDestroyCancellationMessage()
         {
-            if (activeTransition != null)
-            {
-                StopCoroutine(activeTransition);
-                activeTransition = null;
-            }
-
-            TaskCompletionSource<bool> completionSource = activeCompletionSource;
-            activeCompletionSource = null;
-            if (completionSource == null)
-            {
-                return;
-            }
-
-            completionSource.TrySetException(new OperationCanceledException(message));
+            return "Camera transition was interrupted because the service was destroyed.";
         }
     }
 }

@@ -24,16 +24,8 @@ namespace Game.Runtime.Cards
         private IDrawGameActions drawGameActions;
         private ICameraTransitionService cameraTransitionService;
         private IDrawAnimator drawAnimator;
-        private WorkflowState state = WorkflowState.Idle;
-
-        private enum WorkflowState
-        {
-            Idle,
-            MovingToBoard,
-            DrawMode,
-            Drawing,
-            ReturningToCity
-        }
+        private readonly CardDrawWorkflowStateMachine workflowState =
+            new CardDrawWorkflowStateMachine();
 
         private void Awake()
         {
@@ -42,18 +34,19 @@ namespace Game.Runtime.Cards
 
         public async void OnDrawButtonClicked()
         {
-            if (IsBusy())
+            DrawWorkflowAction action = workflowState.HandleDrawClicked();
+            if (action == DrawWorkflowAction.None)
             {
                 return;
             }
 
-            if (state == WorkflowState.Idle)
+            if (action == DrawWorkflowAction.MoveToBoard)
             {
                 await MoveCameraToBoardAsync();
                 return;
             }
 
-            if (state == WorkflowState.DrawMode)
+            if (action == DrawWorkflowAction.Draw)
             {
                 await ExecuteDrawAsync();
             }
@@ -61,7 +54,7 @@ namespace Game.Runtime.Cards
 
         public async void OnReturnButtonClicked()
         {
-            if (IsBusy() || state == WorkflowState.Idle)
+            if (!workflowState.TryBeginReturn())
             {
                 return;
             }
@@ -69,37 +62,28 @@ namespace Game.Runtime.Cards
             await ReturnToCityAsync();
         }
 
-        private bool IsBusy()
-        {
-            return state == WorkflowState.MovingToBoard
-                || state == WorkflowState.Drawing
-                || state == WorkflowState.ReturningToCity;
-        }
-
         private async Task MoveCameraToBoardAsync()
         {
             if (cameraTransitionService == null || cardBoardAnchor == null)
             {
                 Debug.LogWarning("[CardDrawWorkflowController] Missing camera transition service or board anchor.", this);
-                state = WorkflowState.Idle;
+                workflowState.CompleteMoveToBoard(false);
                 return;
             }
-
-            state = WorkflowState.MovingToBoard;
 
             try
             {
                 await cameraTransitionService.StartTransitionAsync(cardBoardAnchor);
-                state = WorkflowState.DrawMode;
+                workflowState.CompleteMoveToBoard(true);
             }
             catch (OperationCanceledException)
             {
-                state = WorkflowState.Idle;
+                workflowState.CompleteMoveToBoard(false);
             }
             catch (Exception exception)
             {
                 Debug.LogError("[CardDrawWorkflowController] Failed to move camera to board: " + exception.Message, this);
-                state = WorkflowState.Idle;
+                workflowState.CompleteMoveToBoard(false);
             }
         }
 
@@ -108,10 +92,10 @@ namespace Game.Runtime.Cards
             if (drawGameActions == null)
             {
                 Debug.LogWarning("[CardDrawWorkflowController] Missing draw game actions dependency.", this);
+                workflowState.CompleteDraw();
                 return;
             }
 
-            state = WorkflowState.Drawing;
             try
             {
                 if (drawAnimator != null && drawAnimator.HasAnimation)
@@ -131,7 +115,7 @@ namespace Game.Runtime.Cards
             }
             finally
             {
-                state = WorkflowState.DrawMode;
+                workflowState.CompleteDraw();
             }
         }
 
@@ -140,10 +124,9 @@ namespace Game.Runtime.Cards
             if (cameraTransitionService == null || cityViewAnchor == null)
             {
                 Debug.LogWarning("[CardDrawWorkflowController] Missing camera transition service or city anchor.", this);
+                workflowState.CompleteReturn();
                 return;
             }
-
-            state = WorkflowState.ReturningToCity;
 
             try
             {
@@ -159,7 +142,7 @@ namespace Game.Runtime.Cards
             }
             finally
             {
-                state = WorkflowState.Idle;
+                workflowState.CompleteReturn();
             }
         }
 
