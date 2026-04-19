@@ -1051,10 +1051,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3718fb82c1768f04280b2954105ce4b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Cards.CardDrawWorkflowController
-  drawGamePresenter: {fileID: 410919965}
-  cameraTransitionService: {fileID: 410919966}
-  drawButton: {fileID: 383258088}
-  returnButton: {fileID: 1196727915}
+  drawGameActionsSource: {fileID: 410919965}
+  cameraTransitionServiceSource: {fileID: 410919966}
   cardBoardAnchor: {fileID: 1243665886}
   cityViewAnchor: {fileID: 256613967}
   drawAnimatorSource: {fileID: 0}

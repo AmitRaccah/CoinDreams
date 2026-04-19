@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Threading.Tasks;
 using UnityEngine;
@@ -28,9 +29,19 @@ namespace Game.Runtime.Cards
                 return animationCompletionSource != null ? animationCompletionSource.Task : Task.CompletedTask;
             }
 
-            animationCompletionSource = new TaskCompletionSource<bool>();
+            animationCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             animationCoroutine = StartCoroutine(PlayAnimationCoroutine());
             return animationCompletionSource.Task;
+        }
+
+        private void OnDisable()
+        {
+            CancelAnimation("Draw animation was interrupted because the animator was disabled.");
+        }
+
+        private void OnDestroy()
+        {
+            CancelAnimation("Draw animation was interrupted because the animator was destroyed.");
         }
 
         private IEnumerator PlayAnimationCoroutine()
@@ -47,9 +58,35 @@ namespace Game.Runtime.Cards
                 yield return null;
             }
 
+            CompleteAnimation();
+        }
+
+        private void CompleteAnimation()
+        {
             animationCoroutine = null;
-            animationCompletionSource?.TrySetResult(true);
+
+            TaskCompletionSource<bool> completionSource = animationCompletionSource;
             animationCompletionSource = null;
+
+            completionSource?.TrySetResult(true);
+        }
+
+        private void CancelAnimation(string message)
+        {
+            if (animationCoroutine != null)
+            {
+                StopCoroutine(animationCoroutine);
+                animationCoroutine = null;
+            }
+
+            TaskCompletionSource<bool> completionSource = animationCompletionSource;
+            animationCompletionSource = null;
+            if (completionSource == null)
+            {
+                return;
+            }
+
+            completionSource.TrySetException(new OperationCanceledException(message));
         }
     }
 }

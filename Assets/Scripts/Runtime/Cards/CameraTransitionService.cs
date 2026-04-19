@@ -25,6 +25,16 @@ namespace Game.Runtime.Cards
             }
         }
 
+        private void OnDisable()
+        {
+            CancelActiveTransition("Camera transition was interrupted because the service was disabled.");
+        }
+
+        private void OnDestroy()
+        {
+            CancelActiveTransition("Camera transition was interrupted because the service was destroyed.");
+        }
+
         public Task StartTransitionAsync(Transform destination)
         {
             if (destination == null)
@@ -47,7 +57,7 @@ namespace Game.Runtime.Cards
                 return activeCompletionSource != null ? activeCompletionSource.Task : Task.CompletedTask;
             }
 
-            activeCompletionSource = new TaskCompletionSource<bool>();
+            activeCompletionSource = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
             activeTransition = StartCoroutine(TransitionCoroutine(destination));
             return activeCompletionSource.Task;
         }
@@ -78,9 +88,35 @@ namespace Game.Runtime.Cards
             cameraTransform.position = targetPosition;
             cameraTransform.rotation = targetRotation;
 
+            CompleteActiveTransition();
+        }
+
+        private void CompleteActiveTransition()
+        {
             activeTransition = null;
-            activeCompletionSource?.TrySetResult(true);
+
+            TaskCompletionSource<bool> completionSource = activeCompletionSource;
             activeCompletionSource = null;
+
+            completionSource?.TrySetResult(true);
+        }
+
+        private void CancelActiveTransition(string message)
+        {
+            if (activeTransition != null)
+            {
+                StopCoroutine(activeTransition);
+                activeTransition = null;
+            }
+
+            TaskCompletionSource<bool> completionSource = activeCompletionSource;
+            activeCompletionSource = null;
+            if (completionSource == null)
+            {
+                return;
+            }
+
+            completionSource.TrySetException(new OperationCanceledException(message));
         }
     }
 }

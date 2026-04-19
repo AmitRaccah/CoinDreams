@@ -12,7 +12,7 @@ using UnityEngine.UI;
 
 namespace Game.Runtime.Cards
 {
-    public sealed class DrawGamePresenter : MonoBehaviour
+    public sealed class DrawGamePresenter : MonoBehaviour, IDrawGameActions
     {
         private const int FallbackWeight = 1;
         private const int FallbackCoinsAmount = 100;
@@ -79,47 +79,33 @@ namespace Game.Runtime.Cards
             UnsubscribeFromRuntimeContextEvents();
         }
 
-        private async void OnDrawButtonClicked()
+        public async Task<AuthoritativeDrawResult> TryDrawAsync()
         {
-            if (isDrawInFlight)
+            if (!TryPrepareDraw(out AuthoritativeDrawResult preconditionFailure))
             {
-                return;
-            }
-
-            if (authoritativeDrawService == null)
-            {
-                ResolveAuthoritativeDrawService();
-            }
-
-            if (authoritativeDrawService == null)
-            {
-                SetResult("Draw service missing.");
-                return;
-            }
-
-            if (!authoritativeDrawService.IsReady)
-            {
-                SetResult("Syncing player state...");
-                return;
-            }
-
-            if (drawRequest == null)
-            {
-                SetResult("Draw deck is invalid.");
-                return;
+                ApplyDrawResult(preconditionFailure);
+                return preconditionFailure;
             }
 
             isDrawInFlight = true;
             try
             {
                 AuthoritativeDrawResult result = await authoritativeDrawService.TryDrawAsync(drawRequest);
+                if (result == null)
+                {
+                    result = AuthoritativeDrawResult.Error("Draw failed.");
+                }
+
                 ApplyDrawResult(result);
                 RefreshAllUi();
+                return result;
             }
             catch (System.Exception exception)
             {
-                SetResult("Draw failed.");
+                AuthoritativeDrawResult errorResult = AuthoritativeDrawResult.Error("Draw failed.");
+                ApplyDrawResult(errorResult);
                 Debug.LogError("[DRAW] Failed: " + exception.Message, this);
+                return errorResult;
             }
             finally
             {
@@ -127,10 +113,13 @@ namespace Game.Runtime.Cards
             }
         }
 
-        public bool CanExecuteDraw()
+        private bool TryPrepareDraw(out AuthoritativeDrawResult failureResult)
         {
+            failureResult = null;
+
             if (isDrawInFlight)
             {
+                failureResult = AuthoritativeDrawResult.Unavailable("Draw is already in progress.");
                 return false;
             }
 
@@ -139,65 +128,25 @@ namespace Game.Runtime.Cards
                 ResolveAuthoritativeDrawService();
             }
 
-            return authoritativeDrawService != null
-                && authoritativeDrawService.IsReady
-                && drawRequest != null;
-        }
-
-        public async Task<AuthoritativeDrawResult> TryDrawAsync()
-        {
-            if (isDrawInFlight)
-            {
-                SetResult("Draw is already in progress.");
-                return null;
-            }
-
             if (authoritativeDrawService == null)
             {
-                ResolveAuthoritativeDrawService();
-            }
-
-            if (authoritativeDrawService == null)
-            {
-                SetResult("Draw service missing.");
-                return null;
+                failureResult = AuthoritativeDrawResult.Unavailable("Draw service missing.");
+                return false;
             }
 
             if (!authoritativeDrawService.IsReady)
             {
-                SetResult("Syncing player state...");
-                return null;
+                failureResult = AuthoritativeDrawResult.Unavailable("Syncing player state...");
+                return false;
             }
 
             if (drawRequest == null)
             {
-                SetResult("Draw deck is invalid.");
-                return null;
+                failureResult = AuthoritativeDrawResult.Invalid("Draw deck is invalid.");
+                return false;
             }
 
-            isDrawInFlight = true;
-            try
-            {
-                AuthoritativeDrawResult result = await authoritativeDrawService.TryDrawAsync(drawRequest);
-                ApplyDrawResult(result);
-                RefreshAllUi();
-                return result;
-            }
-            catch (System.Exception exception)
-            {
-                SetResult("Draw failed.");
-                Debug.LogError("[DRAW] Failed: " + exception.Message, this);
-                return AuthoritativeDrawResult.Error(exception.Message);
-            }
-            finally
-            {
-                isDrawInFlight = false;
-            }
-        }
-
-        public void ShowStatus(string message)
-        {
-            SetResult(message);
+            return true;
         }
 
         private void RefreshAllUi()
