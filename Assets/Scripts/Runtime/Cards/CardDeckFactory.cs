@@ -7,10 +7,6 @@ namespace Game.Runtime.Cards
 {
     public sealed class CardDeckFactory
     {
-        private const int FallbackCoinsAmount = 100;
-        private const int FallbackWeight = 1;
-        private const string FallbackCardId = "fallback_add_coins";
-
         private readonly RewardEffectFactory rewardEffectFactory;
 
         public CardDeckFactory(RewardEffectFactory rewardEffectFactory)
@@ -54,7 +50,7 @@ namespace Game.Runtime.Cards
                     int weight = cardSo.Weight;
                     if (weight <= 0)
                     {
-                        weight = FallbackWeight;
+                        weight = DrawCardFallbacks.Weight;
                     }
 
                     CardDefinition runtimeCard = new CardDefinition(cardSo.CardId, weight, effects);
@@ -73,8 +69,8 @@ namespace Game.Runtime.Cards
         private static CardDefinition CreateFallbackCard()
         {
             IRewardEffect[] effects = new IRewardEffect[1];
-            effects[0] = new AddResourceEffect(RewardResourceType.Currency, FallbackCoinsAmount);
-            return new CardDefinition(FallbackCardId, FallbackWeight, effects);
+            effects[0] = new AddResourceEffect(RewardResourceType.Currency, DrawCardFallbacks.CoinsAmount);
+            return new CardDefinition(DrawCardFallbacks.CardId, DrawCardFallbacks.Weight, effects);
         }
     }
 }

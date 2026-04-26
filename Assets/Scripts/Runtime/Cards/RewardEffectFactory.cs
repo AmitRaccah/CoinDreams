@@ -2,7 +2,6 @@ using System.Collections.Generic;
 using System;
 using Game.Domain.Cards;
 using Game.Config.Cards;
-using Game.Domain.Cards.Effects;
 
 namespace Game.Runtime.Cards
 {
@@ -26,7 +25,7 @@ namespace Game.Runtime.Cards
                     continue;
                 }
 
-                if (IsSupportedType(config.EffectType))
+                if (RewardEffectConfigMapper.IsSupported(config.EffectType))
                 {
                     validEffectCount++;
                 }
@@ -44,7 +43,7 @@ namespace Game.Runtime.Cards
                 RewardEffectConfig config = effectConfigs[i];
                 IRewardEffect effect;
 
-                if (TryCreateEffect(config, out effect))
+                if (RewardEffectConfigMapper.TryCreateRuntimeEffect(config, out effect))
                 {
                     effects[effectIndex] = effect;
                     effectIndex++;
@@ -52,50 +51,6 @@ namespace Game.Runtime.Cards
             }
 
             return effects;
-        }
-
-        private static bool IsSupportedType(RewardEffectType effectType)
-        {
-            return effectType == RewardEffectType.AddCoins
-                || effectType == RewardEffectType.AddEnergy
-                || effectType == RewardEffectType.LaunchMinigame
-                || effectType == RewardEffectType.DoubleNextDraw;
-        }
-
-        private static bool TryCreateEffect(RewardEffectConfig config, out IRewardEffect effect)
-        {
-            effect = null;
-
-            if (config == null)
-            {
-                return false;
-            }
-
-            if (config.EffectType == RewardEffectType.AddCoins)
-            {
-                effect = new AddResourceEffect(RewardResourceType.Currency, config.IntValue);
-                return true;
-            }
-
-            if (config.EffectType == RewardEffectType.AddEnergy)
-            {
-                effect = new AddResourceEffect(RewardResourceType.Energy, config.IntValue);
-                return true;
-            }
-
-            if (config.EffectType == RewardEffectType.LaunchMinigame)
-            {
-                effect = new LaunchMinigameEffect(config.StringValue);
-                return true;
-            }
-
-            if (config.EffectType == RewardEffectType.DoubleNextDraw)
-            {
-                effect = new DoubleNextDrawEffect();
-                return true;
-            }
-
-            return false;
         }
     }
 }

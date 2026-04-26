@@ -7,10 +7,6 @@ namespace Game.Runtime.Cards
 {
     public sealed class AuthoritativeDrawRequestFactory
     {
-        private const int FallbackWeight = 1;
-        private const int FallbackCoinsAmount = 100;
-        private const string FallbackCardId = "fallback_add_coins";
-
         public AuthoritativeDrawRequest Create(int drawCost, CardDeckSO deckConfig)
         {
             List<AuthoritativeDrawCardDefinition> cards =
@@ -30,7 +26,7 @@ namespace Game.Runtime.Cards
                     int weight = card.Weight;
                     if (weight <= 0)
                     {
-                        weight = FallbackWeight;
+                        weight = DrawCardFallbacks.Weight;
                     }
 
                     AuthoritativeDrawEffectDefinition[] effects = BuildEffects(card.EffectConfigs);
@@ -55,10 +51,13 @@ namespace Game.Runtime.Cards
             AuthoritativeDrawEffectDefinition[] effects = new AuthoritativeDrawEffectDefinition[1];
             effects[0] = new AuthoritativeDrawEffectDefinition(
                 AuthoritativeDrawEffectType.AddCoins,
-                FallbackCoinsAmount,
+                DrawCardFallbacks.CoinsAmount,
                 string.Empty);
 
-            return new AuthoritativeDrawCardDefinition(FallbackCardId, FallbackWeight, effects);
+            return new AuthoritativeDrawCardDefinition(
+                DrawCardFallbacks.CardId,
+                DrawCardFallbacks.Weight,
+                effects);
         }
 
         private static AuthoritativeDrawEffectDefinition[] BuildEffects(
@@ -81,7 +80,9 @@ namespace Game.Runtime.Cards
                     continue;
                 }
 
-                if (!TryMapEffectType(config.EffectType, out AuthoritativeDrawEffectType mappedType))
+                if (!RewardEffectConfigMapper.TryMapToAuthoritativeType(
+                        config.EffectType,
+                        out AuthoritativeDrawEffectType mappedType))
                 {
                     continue;
                 }
@@ -98,39 +99,6 @@ namespace Game.Runtime.Cards
             }
 
             return effects.ToArray();
-        }
-
-        private static bool TryMapEffectType(
-            RewardEffectType sourceType,
-            out AuthoritativeDrawEffectType mappedType)
-        {
-            mappedType = AuthoritativeDrawEffectType.AddCoins;
-
-            if (sourceType == RewardEffectType.AddCoins)
-            {
-                mappedType = AuthoritativeDrawEffectType.AddCoins;
-                return true;
-            }
-
-            if (sourceType == RewardEffectType.AddEnergy)
-            {
-                mappedType = AuthoritativeDrawEffectType.AddEnergy;
-                return true;
-            }
-
-            if (sourceType == RewardEffectType.LaunchMinigame)
-            {
-                mappedType = AuthoritativeDrawEffectType.LaunchMinigame;
-                return true;
-            }
-
-            if (sourceType == RewardEffectType.DoubleNextDraw)
-            {
-                mappedType = AuthoritativeDrawEffectType.DoubleNextDraw;
-                return true;
-            }
-
-            return false;
         }
     }
 }

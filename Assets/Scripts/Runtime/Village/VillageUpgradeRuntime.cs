@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Game.Domain.Economy;
 using Game.Domain.Village;
+using Game.Runtime;
 using Game.Runtime.Player;
 using UnityEngine;
 using UnityEngine.SceneManagement;
@@ -538,44 +539,12 @@ namespace Game.Runtime.Village
 
         private void ResolveAuthoritativeUpgradeService()
         {
-            authoritativeUpgradeService = null;
-
-            if (authoritativeVillageUpgradeServiceSource != null)
+            if (RuntimeServiceResolver.TryResolveAuthoritativeVillageUpgradeService(
+                    authoritativeVillageUpgradeServiceSource,
+                    out authoritativeUpgradeService,
+                    out MonoBehaviour resolvedSource))
             {
-                authoritativeUpgradeService =
-                    authoritativeVillageUpgradeServiceSource as IAuthoritativeVillageUpgradeService;
-
-                if (authoritativeUpgradeService == null)
-                {
-                    Debug.LogError(
-                        "[VillageUpgradeRuntime] Configured authoritative service source does not implement IAuthoritativeVillageUpgradeService.",
-                        this);
-                }
-            }
-
-            if (authoritativeUpgradeService != null)
-            {
-                return;
-            }
-
-            MonoBehaviour[] behaviours = FindObjectsByType<MonoBehaviour>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
-
-            int i;
-            for (i = 0; i < behaviours.Length; i++)
-            {
-                MonoBehaviour behaviour = behaviours[i];
-                IAuthoritativeVillageUpgradeService service =
-                    behaviour as IAuthoritativeVillageUpgradeService;
-
-                if (service == null)
-                {
-                    continue;
-                }
-
-                authoritativeUpgradeService = service;
-                authoritativeVillageUpgradeServiceSource = behaviour;
+                authoritativeVillageUpgradeServiceSource = resolvedSource;
                 return;
             }
 
@@ -586,20 +555,9 @@ namespace Game.Runtime.Village
 
         private bool TryResolvePlayerContext()
         {
-            if (playerRuntimeContext != null)
-            {
-                return true;
-            }
-
-            playerRuntimeContext = FindFirstObjectByType<PlayerRuntimeContext>();
-            if (playerRuntimeContext != null)
-            {
-                return true;
-            }
-
-            GameObject runtimeContextObject = new GameObject("PlayerRuntimeContext");
-            playerRuntimeContext = runtimeContextObject.AddComponent<PlayerRuntimeContext>();
-            return playerRuntimeContext != null;
+            return RuntimeServiceResolver.TryResolvePlayerContext(
+                playerRuntimeContext,
+                out playerRuntimeContext);
         }
 
         private bool TryBuildCatalogData(

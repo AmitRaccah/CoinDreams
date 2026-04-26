@@ -1,6 +1,7 @@
 using System.Threading.Tasks;
 using Game.Config.Cards;
 using Game.Domain.Cards;
+using Game.Runtime;
 using Game.Runtime.Player;
 using UnityEngine;
 
@@ -148,40 +149,12 @@ namespace Game.Runtime.Cards
 
         private void ResolveAuthoritativeDrawService()
         {
-            authoritativeDrawService = null;
-
-            if (authoritativeDrawServiceSource != null)
+            if (RuntimeServiceResolver.TryResolveAuthoritativeDrawService(
+                    authoritativeDrawServiceSource,
+                    out authoritativeDrawService,
+                    out MonoBehaviour resolvedSource))
             {
-                authoritativeDrawService = authoritativeDrawServiceSource as IAuthoritativeDrawService;
-                if (authoritativeDrawService == null)
-                {
-                    Debug.LogError(
-                        "[DrawActionPresenter] Configured authoritative draw source does not implement IAuthoritativeDrawService.",
-                        this);
-                }
-            }
-
-            if (authoritativeDrawService != null)
-            {
-                return;
-            }
-
-            MonoBehaviour[] behaviours = FindObjectsByType<MonoBehaviour>(
-                FindObjectsInactive.Include,
-                FindObjectsSortMode.None);
-
-            int i;
-            for (i = 0; i < behaviours.Length; i++)
-            {
-                MonoBehaviour behaviour = behaviours[i];
-                IAuthoritativeDrawService drawService = behaviour as IAuthoritativeDrawService;
-                if (drawService == null)
-                {
-                    continue;
-                }
-
-                authoritativeDrawService = drawService;
-                authoritativeDrawServiceSource = behaviour;
+                authoritativeDrawServiceSource = resolvedSource;
                 return;
             }
 
@@ -192,20 +165,9 @@ namespace Game.Runtime.Cards
 
         private bool TryResolvePlayerContext()
         {
-            if (playerRuntimeContext != null)
-            {
-                return true;
-            }
-
-            playerRuntimeContext = FindFirstObjectByType<PlayerRuntimeContext>();
-            if (playerRuntimeContext != null)
-            {
-                return true;
-            }
-
-            GameObject runtimeContextObject = new GameObject("PlayerRuntimeContext");
-            playerRuntimeContext = runtimeContextObject.AddComponent<PlayerRuntimeContext>();
-            return playerRuntimeContext != null;
+            return RuntimeServiceResolver.TryResolvePlayerContext(
+                playerRuntimeContext,
+                out playerRuntimeContext);
         }
 
         private void PublishResult(AuthoritativeDrawResult result)

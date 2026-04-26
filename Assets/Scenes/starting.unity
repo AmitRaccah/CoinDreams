@@ -467,6 +467,7 @@ GameObject:
   - component: {fileID: 245205527}
   - component: {fileID: 245205528}
   - component: {fileID: 245205529}
+  - component: {fileID: 245205530}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -534,6 +535,21 @@ MonoBehaviour:
   localCacheFileName: player_save_cache.json
   clearLocalCacheOnStart: 1
   forceFreshAnonymousIdentityOnStart: 1
+--- !u!114 &245205530
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 245205526}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f15235588cbd4b4488a64ca5ec9b5a91, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.RuntimeCompositionRoot
+  playerRuntimeContext: {fileID: 245205528}
+  authoritativeDrawServiceSource: {fileID: 245205529}
+  authoritativeVillageUpgradeServiceSource: {fileID: 245205529}
 --- !u!1 &256613966
 GameObject:
   m_ObjectHideFlags: 0

@@ -2,6 +2,7 @@ using System.Collections;
 using Game.Domain.Cards;
 using Game.Domain.Economy;
 using Game.Domain.Energy;
+using Game.Runtime;
 using Game.Runtime.Player;
 using TMPro;
 using UnityEngine;
@@ -238,20 +239,9 @@ namespace Game.Runtime.Cards
 
         private bool TryResolvePlayerContext()
         {
-            if (playerRuntimeContext != null)
-            {
-                return true;
-            }
-
-            playerRuntimeContext = FindFirstObjectByType<PlayerRuntimeContext>();
-            if (playerRuntimeContext != null)
-            {
-                return true;
-            }
-
-            GameObject runtimeContextObject = new GameObject("PlayerRuntimeContext");
-            playerRuntimeContext = runtimeContextObject.AddComponent<PlayerRuntimeContext>();
-            return playerRuntimeContext != null;
+            return RuntimeServiceResolver.TryResolvePlayerContext(
+                playerRuntimeContext,
+                out playerRuntimeContext);
         }
 
         private void RebuildRuntimeBindings()

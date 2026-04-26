@@ -346,16 +346,7 @@ namespace Game.Runtime.Village
                     continue;
                 }
 
-                if (!textureState.hasDefaultTexture)
-                {
-                    // No default texture exists on the material, so clear overrides.
-                    partRenderer.SetPropertyBlock(null);
-                    continue;
-                }
-
-                partRenderer.GetPropertyBlock(reusablePropertyBlock);
-                reusablePropertyBlock.SetTexture(textureState.propertyId, textureState.defaultTexture);
-                partRenderer.SetPropertyBlock(reusablePropertyBlock);
+                ClearTextureOverride(partRenderer);
             }
         }
 
@@ -405,16 +396,27 @@ namespace Game.Runtime.Village
                     continue;
                 }
 
-                if (op.texture == null)
+                if (op.texture == null
+                    || (textureState.hasDefaultTexture && op.texture == textureState.defaultTexture))
                 {
-                    partRenderer.SetPropertyBlock(null);
+                    ClearTextureOverride(partRenderer);
                     continue;
                 }
 
-                partRenderer.GetPropertyBlock(reusablePropertyBlock);
-                reusablePropertyBlock.SetTexture(textureState.propertyId, op.texture);
-                partRenderer.SetPropertyBlock(reusablePropertyBlock);
+                ApplyTextureOverride(partRenderer, textureState.propertyId, op.texture);
             }
+        }
+
+        private static void ClearTextureOverride(Renderer targetRenderer)
+        {
+            targetRenderer.SetPropertyBlock(null);
+        }
+
+        private void ApplyTextureOverride(Renderer targetRenderer, int propertyId, Texture texture)
+        {
+            targetRenderer.GetPropertyBlock(reusablePropertyBlock);
+            reusablePropertyBlock.SetTexture(propertyId, texture);
+            targetRenderer.SetPropertyBlock(reusablePropertyBlock);
         }
 
         private struct StepActivationOp

@@ -2,6 +2,7 @@ using System.Threading.Tasks;
 using Game.Domain.Cards;
 using Game.Domain.Player;
 using Game.Domain.Village;
+using Game.Runtime;
 using Game.Runtime.Player;
 using UnityEngine;
 
@@ -46,6 +47,8 @@ namespace Game.Infrastructure.Persistence
         private bool isSubscribed;
         private bool suppressStateTracking;
         private float nextSaveTime;
+        private bool localCacheDirty;
+        private float nextLocalCacheSaveTime;
 
         public bool IsReady
         {
@@ -130,6 +133,8 @@ namespace Game.Infrastructure.Persistence
 
         private void Update()
         {
+            FlushLocalCacheIfDue();
+
             if (!autoSave || !loadCompleted || !dirty || isSaving || !firebaseConnection.IsReady)
             {
                 return;
@@ -145,7 +150,14 @@ namespace Game.Infrastructure.Persistence
 
         private void OnApplicationPause(bool pause)
         {
-            if (!pause || !saveOnApplicationPause)
+            if (!pause)
+            {
+                return;
+            }
+
+            FlushLocalCacheNow();
+
+            if (!saveOnApplicationPause)
             {
                 return;
             }
@@ -155,6 +167,8 @@ namespace Game.Infrastructure.Persistence
 
         private void OnApplicationQuit()
         {
+            FlushLocalCacheNow();
+
             if (!saveOnApplicationQuit)
             {
                 return;
@@ -431,7 +445,7 @@ namespace Game.Infrastructure.Persistence
                 return;
             }
 
-            PersistToLocalCacheFromCurrentState();
+            MarkLocalCacheDirty();
 
             if (!loadCompleted)
             {
@@ -465,20 +479,9 @@ namespace Game.Infrastructure.Persistence
 
         private bool TryResolvePlayerContext()
         {
-            if (playerRuntimeContext != null)
-            {
-                return true;
-            }
-
-            playerRuntimeContext = FindFirstObjectByType<PlayerRuntimeContext>();
-            if (playerRuntimeContext != null)
-            {
-                return true;
-            }
-
-            GameObject runtimeContextObject = new GameObject("PlayerRuntimeContext");
-            playerRuntimeContext = runtimeContextObject.AddComponent<PlayerRuntimeContext>();
-            return playerRuntimeContext != null;
+            return RuntimeServiceResolver.TryResolvePlayerContext(
+                playerRuntimeContext,
+                out playerRuntimeContext);
         }
 
         private void InitializeLocalCacheStore()
@@ -531,22 +534,22 @@ namespace Game.Infrastructure.Persistence
             }
         }
 
-        private void PersistToLocalCacheFromCurrentState()
+        private bool PersistToLocalCacheFromCurrentState()
         {
             if (localCacheStore == null || !localCacheStore.IsEnabled || playerRuntimeContext == null)
             {
-                return;
+                return false;
             }
 
             PlayerProfileSnapshot snapshot = CreateSnapshotForInitialization();
-            PersistToLocalCache(snapshot);
+            return PersistToLocalCache(snapshot);
         }
 
-        private void PersistToLocalCache(PlayerProfileSnapshot snapshot)
+        private bool PersistToLocalCache(PlayerProfileSnapshot snapshot)
         {
             if (localCacheStore == null || !localCacheStore.IsEnabled || snapshot == null)
             {
-                return;
+                return false;
             }
 
             if (!localCacheStore.TryPersistSnapshot(snapshot, out string error))
@@ -554,7 +557,11 @@ namespace Game.Infrastructure.Persistence
                 Debug.LogWarning(
                     "[FirebasePlayerPersistenceRuntime] Failed to persist local cache: " + error,
                     this);
+                return false;
             }
+
+            localCacheDirty = false;
+            return true;
         }
 
         private void MarkDirty()
@@ -566,6 +573,37 @@ namespace Game.Infrastructure.Persistence
 
             dirty = true;
             nextSaveTime = Time.unscaledTime + GetAutosaveIntervalSeconds();
+        }
+
+        private void MarkLocalCacheDirty()
+        {
+            if (localCacheStore == null || !localCacheStore.IsEnabled)
+            {
+                return;
+            }
+
+            localCacheDirty = true;
+            nextLocalCacheSaveTime = Time.unscaledTime + GetAutosaveIntervalSeconds();
+        }
+
+        private void FlushLocalCacheIfDue()
+        {
+            if (!localCacheDirty || Time.unscaledTime < nextLocalCacheSaveTime)
+            {
+                return;
+            }
+
+            FlushLocalCacheNow();
+        }
+
+        private void FlushLocalCacheNow()
+        {
+            if (!localCacheDirty)
+            {
+                return;
+            }
+
+            PersistToLocalCacheFromCurrentState();
         }
 
         private void FinalizeLoadState()
