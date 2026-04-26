@@ -2990,6 +2990,9 @@ MonoBehaviour:
   - {fileID: 5778253223091571419}
   - {fileID: 7610378893962973900}
   - {fileID: 2491851474096648732}
+  levelVisuals: []
+  usePartObjectsAsLevelVisuals: 1
+  combineLevelMeshesOnAwake: 1
   autoCollectChildrenWhenEmpty: 1
   applyLevelZeroOnAwake: 1
 --- !u!1 &882421170163363699
@@ -6483,6 +6486,9 @@ MonoBehaviour:
   - {fileID: 4003207661439088762}
   - {fileID: 2075652885767941049}
   - {fileID: 85730425379676950}
+  levelVisuals: []
+  usePartObjectsAsLevelVisuals: 1
+  combineLevelMeshesOnAwake: 1
   autoCollectChildrenWhenEmpty: 1
   applyLevelZeroOnAwake: 1
 --- !u!1 &1805759399134410668
@@ -9254,6 +9260,9 @@ MonoBehaviour:
   - {fileID: 3793901132418940970}
   - {fileID: 6399706374042758624}
   - {fileID: 5845122527979013836}
+  levelVisuals: []
+  usePartObjectsAsLevelVisuals: 1
+  combineLevelMeshesOnAwake: 1
   autoCollectChildrenWhenEmpty: 1
   applyLevelZeroOnAwake: 1
 --- !u!1 &2659611421465168162
