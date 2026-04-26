@@ -78,12 +78,13 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingVisualController
   buildingDefinition: {fileID: 11400000, guid: df74b32764b81aa43ab8ded58b016e67, type: 2}
-  partObjects:
+  levelRoots:
   - {fileID: 6699005874811264894}
   - {fileID: 6738782387418201719}
   - {fileID: 2186943825582944797}
   - {fileID: 2460438014305906125}
   - {fileID: 4458452155421890363}
+  combineLevelMeshesOnAwake: 1
   autoCollectChildrenWhenEmpty: 1
   applyLevelZeroOnAwake: 1
 --- !u!1 &2186943825582944797 stripped

@@ -3,23 +3,18 @@ using UnityEngine;
 
 namespace Game.Runtime.Village
 {
-    internal sealed class BuildingLevelVisualApplier : IBuildingVisualApplier
+    internal sealed class BuildingLevelVisualApplier
     {
         private readonly GameObject[] levelRoots;
         private readonly GeneratedMeshSet generatedMeshes;
 
         public BuildingLevelVisualApplier(
-            BuildingLevelVisual[] configuredLevelVisuals,
-            GameObject[] partObjects,
-            bool usePartObjectsAsLevelVisuals,
+            GameObject[] levelRoots,
             bool combineMeshes)
         {
-            levelRoots = BuildLevelRoots(
-                configuredLevelVisuals,
-                partObjects,
-                usePartObjectsAsLevelVisuals);
+            this.levelRoots = levelRoots ?? Array.Empty<GameObject>();
 
-            IsValid = HasAnyLevelRoot(levelRoots);
+            IsValid = HasAnyLevelRoot(this.levelRoots);
             if (!IsValid || !combineMeshes)
             {
                 return;
@@ -41,7 +36,7 @@ namespace Game.Runtime.Village
                     return 0;
                 }
 
-                return levelRoots.Length - 1;
+                return levelRoots.Length;
             }
         }
 
@@ -52,7 +47,7 @@ namespace Game.Runtime.Village
                 return;
             }
 
-            int activeIndex = ClampLevel(level);
+            int activeIndex = GetActiveRootIndex(level);
 
             int i;
             for (i = 0; i < levelRoots.Length; i++)
@@ -79,60 +74,19 @@ namespace Game.Runtime.Village
             }
         }
 
-        public static bool HasConfiguredLevelVisuals(BuildingLevelVisual[] configuredLevelVisuals)
+        private int GetActiveRootIndex(int level)
         {
-            return configuredLevelVisuals != null && configuredLevelVisuals.Length > 0;
-        }
-
-        private int ClampLevel(int level)
-        {
-            if (level < 0)
+            if (level <= 0)
             {
-                return 0;
+                return -1;
             }
 
-            if (level >= levelRoots.Length)
+            if (level > levelRoots.Length)
             {
                 return levelRoots.Length - 1;
             }
 
-            return level;
-        }
-
-        private static GameObject[] BuildLevelRoots(
-            BuildingLevelVisual[] configuredLevelVisuals,
-            GameObject[] partObjects,
-            bool usePartObjectsAsLevelVisuals)
-        {
-            int configuredCount = configuredLevelVisuals != null ? configuredLevelVisuals.Length : 0;
-            if (configuredCount > 0)
-            {
-                GameObject[] roots = new GameObject[configuredCount];
-
-                int i;
-                for (i = 0; i < configuredCount; i++)
-                {
-                    BuildingLevelVisual visual = configuredLevelVisuals[i];
-                    roots[i] = visual != null ? visual.root : null;
-                }
-
-                return roots;
-            }
-
-            if (!usePartObjectsAsLevelVisuals || partObjects == null || partObjects.Length == 0)
-            {
-                return Array.Empty<GameObject>();
-            }
-
-            GameObject[] partLevelRoots = new GameObject[partObjects.Length + 1];
-
-            int partIndex;
-            for (partIndex = 0; partIndex < partObjects.Length; partIndex++)
-            {
-                partLevelRoots[partIndex + 1] = partObjects[partIndex];
-            }
-
-            return partLevelRoots;
+            return level - 1;
         }
 
         private static bool HasAnyLevelRoot(GameObject[] roots)

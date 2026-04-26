@@ -7,14 +7,12 @@ namespace Game.Runtime.Village
     public sealed class BuildingVisualController : MonoBehaviour
     {
         [SerializeField] private BuildingDefinitionSO buildingDefinition;
-        [SerializeField] private GameObject[] partObjects = new GameObject[0];
-        [SerializeField] private BuildingLevelVisual[] levelVisuals = Array.Empty<BuildingLevelVisual>();
-        [SerializeField] private bool usePartObjectsAsLevelVisuals;
+        [SerializeField] private GameObject[] levelRoots = Array.Empty<GameObject>();
         [SerializeField] private bool combineLevelMeshesOnAwake;
         [SerializeField] private bool autoCollectChildrenWhenEmpty = true;
         [SerializeField] private bool applyLevelZeroOnAwake = true;
 
-        private IBuildingVisualApplier visualApplier;
+        private BuildingLevelVisualApplier visualApplier;
         private bool cacheInitialized;
 
         public BuildingDefinitionSO Definition
@@ -89,7 +87,7 @@ namespace Game.Runtime.Village
             visualApplier = CreateVisualApplier();
         }
 
-        private IBuildingVisualApplier CreateVisualApplier()
+        private BuildingLevelVisualApplier CreateVisualApplier()
         {
             if (buildingDefinition == null)
             {
@@ -97,43 +95,32 @@ namespace Game.Runtime.Village
                 return null;
             }
 
-            GameObject[] resolvedPartObjects = ResolvePartObjects();
-            bool hasConfiguredLevels = BuildingLevelVisualApplier.HasConfiguredLevelVisuals(levelVisuals);
-
-            if (hasConfiguredLevels || usePartObjectsAsLevelVisuals)
+            GameObject[] resolvedLevelRoots = ResolveLevelRoots();
+            if (resolvedLevelRoots.Length == 0)
             {
-                BuildingLevelVisualApplier levelApplier = new BuildingLevelVisualApplier(
-                    levelVisuals,
-                    resolvedPartObjects,
-                    usePartObjectsAsLevelVisuals,
-                    combineLevelMeshesOnAwake);
-
-                if (levelApplier.IsValid)
-                {
-                    return levelApplier;
-                }
-
-                levelApplier.Dispose();
-            }
-
-            if (resolvedPartObjects.Length == 0)
-            {
-                Debug.LogError("[BuildingVisualController] No part objects configured on root " + name + ".", this);
+                Debug.LogError("[BuildingVisualController] No level roots configured on root " + name + ".", this);
                 return null;
             }
 
-            return new BuildingPartStepVisualApplier(
-                buildingDefinition,
-                resolvedPartObjects,
-                this);
+            BuildingLevelVisualApplier levelApplier = new BuildingLevelVisualApplier(
+                resolvedLevelRoots,
+                combineLevelMeshesOnAwake);
+
+            if (levelApplier.IsValid)
+            {
+                return levelApplier;
+            }
+
+            levelApplier.Dispose();
+            return null;
         }
 
-        private GameObject[] ResolvePartObjects()
+        private GameObject[] ResolveLevelRoots()
         {
-            GameObject[] configuredParts = partObjects;
-            if (configuredParts != null && configuredParts.Length > 0)
+            GameObject[] configuredLevelRoots = levelRoots;
+            if (configuredLevelRoots != null && configuredLevelRoots.Length > 0)
             {
-                return configuredParts;
+                return configuredLevelRoots;
             }
 
             if (!autoCollectChildrenWhenEmpty)

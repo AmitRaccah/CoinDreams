@@ -16,17 +16,4 @@ public sealed class BuildingDefinitionSO : ScriptableObject
 public sealed class BuildingUpgradeStepConfig
 {
     public int upgradeCost;
-
-    // Visual state changes that should be applied when this upgrade succeeds.
-    public List<BuildingPartVisualStateConfig> nextLevelPartStates = new List<BuildingPartVisualStateConfig>();
-}
-
-[Serializable]
-public sealed class BuildingPartVisualStateConfig
-{
-    public int partIndex;
-    public bool isActive;
-
-    // Optional: if null, texture will not change for this part in this step.
-    public Texture texture;
 }

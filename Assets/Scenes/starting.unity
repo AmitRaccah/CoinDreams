@@ -2843,7 +2843,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.VillageUpgradeRuntime
   villageDefinition: {fileID: 11400000, guid: 03dbec92c331c2e48a8842e3ee8a5ec0, type: 2}
   playerRuntimeContext: {fileID: 245205528}
-  authoritativeVillageUpgradeServiceSource: {fileID: 0}
+  authoritativeVillageUpgradeServiceSource: {fileID: 245205529}
   applyVisualsOnAwake: 1
   buildingVisualControllers:
   - {fileID: 289853532}

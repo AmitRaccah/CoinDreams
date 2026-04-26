@@ -369,7 +369,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 521876008471528408}
-  - component: {fileID: 3897723112700349852}
   m_Layer: 0
   m_Name: Shop_Level03
   m_TagString: Untagged
@@ -512,22 +511,6 @@ Transform:
   - {fileID: 3932073738183302997}
   m_Father: {fileID: 282027459321052861}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &3897723112700349852
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 85730425379676950}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 234e88a30a9476a4aaa14adc9a3c93aa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingVisualController
-  buildingDefinition: {fileID: 0}
-  partObjects: []
-  autoCollectChildrenWhenEmpty: 1
-  applyLevelZeroOnAwake: 1
 --- !u!1 &122546981941467762
 GameObject:
   m_ObjectHideFlags: 0
@@ -2986,12 +2969,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingVisualController
   buildingDefinition: {fileID: 11400000, guid: af00c2c25de169e4897d5911dd1dac57, type: 2}
-  partObjects:
+  levelRoots:
   - {fileID: 5778253223091571419}
   - {fileID: 7610378893962973900}
   - {fileID: 2491851474096648732}
-  levelVisuals: []
-  usePartObjectsAsLevelVisuals: 1
   combineLevelMeshesOnAwake: 1
   autoCollectChildrenWhenEmpty: 1
   applyLevelZeroOnAwake: 1
@@ -6482,12 +6463,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingVisualController
   buildingDefinition: {fileID: 11400000, guid: 9d5fa2d9e1c01a14883eacb269266abc, type: 2}
-  partObjects:
+  levelRoots:
   - {fileID: 4003207661439088762}
   - {fileID: 2075652885767941049}
   - {fileID: 85730425379676950}
-  levelVisuals: []
-  usePartObjectsAsLevelVisuals: 1
   combineLevelMeshesOnAwake: 1
   autoCollectChildrenWhenEmpty: 1
   applyLevelZeroOnAwake: 1
@@ -7040,7 +7019,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2326543672998149341}
-  - component: {fileID: 566317967178570780}
   m_Layer: 0
   m_Name: Shop_Level02
   m_TagString: Untagged
@@ -7087,22 +7065,6 @@ Transform:
   - {fileID: 7344593720899063300}
   m_Father: {fileID: 282027459321052861}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &566317967178570780
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2075652885767941049}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 234e88a30a9476a4aaa14adc9a3c93aa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingVisualController
-  buildingDefinition: {fileID: 0}
-  partObjects: []
-  autoCollectChildrenWhenEmpty: 1
-  applyLevelZeroOnAwake: 1
 --- !u!1 &2086112056086897888
 GameObject:
   m_ObjectHideFlags: 0
@@ -9256,12 +9218,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingVisualController
   buildingDefinition: {fileID: 11400000, guid: d16cc7cc7300c9642915d3cf6678ac61, type: 2}
-  partObjects:
+  levelRoots:
   - {fileID: 3793901132418940970}
   - {fileID: 6399706374042758624}
   - {fileID: 5845122527979013836}
-  levelVisuals: []
-  usePartObjectsAsLevelVisuals: 1
   combineLevelMeshesOnAwake: 1
   autoCollectChildrenWhenEmpty: 1
   applyLevelZeroOnAwake: 1
@@ -12850,7 +12810,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 4297670680036197276}
-  - component: {fileID: 8975881755362567239}
   m_Layer: 0
   m_Name: Shop_Level01
   m_TagString: Untagged
@@ -12921,22 +12880,6 @@ Transform:
   - {fileID: 3100147075854689683}
   m_Father: {fileID: 282027459321052861}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8975881755362567239
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4003207661439088762}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 234e88a30a9476a4aaa14adc9a3c93aa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingVisualController
-  buildingDefinition: {fileID: 0}
-  partObjects: []
-  autoCollectChildrenWhenEmpty: 1
-  applyLevelZeroOnAwake: 1
 --- !u!1 &4043189679460860305
 GameObject:
   m_ObjectHideFlags: 0
@@ -19024,7 +18967,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6670918856061091784}
-  - component: {fileID: 8971641060812083510}
   m_Layer: 0
   m_Name: Photo_BoothLVL03
   m_TagString: Untagged
@@ -19064,22 +19006,6 @@ Transform:
   - {fileID: 643745602624753219}
   m_Father: {fileID: 249870625226623192}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &8971641060812083510
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5845122527979013836}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 234e88a30a9476a4aaa14adc9a3c93aa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingVisualController
-  buildingDefinition: {fileID: 0}
-  partObjects: []
-  autoCollectChildrenWhenEmpty: 1
-  applyLevelZeroOnAwake: 1
 --- !u!1 &5847725476828012895
 GameObject:
   m_ObjectHideFlags: 0
@@ -21461,7 +21387,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1753493022616869647}
-  - component: {fileID: 6264254581512236789}
   m_Layer: 0
   m_Name: Photo_BoothLVL02
   m_TagString: Untagged
@@ -21499,22 +21424,6 @@ Transform:
   - {fileID: 2977640007926145257}
   m_Father: {fileID: 249870625226623192}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &6264254581512236789
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 6399706374042758624}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 234e88a30a9476a4aaa14adc9a3c93aa, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingVisualController
-  buildingDefinition: {fileID: 0}
-  partObjects: []
-  autoCollectChildrenWhenEmpty: 1
-  applyLevelZeroOnAwake: 1
 --- !u!1 &6421625739865847077
 GameObject:
   m_ObjectHideFlags: 0
