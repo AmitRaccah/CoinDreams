@@ -49,6 +49,11 @@ namespace Game.Runtime.Village
 
         private void Awake()
         {
+            if (buildingDefinition == null)
+            {
+                return;
+            }
+
             EnsureCache();
 
             if (applyLevelZeroOnAwake)
@@ -94,7 +99,6 @@ namespace Game.Runtime.Village
         {
             if (buildingDefinition == null)
             {
-                Debug.LogError("[BuildingVisualController] Missing BuildingDefinitionSO.", this);
                 return null;
             }
 
