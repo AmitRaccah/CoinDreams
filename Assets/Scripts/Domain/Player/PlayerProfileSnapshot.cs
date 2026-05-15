@@ -12,7 +12,6 @@ namespace Game.Domain.Player
 
         public int currentEnergy;
         public int regenMaxEnergy;
-        public int storageMaxEnergy;
         public int regenIntervalSeconds;
         public long lastRegenUtcTicks;
 
@@ -27,7 +26,6 @@ namespace Game.Domain.Player
 
             currentEnergy = 0;
             regenMaxEnergy = 10;
-            storageMaxEnergy = 10;
             regenIntervalSeconds = 300;
             lastRegenUtcTicks = 0;
 

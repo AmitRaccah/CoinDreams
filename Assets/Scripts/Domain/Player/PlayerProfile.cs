@@ -199,7 +199,6 @@ namespace Game.Domain.Player
             snapshot.coins = currency.GetCoins();
             snapshot.currentEnergy = energy.GetCurrent();
             snapshot.regenMaxEnergy = energy.GetMax();
-            snapshot.storageMaxEnergy = energy.GetStorageMax();
             snapshot.regenIntervalSeconds = energy.GetRegenIntervalSeconds();
             snapshot.lastRegenUtcTicks = energy.GetLastRegenTicks();
             snapshot.villageLevels = village.GetLevelsSnapshot();
@@ -229,7 +228,6 @@ namespace Game.Domain.Player
                 timeProvider,
                 snapshot.currentEnergy,
                 snapshot.regenMaxEnergy,
-                snapshot.storageMaxEnergy,
                 snapshot.regenIntervalSeconds,
                 snapshot.lastRegenUtcTicks);
 

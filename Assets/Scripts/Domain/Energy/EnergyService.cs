@@ -11,22 +11,15 @@ namespace Game.Domain.Energy
 
         private int currentEnergy;
         private int regenMaxEnergy;
-        private int storageMaxEnergy;
 
         private int regenIntervalSeconds;
 
         private long lastRegenUtcTicks;
 
-        public EnergyService(ITimeProvider timeProvider, int startEnergy, int maxEnergy, int regenIntervalSeconds, long lastRegenUtcTicks)
-            : this(timeProvider, startEnergy, maxEnergy, maxEnergy, regenIntervalSeconds, lastRegenUtcTicks)
-        {
-        }
-
         public EnergyService(
             ITimeProvider timeProvider,
             int startEnergy,
             int regenMaxEnergy,
-            int storageMaxEnergy,
             int regenIntervalSeconds,
             long lastRegenUtcTicks)
         {
@@ -34,9 +27,8 @@ namespace Game.Domain.Energy
             calculator = new EnergyRegenCalculator();
 
             this.regenMaxEnergy = NormalizeRegenMax(regenMaxEnergy);
-            this.storageMaxEnergy = NormalizeStorageMax(storageMaxEnergy, this.regenMaxEnergy);
 
-            currentEnergy = Clamp(startEnergy, 0, this.storageMaxEnergy);
+            currentEnergy = startEnergy < 0 ? 0 : startEnergy;
 
             this.regenIntervalSeconds = regenIntervalSeconds;
             this.lastRegenUtcTicks = lastRegenUtcTicks;
@@ -55,11 +47,6 @@ namespace Game.Domain.Energy
         public int GetMax()
         {
             return regenMaxEnergy;
-        }
-
-        public int GetStorageMax()
-        {
-            return storageMaxEnergy;
         }
 
         public int GetRegenIntervalSeconds()
@@ -134,23 +121,13 @@ namespace Game.Domain.Energy
             {
                 currentEnergy = int.MaxValue;
             }
-            else if (nextEnergy < int.MinValue)
+            else if (nextEnergy < 0)
             {
-                currentEnergy = int.MinValue;
+                currentEnergy = 0;
             }
             else
             {
                 currentEnergy = (int)nextEnergy;
-            }
-
-            if (currentEnergy > storageMaxEnergy)
-            {
-                currentEnergy = storageMaxEnergy;
-            }
-
-            if (currentEnergy < 0)
-            {
-                currentEnergy = 0;
             }
 
             if (currentEnergy != before)
@@ -170,31 +147,6 @@ namespace Game.Domain.Energy
             if (value <= 0)
             {
                 return 1;
-            }
-
-            return value;
-        }
-
-        private static int NormalizeStorageMax(int storageMax, int regenMax)
-        {
-            if (storageMax < regenMax)
-            {
-                return regenMax;
-            }
-
-            return storageMax;
-        }
-
-        private static int Clamp(int value, int min, int max)
-        {
-            if (value < min)
-            {
-                return min;
-            }
-
-            if (value > max)
-            {
-                return max;
             }
 
             return value;

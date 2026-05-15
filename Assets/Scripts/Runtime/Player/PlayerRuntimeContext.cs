@@ -20,7 +20,6 @@ namespace Game.Runtime.Player
         [Header("Initial Energy")]
         [SerializeField] private int startingEnergy = 5;
         [SerializeField] private int maxEnergy = 10;
-        [SerializeField] private int maxStoredEnergy = 20;
         [SerializeField] private int regenIntervalSeconds = 300;
         [SerializeField] private long lastRegenUtcTicks;
 
@@ -145,7 +144,6 @@ namespace Game.Runtime.Player
                 timeProvider,
                 startingEnergy,
                 maxEnergy,
-                maxStoredEnergy,
                 regenIntervalSeconds,
                 lastRegenUtcTicks);
 

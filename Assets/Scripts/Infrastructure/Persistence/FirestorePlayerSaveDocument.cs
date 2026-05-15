@@ -22,9 +22,6 @@ namespace Game.Infrastructure.Persistence
         [FirestoreProperty("maxEnergy")]
         public int MaxEnergy { get; set; }
 
-        [FirestoreProperty("storageMaxEnergy")]
-        public int StorageMaxEnergy { get; set; }
-
         [FirestoreProperty("regenIntervalSeconds")]
         public int RegenIntervalSeconds { get; set; }
 
@@ -54,7 +51,6 @@ namespace Game.Infrastructure.Persistence
                 Coins = saveData.coins,
                 CurrentEnergy = saveData.currentEnergy,
                 MaxEnergy = saveData.maxEnergy,
-                StorageMaxEnergy = saveData.storageMaxEnergy,
                 RegenIntervalSeconds = saveData.regenIntervalSeconds,
                 LastRegenUtcTicks = saveData.lastRegenUtcTicks,
                 VillageLevels = ToIntList(saveData.villageLevels),
@@ -71,7 +67,6 @@ namespace Game.Infrastructure.Persistence
             saveData.coins = Coins;
             saveData.currentEnergy = CurrentEnergy;
             saveData.maxEnergy = MaxEnergy;
-            saveData.storageMaxEnergy = StorageMaxEnergy;
             saveData.regenIntervalSeconds = RegenIntervalSeconds;
             saveData.lastRegenUtcTicks = LastRegenUtcTicks;
             saveData.villageLevels = ToIntArray(VillageLevels);

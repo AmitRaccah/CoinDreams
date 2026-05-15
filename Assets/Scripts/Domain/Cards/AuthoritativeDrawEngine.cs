@@ -180,7 +180,6 @@ namespace Game.Domain.Cards
             copy.coins = snapshot.coins;
             copy.currentEnergy = snapshot.currentEnergy;
             copy.regenMaxEnergy = snapshot.regenMaxEnergy;
-            copy.storageMaxEnergy = snapshot.storageMaxEnergy;
             copy.regenIntervalSeconds = snapshot.regenIntervalSeconds;
             copy.lastRegenUtcTicks = snapshot.lastRegenUtcTicks;
             copy.villageLevels = CopyIntArray(snapshot.villageLevels);

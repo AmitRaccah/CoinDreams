@@ -18,7 +18,6 @@ namespace Game.Infrastructure.Persistence
             saveData.coins = snapshot.coins;
             saveData.currentEnergy = snapshot.currentEnergy;
             saveData.maxEnergy = snapshot.regenMaxEnergy;
-            saveData.storageMaxEnergy = snapshot.storageMaxEnergy;
             saveData.regenIntervalSeconds = snapshot.regenIntervalSeconds;
             saveData.lastRegenUtcTicks = snapshot.lastRegenUtcTicks;
             saveData.villageLevels = CopyIntArray(snapshot.villageLevels);
@@ -39,7 +38,6 @@ namespace Game.Infrastructure.Persistence
             snapshot.coins = saveData.coins;
             snapshot.currentEnergy = saveData.currentEnergy;
             snapshot.regenMaxEnergy = saveData.maxEnergy;
-            snapshot.storageMaxEnergy = saveData.storageMaxEnergy;
             snapshot.regenIntervalSeconds = saveData.regenIntervalSeconds;
             snapshot.lastRegenUtcTicks = saveData.lastRegenUtcTicks;
             snapshot.villageLevels = CopyIntArray(saveData.villageLevels);

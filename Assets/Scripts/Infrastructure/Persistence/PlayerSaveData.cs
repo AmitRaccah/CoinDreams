@@ -15,7 +15,6 @@ namespace Game.Infrastructure.Persistence
         // Energy
         public int currentEnergy;
         public int maxEnergy;
-        public int storageMaxEnergy;
         public int regenIntervalSeconds;
         public long lastRegenUtcTicks;
 
@@ -34,7 +33,6 @@ namespace Game.Infrastructure.Persistence
 
             currentEnergy = 5;
             maxEnergy = 10;
-            storageMaxEnergy = 20;
             regenIntervalSeconds = 300;
             lastRegenUtcTicks = 0;
 
