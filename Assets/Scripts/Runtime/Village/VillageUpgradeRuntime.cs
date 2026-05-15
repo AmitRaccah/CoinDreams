@@ -1,4 +1,5 @@
 using System.Threading.Tasks;
+using Game.Config.Village;
 using Game.Domain.Economy;
 using Game.Domain.Village;
 using Game.Runtime;

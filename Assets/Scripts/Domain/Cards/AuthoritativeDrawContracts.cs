@@ -8,8 +8,7 @@ namespace Game.Domain.Cards
     {
         AddCoins = 0,
         AddEnergy = 1,
-        LaunchMinigame = 2,
-        DoubleNextDraw = 3
+        LaunchMinigame = 2
     }
 
     public sealed class AuthoritativeDrawEffectDefinition
@@ -49,11 +48,16 @@ namespace Game.Domain.Cards
     public sealed class AuthoritativeDrawRequest
     {
         public readonly int DrawCost;
+        public readonly int RequestedMultiplier;
         public readonly AuthoritativeDrawCardDefinition[] Cards;
 
-        public AuthoritativeDrawRequest(int drawCost, AuthoritativeDrawCardDefinition[] cards)
+        public AuthoritativeDrawRequest(
+            int drawCost,
+            int requestedMultiplier,
+            AuthoritativeDrawCardDefinition[] cards)
         {
             DrawCost = drawCost;
+            RequestedMultiplier = requestedMultiplier < 1 ? 1 : requestedMultiplier;
             Cards = cards ?? Array.Empty<AuthoritativeDrawCardDefinition>();
         }
     }

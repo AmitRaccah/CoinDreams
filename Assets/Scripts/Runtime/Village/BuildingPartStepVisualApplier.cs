@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Game.Config.Village;
 using UnityEngine;
 
 namespace Game.Runtime.Village

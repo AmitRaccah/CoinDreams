@@ -36,27 +36,21 @@ namespace Game.Infrastructure.Persistence
         [SerializeField] private bool clearLocalCacheOnStart;
         [SerializeField] private bool forceFreshAnonymousIdentityOnStart;
 
-        private readonly FirebaseConnection firebaseConnection = new FirebaseConnection();
-        private FirestorePlayerRepository remoteRepository;
-        private LocalPlayerCacheStore localCacheStore;
-        private string authenticatedPlayerId = string.Empty;
+        private FirebasePlayerSession session;
+        private AutosaveScheduler autosaveScheduler;
+        private LocalCacheCoordinator localCache;
 
         private bool loadCompleted;
-        private bool dirty;
-        private bool isSaving;
         private bool isSubscribed;
         private bool suppressStateTracking;
-        private float nextSaveTime;
-        private bool localCacheDirty;
-        private float nextLocalCacheSaveTime;
 
         public bool IsReady
         {
             get
             {
-                return firebaseConnection.IsReady
+                return session != null
+                    && session.IsReady
                     && loadCompleted
-                    && !string.IsNullOrEmpty(authenticatedPlayerId)
                     && playerRuntimeContext != null;
             }
         }
@@ -70,18 +64,28 @@ namespace Game.Infrastructure.Persistence
                 return;
             }
 
-            InitializeLocalCacheStore();
+            session = new FirebasePlayerSession();
+            autosaveScheduler = new AutosaveScheduler(autosaveIntervalSeconds);
+
+            LocalPlayerCacheStore store = LocalPlayerCacheStore.Create(useLocalCache, localCacheFileName);
+            localCache = new LocalCacheCoordinator(store, autosaveScheduler.IntervalSeconds);
+
             if (clearLocalCacheOnStart)
             {
                 if (verboseLogging)
                 {
                     Debug.Log(
                         "[FirebasePlayerPersistenceRuntime] Clearing local cache on start: "
-                        + localCacheStore.CachePath,
+                        + localCache.CachePath,
                         this);
                 }
 
-                DeleteLocalCacheFile();
+                if (!localCache.TryDelete(out string error))
+                {
+                    Debug.LogWarning(
+                        "[FirebasePlayerPersistenceRuntime] Failed to delete local cache: " + error,
+                        this);
+                }
             }
 
             if (!forceFreshAnonymousIdentityOnStart)
@@ -113,7 +117,11 @@ namespace Game.Infrastructure.Persistence
                 return;
             }
 
-            bool initialized = await InitializeAndAuthenticateAsync();
+            bool initialized = await session.InitializeAsync(
+                forceFreshAnonymousIdentityOnStart,
+                verboseLogging,
+                this,
+                PlayersCollectionName);
             if (!initialized)
             {
                 return;
@@ -128,19 +136,22 @@ namespace Game.Infrastructure.Persistence
 
             await LoadOrCreatePlayerSnapshotAsync();
             loadCompleted = true;
-            FinalizeLoadState();
+            autosaveScheduler.ClearDirty(Time.unscaledTime);
         }
 
         private void Update()
         {
-            FlushLocalCacheIfDue();
+            if (localCache.ShouldFlush(Time.unscaledTime))
+            {
+                FlushLocalCacheNow();
+            }
 
-            if (!autoSave || !loadCompleted || !dirty || isSaving || !firebaseConnection.IsReady)
+            if (!autoSave || !loadCompleted || !session.IsReady)
             {
                 return;
             }
 
-            if (Time.unscaledTime < nextSaveTime)
+            if (!autosaveScheduler.ShouldSave(Time.unscaledTime))
             {
                 return;
             }
@@ -179,40 +190,34 @@ namespace Game.Infrastructure.Persistence
 
         public async Task<bool> SaveNowAsync()
         {
-            if (!CanSaveNow() || remoteRepository == null)
+            if (!IsReady)
             {
                 return false;
             }
 
-            isSaving = true;
+            autosaveScheduler.BeginSave();
             try
             {
                 PlayerProfileSnapshot snapshot = playerRuntimeContext.CreateSnapshot();
-                snapshot.playerId = authenticatedPlayerId;
+                snapshot.playerId = session.AuthenticatedPlayerId;
                 int snapshotRevision = snapshot.revision;
 
-                SaveSnapshotResult saveResult = await remoteRepository.SaveSnapshotAsync(
-                    authenticatedPlayerId,
+                SaveSnapshotResult saveResult = await session.Repository.SaveSnapshotAsync(
+                    session.AuthenticatedPlayerId,
                     snapshot,
                     false);
 
                 if (!saveResult.Success)
                 {
-                    Debug.LogWarning(
-                        "[FirebasePlayerPersistenceRuntime] Save failed: " + saveResult.ErrorMessage,
-                        this);
-
-                    nextSaveTime = Time.unscaledTime + GetAutosaveIntervalSeconds();
+                    LogSaveFailure(saveResult);
+                    autosaveScheduler.RecordSaveFailure(Time.unscaledTime);
                     return false;
                 }
 
                 int currentRevision = playerRuntimeContext.Profile.Revision;
-                dirty = currentRevision > snapshotRevision;
-                if (dirty)
-                {
-                    nextSaveTime = Time.unscaledTime + GetAutosaveIntervalSeconds();
-                }
-                else
+                autosaveScheduler.RecordSaveSuccess(currentRevision, snapshotRevision, Time.unscaledTime);
+
+                if (currentRevision <= snapshotRevision)
                 {
                     PersistToLocalCache(snapshot);
                 }
@@ -221,7 +226,7 @@ namespace Game.Infrastructure.Persistence
             }
             finally
             {
-                isSaving = false;
+                autosaveScheduler.EndSave();
             }
         }
 
@@ -238,27 +243,20 @@ namespace Game.Infrastructure.Persistence
                     "Draw authority is not ready. Wait for Firebase load to complete.");
             }
 
-            if (remoteRepository == null)
-            {
-                return AuthoritativeDrawResult.Unavailable(
-                    "Draw authority repository is not available.");
-            }
-
             PlayerProfileSnapshot fallbackSnapshot = CreateSnapshotForInitialization();
-            fallbackSnapshot.playerId = authenticatedPlayerId;
+            fallbackSnapshot.playerId = session.AuthenticatedPlayerId;
 
-            AuthoritativeDrawResult drawResult = await remoteRepository.ExecuteDrawAsync(
-                authenticatedPlayerId,
+            AuthoritativeDrawResult drawResult = await session.Repository.ExecuteDrawAsync(
+                session.AuthenticatedPlayerId,
                 fallbackSnapshot,
                 request);
 
             if (drawResult.Snapshot != null)
             {
-                drawResult.Snapshot.playerId = authenticatedPlayerId;
+                drawResult.Snapshot.playerId = session.AuthenticatedPlayerId;
                 LoadSnapshotWithoutTracking(drawResult.Snapshot);
                 PersistToLocalCache(drawResult.Snapshot);
-                dirty = false;
-                nextSaveTime = Time.unscaledTime + GetAutosaveIntervalSeconds();
+                autosaveScheduler.ClearDirty(Time.unscaledTime);
             }
 
             return drawResult;
@@ -278,75 +276,35 @@ namespace Game.Infrastructure.Persistence
                     "Village upgrade authority is not ready. Wait for Firebase load to complete.");
             }
 
-            if (remoteRepository == null)
-            {
-                return AuthoritativeVillageUpgradeResult.Unavailable(
-                    "Village upgrade authority repository is not available.");
-            }
-
             PlayerProfileSnapshot fallbackSnapshot = CreateSnapshotForInitialization();
-            fallbackSnapshot.playerId = authenticatedPlayerId;
+            fallbackSnapshot.playerId = session.AuthenticatedPlayerId;
 
             AuthoritativeVillageUpgradeResult upgradeResult =
-                await remoteRepository.ExecuteVillageUpgradeAsync(
-                    authenticatedPlayerId,
+                await session.Repository.ExecuteVillageUpgradeAsync(
+                    session.AuthenticatedPlayerId,
                     fallbackSnapshot,
                     request);
 
             if (upgradeResult.Snapshot != null)
             {
-                upgradeResult.Snapshot.playerId = authenticatedPlayerId;
+                upgradeResult.Snapshot.playerId = session.AuthenticatedPlayerId;
                 LoadSnapshotWithoutTracking(upgradeResult.Snapshot);
                 PersistToLocalCache(upgradeResult.Snapshot);
-                dirty = false;
-                nextSaveTime = Time.unscaledTime + GetAutosaveIntervalSeconds();
+                autosaveScheduler.ClearDirty(Time.unscaledTime);
             }
 
             return upgradeResult;
         }
 
-        private bool CanSaveNow()
-        {
-            return IsReady;
-        }
-
-        private float GetAutosaveIntervalSeconds()
-        {
-            if (autosaveIntervalSeconds < 0.25f)
-            {
-                return 0.25f;
-            }
-
-            return autosaveIntervalSeconds;
-        }
-
-        private async Task<bool> InitializeAndAuthenticateAsync()
-        {
-            bool initialized = await firebaseConnection.InitializeAndAuthenticateAsync(
-                forceFreshAnonymousIdentityOnStart,
-                verboseLogging,
-                this);
-            if (!initialized)
-            {
-                return false;
-            }
-
-            authenticatedPlayerId = firebaseConnection.AuthenticatedPlayerId;
-            remoteRepository = new FirestorePlayerRepository(
-                firebaseConnection.Firestore,
-                PlayersCollectionName);
-            return true;
-        }
-
         private async Task LoadOrCreatePlayerSnapshotAsync()
         {
-            if (!firebaseConnection.IsReady || playerRuntimeContext == null || remoteRepository == null)
+            if (!session.IsReady || playerRuntimeContext == null)
             {
                 return;
             }
 
             PlayerProfileSnapshot localSnapshot = CreateSnapshotForInitialization();
-            localSnapshot.playerId = authenticatedPlayerId;
+            localSnapshot.playerId = session.AuthenticatedPlayerId;
 
             if (forceFreshAnonymousIdentityOnStart)
             {
@@ -363,8 +321,8 @@ namespace Game.Infrastructure.Persistence
 
                 if (createRemoteDocumentIfMissing)
                 {
-                    SaveSnapshotResult savedFresh = await remoteRepository.SaveSnapshotAsync(
-                        authenticatedPlayerId,
+                    SaveSnapshotResult savedFresh = await session.Repository.SaveSnapshotAsync(
+                        session.AuthenticatedPlayerId,
                         localSnapshot,
                         true);
                     if (!savedFresh.Success)
@@ -372,7 +330,7 @@ namespace Game.Infrastructure.Persistence
                         Debug.LogWarning(
                             "[FirebasePlayerPersistenceRuntime] Failed to persist fresh profile to remote after force-fresh start.",
                             this);
-                        MarkDirty();
+                        autosaveScheduler.MarkDirty(Time.unscaledTime);
                     }
                 }
 
@@ -380,7 +338,7 @@ namespace Game.Infrastructure.Persistence
             }
 
             RemoteSnapshotLoadResult loadResult =
-                await remoteRepository.LoadSnapshotAsync(authenticatedPlayerId);
+                await session.Repository.LoadSnapshotAsync(session.AuthenticatedPlayerId);
 
             if (loadResult.Status == RemoteSnapshotLoadStatus.Found)
             {
@@ -420,8 +378,8 @@ namespace Game.Infrastructure.Persistence
 
             if (createRemoteDocumentIfMissing)
             {
-                SaveSnapshotResult saveResult = await remoteRepository.SaveSnapshotAsync(
-                    authenticatedPlayerId,
+                SaveSnapshotResult saveResult = await session.Repository.SaveSnapshotAsync(
+                    session.AuthenticatedPlayerId,
                     localSnapshot,
                     true);
                 if (!saveResult.Success)
@@ -429,13 +387,75 @@ namespace Game.Infrastructure.Persistence
                     Debug.LogWarning(
                         "[FirebasePlayerPersistenceRuntime] Failed to create initial remote profile.",
                         this);
-                    MarkDirty();
+                    autosaveScheduler.MarkDirty(Time.unscaledTime);
                 }
                 else
                 {
                     PersistToLocalCache(localSnapshot);
                 }
             }
+        }
+
+        private void TryLoadFromLocalCache()
+        {
+            if (!localCache.IsEnabled || playerRuntimeContext == null)
+            {
+                return;
+            }
+
+            if (localCache.TryLoadSnapshot(out PlayerProfileSnapshot snapshot, out string error))
+            {
+                LoadSnapshotWithoutTracking(snapshot);
+
+                if (verboseLogging)
+                {
+                    Debug.Log(
+                        "[FirebasePlayerPersistenceRuntime] Loaded local cache snapshot. Revision="
+                        + snapshot.revision
+                        + ".",
+                        this);
+                }
+                return;
+            }
+
+            if (!string.IsNullOrEmpty(error))
+            {
+                Debug.LogWarning(
+                    "[FirebasePlayerPersistenceRuntime] Failed to load local cache: " + error,
+                    this);
+            }
+        }
+
+        private bool PersistToLocalCache(PlayerProfileSnapshot snapshot)
+        {
+            if (snapshot == null)
+            {
+                return false;
+            }
+
+            if (!localCache.TryPersistSnapshot(snapshot, out string error))
+            {
+                if (!string.IsNullOrEmpty(error))
+                {
+                    Debug.LogWarning(
+                        "[FirebasePlayerPersistenceRuntime] Failed to persist local cache: " + error,
+                        this);
+                }
+                return false;
+            }
+
+            return true;
+        }
+
+        private void FlushLocalCacheNow()
+        {
+            if (!localCache.IsEnabled || playerRuntimeContext == null)
+            {
+                return;
+            }
+
+            PlayerProfileSnapshot snapshot = CreateSnapshotForInitialization();
+            PersistToLocalCache(snapshot);
         }
 
         private void HandlePlayerStateChanged()
@@ -445,14 +465,14 @@ namespace Game.Infrastructure.Persistence
                 return;
             }
 
-            MarkLocalCacheDirty();
+            localCache.MarkDirty(Time.unscaledTime);
 
             if (!loadCompleted)
             {
                 return;
             }
 
-            MarkDirty();
+            autosaveScheduler.MarkDirty(Time.unscaledTime);
         }
 
         private void SubscribeToPlayerState()
@@ -484,134 +504,6 @@ namespace Game.Infrastructure.Persistence
                 out playerRuntimeContext);
         }
 
-        private void InitializeLocalCacheStore()
-        {
-            localCacheStore = LocalPlayerCacheStore.Create(useLocalCache, localCacheFileName);
-        }
-
-        private void TryLoadFromLocalCache()
-        {
-            if (localCacheStore == null || playerRuntimeContext == null)
-            {
-                return;
-            }
-
-            if (localCacheStore.TryLoadSnapshot(out PlayerProfileSnapshot snapshot, out string error))
-            {
-                LoadSnapshotWithoutTracking(snapshot);
-
-                if (verboseLogging)
-                {
-                    Debug.Log(
-                        "[FirebasePlayerPersistenceRuntime] Loaded local cache snapshot. Revision="
-                        + snapshot.revision
-                        + ".",
-                        this);
-                }
-                return;
-            }
-
-            if (!string.IsNullOrEmpty(error))
-            {
-                Debug.LogWarning(
-                    "[FirebasePlayerPersistenceRuntime] Failed to load local cache: " + error,
-                    this);
-            }
-        }
-
-        private void DeleteLocalCacheFile()
-        {
-            if (localCacheStore == null)
-            {
-                return;
-            }
-
-            if (!localCacheStore.TryDelete(out string error))
-            {
-                Debug.LogWarning(
-                    "[FirebasePlayerPersistenceRuntime] Failed to delete local cache: " + error,
-                    this);
-            }
-        }
-
-        private bool PersistToLocalCacheFromCurrentState()
-        {
-            if (localCacheStore == null || !localCacheStore.IsEnabled || playerRuntimeContext == null)
-            {
-                return false;
-            }
-
-            PlayerProfileSnapshot snapshot = CreateSnapshotForInitialization();
-            return PersistToLocalCache(snapshot);
-        }
-
-        private bool PersistToLocalCache(PlayerProfileSnapshot snapshot)
-        {
-            if (localCacheStore == null || !localCacheStore.IsEnabled || snapshot == null)
-            {
-                return false;
-            }
-
-            if (!localCacheStore.TryPersistSnapshot(snapshot, out string error))
-            {
-                Debug.LogWarning(
-                    "[FirebasePlayerPersistenceRuntime] Failed to persist local cache: " + error,
-                    this);
-                return false;
-            }
-
-            localCacheDirty = false;
-            return true;
-        }
-
-        private void MarkDirty()
-        {
-            if (dirty)
-            {
-                return;
-            }
-
-            dirty = true;
-            nextSaveTime = Time.unscaledTime + GetAutosaveIntervalSeconds();
-        }
-
-        private void MarkLocalCacheDirty()
-        {
-            if (localCacheStore == null || !localCacheStore.IsEnabled)
-            {
-                return;
-            }
-
-            localCacheDirty = true;
-            nextLocalCacheSaveTime = Time.unscaledTime + GetAutosaveIntervalSeconds();
-        }
-
-        private void FlushLocalCacheIfDue()
-        {
-            if (!localCacheDirty || Time.unscaledTime < nextLocalCacheSaveTime)
-            {
-                return;
-            }
-
-            FlushLocalCacheNow();
-        }
-
-        private void FlushLocalCacheNow()
-        {
-            if (!localCacheDirty)
-            {
-                return;
-            }
-
-            PersistToLocalCacheFromCurrentState();
-        }
-
-        private void FinalizeLoadState()
-        {
-            dirty = false;
-            nextSaveTime = Time.unscaledTime + GetAutosaveIntervalSeconds();
-        }
-
         private PlayerProfileSnapshot CreateSnapshotForInitialization()
         {
             suppressStateTracking = true;
@@ -636,6 +528,22 @@ namespace Game.Infrastructure.Persistence
             {
                 suppressStateTracking = false;
             }
+        }
+
+        private void LogSaveFailure(SaveSnapshotResult result)
+        {
+            if (result.IsConflict)
+            {
+                Debug.LogWarning(
+                    "[FirebasePlayerPersistenceRuntime] Save conflict (server revision ahead): "
+                    + result.ErrorMessage,
+                    this);
+                return;
+            }
+
+            Debug.LogWarning(
+                "[FirebasePlayerPersistenceRuntime] Save failed: " + result.ErrorMessage,
+                this);
         }
     }
 }

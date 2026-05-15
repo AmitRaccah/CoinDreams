@@ -7,7 +7,7 @@ using Game.Domain.Village;
 
 namespace Game.Infrastructure.Persistence
 {
-    public sealed class FirestorePlayerRepository
+    public sealed class FirestorePlayerRepository : IPlayerRepository
     {
         private readonly FirebaseFirestore firestore;
         private readonly string playersCollectionName;
@@ -83,22 +83,44 @@ namespace Game.Infrastructure.Persistence
             PlayerProfileSnapshot snapshotToPersist = CloneSnapshot(snapshot);
             snapshotToPersist.playerId = normalizedPlayerId;
 
+            DocumentReference playerDocument = GetPlayerDocument(normalizedPlayerId);
+
             try
             {
-                DocumentReference playerDocument = GetPlayerDocument(normalizedPlayerId);
-                FirestorePlayerSaveDocument firestoreDocument =
-                    CreateFirestoreDocument(snapshotToPersist);
-
-                if (createIfMissing)
+                return await firestore.RunTransactionAsync(async transaction =>
                 {
-                    await playerDocument.SetAsync(firestoreDocument, SetOptions.MergeAll);
-                }
-                else
-                {
-                    await playerDocument.SetAsync(firestoreDocument);
-                }
+                    DocumentSnapshot existing = await transaction.GetSnapshotAsync(playerDocument);
 
-                return SaveSnapshotResult.Ok();
+                    if (existing != null && existing.Exists)
+                    {
+                        if (TryConvertDocumentToSnapshot(
+                                existing,
+                                normalizedPlayerId,
+                                out PlayerProfileSnapshot serverSnapshot,
+                                out _))
+                        {
+                            if (snapshotToPersist.revision < serverSnapshot.revision)
+                            {
+                                return SaveSnapshotResult.Conflict(
+                                    "Server revision is ahead. server="
+                                    + serverSnapshot.revision
+                                    + " client="
+                                    + snapshotToPersist.revision);
+                            }
+                        }
+
+                        transaction.Set(playerDocument, CreateFirestoreDocument(snapshotToPersist));
+                        return SaveSnapshotResult.Ok();
+                    }
+
+                    if (!createIfMissing)
+                    {
+                        return SaveSnapshotResult.Fail("Document does not exist.");
+                    }
+
+                    transaction.Set(playerDocument, CreateFirestoreDocument(snapshotToPersist));
+                    return SaveSnapshotResult.Ok();
+                });
             }
             catch (Exception exception)
             {

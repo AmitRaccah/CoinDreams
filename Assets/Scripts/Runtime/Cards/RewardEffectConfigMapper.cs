@@ -1,50 +1,29 @@
+using System.Collections.Generic;
 using Game.Config.Cards;
 using Game.Domain.Cards;
-using Game.Domain.Cards.Effects;
 
 namespace Game.Runtime.Cards
 {
     internal static class RewardEffectConfigMapper
     {
+        private static readonly Dictionary<RewardEffectType, AuthoritativeDrawEffectType> configToAuthoritative =
+            new Dictionary<RewardEffectType, AuthoritativeDrawEffectType>
+            {
+                { RewardEffectType.AddCoins, AuthoritativeDrawEffectType.AddCoins },
+                { RewardEffectType.AddEnergy, AuthoritativeDrawEffectType.AddEnergy },
+                { RewardEffectType.LaunchMinigame, AuthoritativeDrawEffectType.LaunchMinigame }
+            };
+
         public static bool IsSupported(RewardEffectType effectType)
         {
-            return effectType == RewardEffectType.AddCoins
-                || effectType == RewardEffectType.AddEnergy
-                || effectType == RewardEffectType.LaunchMinigame
-                || effectType == RewardEffectType.DoubleNextDraw;
+            return configToAuthoritative.ContainsKey(effectType);
         }
 
         public static bool TryMapToAuthoritativeType(
             RewardEffectType sourceType,
             out AuthoritativeDrawEffectType mappedType)
         {
-            mappedType = AuthoritativeDrawEffectType.AddCoins;
-
-            if (sourceType == RewardEffectType.AddCoins)
-            {
-                mappedType = AuthoritativeDrawEffectType.AddCoins;
-                return true;
-            }
-
-            if (sourceType == RewardEffectType.AddEnergy)
-            {
-                mappedType = AuthoritativeDrawEffectType.AddEnergy;
-                return true;
-            }
-
-            if (sourceType == RewardEffectType.LaunchMinigame)
-            {
-                mappedType = AuthoritativeDrawEffectType.LaunchMinigame;
-                return true;
-            }
-
-            if (sourceType == RewardEffectType.DoubleNextDraw)
-            {
-                mappedType = AuthoritativeDrawEffectType.DoubleNextDraw;
-                return true;
-            }
-
-            return false;
+            return configToAuthoritative.TryGetValue(sourceType, out mappedType);
         }
 
         public static bool TryCreateRuntimeEffect(
@@ -58,31 +37,18 @@ namespace Game.Runtime.Cards
                 return false;
             }
 
-            if (config.EffectType == RewardEffectType.AddCoins)
+            AuthoritativeDrawEffectType authoritativeType;
+            if (!TryMapToAuthoritativeType(config.EffectType, out authoritativeType))
             {
-                effect = new AddResourceEffect(RewardResourceType.Currency, config.IntValue);
-                return true;
+                return false;
             }
 
-            if (config.EffectType == RewardEffectType.AddEnergy)
-            {
-                effect = new AddResourceEffect(RewardResourceType.Energy, config.IntValue);
-                return true;
-            }
+            AuthoritativeDrawEffectDefinition definition = new AuthoritativeDrawEffectDefinition(
+                authoritativeType,
+                config.IntValue,
+                config.StringValue);
 
-            if (config.EffectType == RewardEffectType.LaunchMinigame)
-            {
-                effect = new LaunchMinigameEffect(config.StringValue);
-                return true;
-            }
-
-            if (config.EffectType == RewardEffectType.DoubleNextDraw)
-            {
-                effect = new DoubleNextDrawEffect();
-                return true;
-            }
-
-            return false;
+            return AuthoritativeEffectRegistry.TryCreate(definition, out effect);
         }
     }
 }

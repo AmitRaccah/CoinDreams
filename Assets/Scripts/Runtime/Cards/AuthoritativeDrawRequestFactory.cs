@@ -7,7 +7,7 @@ namespace Game.Runtime.Cards
 {
     public sealed class AuthoritativeDrawRequestFactory
     {
-        public AuthoritativeDrawRequest Create(int drawCost, CardDeckSO deckConfig)
+        public AuthoritativeDrawRequest Create(int drawCost, int requestedMultiplier, CardDeckSO deckConfig)
         {
             List<AuthoritativeDrawCardDefinition> cards =
                 new List<AuthoritativeDrawCardDefinition>();
@@ -43,7 +43,7 @@ namespace Game.Runtime.Cards
                 cards.Add(CreateFallbackCard());
             }
 
-            return new AuthoritativeDrawRequest(drawCost, cards.ToArray());
+            return new AuthoritativeDrawRequest(drawCost, requestedMultiplier, cards.ToArray());
         }
 
         private static AuthoritativeDrawCardDefinition CreateFallbackCard()

@@ -34,23 +34,14 @@ namespace Game.Domain.Cards
                 return false;
             }
 
-            context.BeginDraw();
-
-            try
+            int i;
+            for (i = 0; i < drawnCard.Effects.Length; i++)
             {
-                int i;
-                for (i = 0; i < drawnCard.Effects.Length; i++)
+                IRewardEffect effect = drawnCard.Effects[i];
+                if (effect != null)
                 {
-                    IRewardEffect effect = drawnCard.Effects[i];
-                    if (effect != null)
-                    {
-                        effect.Apply(context);
-                    }
+                    effect.Apply(context);
                 }
-            }
-            finally
-            {
-                context.EndDraw();
             }
 
             return true;

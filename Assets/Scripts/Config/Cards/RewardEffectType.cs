@@ -4,7 +4,6 @@ namespace Game.Config.Cards
     {
         AddCoins = 0,
         AddEnergy = 1,
-        LaunchMinigame = 2,
-        DoubleNextDraw = 3
+        LaunchMinigame = 2
     }
 }

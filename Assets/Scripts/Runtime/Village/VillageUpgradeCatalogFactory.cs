@@ -1,4 +1,5 @@
 using System;
+using Game.Config.Village;
 using Game.Domain.Village;
 
 namespace Game.Runtime.Village

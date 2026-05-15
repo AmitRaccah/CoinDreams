@@ -6,9 +6,7 @@ namespace Game.Domain.Cards
         private readonly Game.Domain.Economy.CurrencyService currency;
         private readonly Game.Domain.Cards.DrawModifiersService modifiers;
         private readonly Game.Domain.Minigames.IMinigameLauncher minigames;
-
-        private int currentDrawMultiplier;
-        private bool scaledResourceRewardApplied;
+        private readonly int drawMultiplier;
 
         public RewardContext(
             Game.Domain.Energy.EnergyService energy,
@@ -20,8 +18,7 @@ namespace Game.Domain.Cards
             this.currency = currency;
             this.modifiers = modifiers;
             this.minigames = minigames;
-            currentDrawMultiplier = 1;
-            scaledResourceRewardApplied = false;
+            drawMultiplier = modifiers.GetCurrentDrawMultiplier();
         }
 
         public Game.Domain.Energy.EnergyService Energy
@@ -44,20 +41,6 @@ namespace Game.Domain.Cards
             get { return minigames; }
         }
 
-        public void BeginDraw()
-        {
-            modifiers.BeginDraw();
-            currentDrawMultiplier = modifiers.GetCurrentDrawMultiplier();
-            scaledResourceRewardApplied = false;
-        }
-
-        public void EndDraw()
-        {
-            modifiers.CompleteDraw(scaledResourceRewardApplied);
-            currentDrawMultiplier = 1;
-            scaledResourceRewardApplied = false;
-        }
-
         public void AddToResource(RewardResourceType resourceType, int baseAmount)
         {
             if (baseAmount == 0)
@@ -65,19 +48,17 @@ namespace Game.Domain.Cards
                 return;
             }
 
-            int scaledAmount = ScaleAmount(baseAmount, currentDrawMultiplier);
+            int scaledAmount = ScaleAmount(baseAmount, drawMultiplier);
 
             if (resourceType == RewardResourceType.Currency)
             {
                 currency.Add(scaledAmount);
-                scaledResourceRewardApplied = true;
                 return;
             }
 
             if (resourceType == RewardResourceType.Energy)
             {
                 energy.Add(scaledAmount);
-                scaledResourceRewardApplied = true;
             }
         }
 

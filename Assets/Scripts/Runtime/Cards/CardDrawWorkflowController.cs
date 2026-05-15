@@ -1,5 +1,3 @@
-using System;
-using System.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Serialization;
 
@@ -24,12 +22,24 @@ namespace Game.Runtime.Cards
         private IDrawGameActions drawGameActions;
         private ICameraTransitionService cameraTransitionService;
         private IDrawAnimator drawAnimator;
+
         private readonly CardDrawWorkflowStateMachine workflowState =
             new CardDrawWorkflowStateMachine();
+
+        private DrawWorkflowExecutor executor;
 
         private void Awake()
         {
             ResolveDependencies();
+            ValidateDependencies();
+            executor = new DrawWorkflowExecutor(
+                cameraTransitionService,
+                drawAnimator,
+                drawGameActions,
+                workflowState,
+                cardBoardAnchor,
+                cityViewAnchor,
+                this);
         }
 
         public async void OnDrawButtonClicked()
@@ -42,13 +52,13 @@ namespace Game.Runtime.Cards
 
             if (action == DrawWorkflowAction.MoveToBoard)
             {
-                await MoveCameraToBoardAsync();
+                await executor.MoveCameraToBoardAsync();
                 return;
             }
 
             if (action == DrawWorkflowAction.Draw)
             {
-                await ExecuteDrawAsync();
+                await executor.ExecuteDrawAsync();
             }
         }
 
@@ -59,119 +69,7 @@ namespace Game.Runtime.Cards
                 return;
             }
 
-            await ReturnToCityAsync();
-        }
-
-        private async Task MoveCameraToBoardAsync()
-        {
-            if (cameraTransitionService == null || cardBoardAnchor == null)
-            {
-                Debug.LogWarning("[CardDrawWorkflowController] Missing camera transition service or board anchor.", this);
-                workflowState.CompleteMoveToBoard(false);
-                return;
-            }
-
-            try
-            {
-                await cameraTransitionService.StartTransitionAsync(cardBoardAnchor);
-                workflowState.CompleteMoveToBoard(true);
-            }
-            catch (OperationCanceledException)
-            {
-                workflowState.CompleteMoveToBoard(false);
-            }
-            catch (Exception exception)
-            {
-                Debug.LogError("[CardDrawWorkflowController] Failed to move camera to board: " + exception.Message, this);
-                workflowState.CompleteMoveToBoard(false);
-            }
-        }
-
-        private async Task ExecuteDrawAsync()
-        {
-            if (drawGameActions == null)
-            {
-                Debug.LogWarning("[CardDrawWorkflowController] Missing draw game actions dependency.", this);
-                workflowState.CompleteDraw();
-                return;
-            }
-
-            try
-            {
-                if (drawAnimator != null && drawAnimator.HasAnimation)
-                {
-                    await drawAnimator.PlayDrawAnimationAsync();
-                }
-
-                await drawGameActions.TryDrawAsync();
-            }
-            catch (OperationCanceledException)
-            {
-                // Ignore cancellation during teardown/disable.
-            }
-            catch (Exception exception)
-            {
-                Debug.LogError("[CardDrawWorkflowController] Failed to execute draw: " + exception.Message, this);
-            }
-            finally
-            {
-                workflowState.CompleteDraw();
-            }
-        }
-
-        private async Task ReturnToCityAsync()
-        {
-            if (cameraTransitionService == null || cityViewAnchor == null)
-            {
-                Debug.LogWarning("[CardDrawWorkflowController] Missing camera transition service or city anchor.", this);
-                workflowState.CompleteReturn();
-                return;
-            }
-
-            try
-            {
-                await cameraTransitionService.StartTransitionAsync(cityViewAnchor);
-            }
-            catch (OperationCanceledException)
-            {
-                // Ignore cancellation during teardown/disable.
-            }
-            catch (Exception exception)
-            {
-                Debug.LogError("[CardDrawWorkflowController] Failed to return camera to city: " + exception.Message, this);
-            }
-            finally
-            {
-                workflowState.CompleteReturn();
-            }
-        }
-
-        private void ValidateDependencies()
-        {
-            if (drawGameActions == null)
-            {
-                Debug.LogWarning("[CardDrawWorkflowController] Draw game actions dependency is not assigned.", this);
-            }
-
-            if (cameraTransitionService == null)
-            {
-                Debug.LogWarning("[CardDrawWorkflowController] Camera transition service dependency is not assigned.", this);
-            }
-
-            if (cardBoardAnchor == null)
-            {
-                Debug.LogWarning("[CardDrawWorkflowController] CardBoardAnchor is not assigned.", this);
-            }
-
-            if (cityViewAnchor == null)
-            {
-                Debug.LogWarning("[CardDrawWorkflowController] CityViewAnchor is not assigned.", this);
-            }
-
-            if (drawAnimatorSource != null && drawAnimator == null)
-            {
-                Debug.LogWarning("[CardDrawWorkflowController] Draw animator source does not implement IDrawAnimator.", this);
-            }
+            await executor.ReturnToCityAsync();
         }
 
         private void ResolveDependencies()
@@ -205,8 +103,44 @@ namespace Game.Runtime.Cards
             {
                 drawAnimator = GetComponent<IDrawAnimator>();
             }
+        }
 
-            ValidateDependencies();
+        private void ValidateDependencies()
+        {
+            if (drawGameActions == null)
+            {
+                Debug.LogWarning(
+                    "[CardDrawWorkflowController] Draw game actions dependency is not assigned.",
+                    this);
+            }
+
+            if (cameraTransitionService == null)
+            {
+                Debug.LogWarning(
+                    "[CardDrawWorkflowController] Camera transition service dependency is not assigned.",
+                    this);
+            }
+
+            if (cardBoardAnchor == null)
+            {
+                Debug.LogWarning(
+                    "[CardDrawWorkflowController] CardBoardAnchor is not assigned.",
+                    this);
+            }
+
+            if (cityViewAnchor == null)
+            {
+                Debug.LogWarning(
+                    "[CardDrawWorkflowController] CityViewAnchor is not assigned.",
+                    this);
+            }
+
+            if (drawAnimatorSource != null && drawAnimator == null)
+            {
+                Debug.LogWarning(
+                    "[CardDrawWorkflowController] Draw animator source does not implement IDrawAnimator.",
+                    this);
+            }
         }
     }
 }

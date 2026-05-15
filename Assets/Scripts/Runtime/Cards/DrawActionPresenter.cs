@@ -124,7 +124,7 @@ namespace Game.Runtime.Cards
 
         private void RebuildDrawRequest()
         {
-            drawRequest = drawRequestFactory.Create(drawCost, deckConfig);
+            drawRequest = drawRequestFactory.Create(drawCost, 1, deckConfig);
         }
 
         private void ResolveDrawResultSink()

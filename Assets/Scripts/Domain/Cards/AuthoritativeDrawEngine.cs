@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Game.Domain.Cards.Effects;
 using Game.Domain.Minigames;
 using Game.Domain.Player;
 using Game.Domain.Time;
@@ -45,7 +44,7 @@ namespace Game.Domain.Cards
                     "Failed to create profile from snapshot: " + exception.Message);
             }
 
-            DrawModifiersService modifiers = new DrawModifiersService(snapshot.pendingDrawMultiplier);
+            DrawModifiersService modifiers = new DrawModifiersService(request.RequestedMultiplier);
             CapturingMinigameLauncher minigameLauncher = new CapturingMinigameLauncher();
 
             RewardContext rewardContext = new RewardContext(
@@ -55,17 +54,17 @@ namespace Game.Domain.Cards
                 minigameLauncher);
 
             ICardDeck deck = new WeightedRandomCardDeck(runtimeCards);
+            int effectiveDrawCost = ScaleDrawCost(request.DrawCost, request.RequestedMultiplier);
             DrawCardUseCase drawUseCase = new DrawCardUseCase(
                 profile.Energy,
                 deck,
                 rewardContext,
-                request.DrawCost);
+                effectiveDrawCost);
 
             CardDefinition drawnCard;
             bool success = drawUseCase.TryDraw(out drawnCard);
 
             PlayerProfileSnapshot updatedSnapshot = profile.CreateSnapshot();
-            updatedSnapshot.pendingDrawMultiplier = modifiers.GetPendingMultiplier();
 
             if (!success)
             {
@@ -135,9 +134,8 @@ namespace Game.Domain.Cards
             int i;
             for (i = 0; i < sourceEffects.Length; i++)
             {
-                AuthoritativeDrawEffectDefinition sourceEffect = sourceEffects[i];
                 IRewardEffect effect;
-                if (!TryCreateEffect(sourceEffect, out effect))
+                if (!AuthoritativeEffectRegistry.TryCreate(sourceEffects[i], out effect))
                 {
                     continue;
                 }
@@ -153,42 +151,20 @@ namespace Game.Domain.Cards
             return effects.ToArray();
         }
 
-        private static bool TryCreateEffect(
-            AuthoritativeDrawEffectDefinition sourceEffect,
-            out IRewardEffect effect)
+        private static int ScaleDrawCost(int drawCost, int multiplier)
         {
-            effect = null;
-
-            if (sourceEffect == null)
+            if (drawCost <= 0)
             {
-                return false;
+                return 0;
             }
 
-            if (sourceEffect.EffectType == AuthoritativeDrawEffectType.AddCoins)
+            long scaled = (long)drawCost * multiplier;
+            if (scaled > int.MaxValue)
             {
-                effect = new AddResourceEffect(RewardResourceType.Currency, sourceEffect.IntValue);
-                return true;
+                return int.MaxValue;
             }
 
-            if (sourceEffect.EffectType == AuthoritativeDrawEffectType.AddEnergy)
-            {
-                effect = new AddResourceEffect(RewardResourceType.Energy, sourceEffect.IntValue);
-                return true;
-            }
-
-            if (sourceEffect.EffectType == AuthoritativeDrawEffectType.LaunchMinigame)
-            {
-                effect = new LaunchMinigameEffect(sourceEffect.StringValue);
-                return true;
-            }
-
-            if (sourceEffect.EffectType == AuthoritativeDrawEffectType.DoubleNextDraw)
-            {
-                effect = new DoubleNextDrawEffect();
-                return true;
-            }
-
-            return false;
+            return (int)scaled;
         }
 
         private static PlayerProfileSnapshot CopySnapshot(PlayerProfileSnapshot snapshot)
@@ -207,7 +183,6 @@ namespace Game.Domain.Cards
             copy.storageMaxEnergy = snapshot.storageMaxEnergy;
             copy.regenIntervalSeconds = snapshot.regenIntervalSeconds;
             copy.lastRegenUtcTicks = snapshot.lastRegenUtcTicks;
-            copy.pendingDrawMultiplier = snapshot.pendingDrawMultiplier;
             copy.villageLevels = CopyIntArray(snapshot.villageLevels);
             copy.processedImpactIds = CopyStringArray(snapshot.processedImpactIds);
             return copy;

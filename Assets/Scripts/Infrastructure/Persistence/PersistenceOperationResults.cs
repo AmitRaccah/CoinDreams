@@ -53,22 +53,29 @@ namespace Game.Infrastructure.Persistence
     public readonly struct SaveSnapshotResult
     {
         public readonly bool Success;
+        public readonly bool IsConflict;
         public readonly string ErrorMessage;
 
-        public SaveSnapshotResult(bool success, string errorMessage)
+        public SaveSnapshotResult(bool success, bool isConflict, string errorMessage)
         {
             Success = success;
+            IsConflict = isConflict;
             ErrorMessage = errorMessage ?? string.Empty;
         }
 
         public static SaveSnapshotResult Ok()
         {
-            return new SaveSnapshotResult(true, string.Empty);
+            return new SaveSnapshotResult(true, false, string.Empty);
         }
 
         public static SaveSnapshotResult Fail(string message)
         {
-            return new SaveSnapshotResult(false, message);
+            return new SaveSnapshotResult(false, false, message);
+        }
+
+        public static SaveSnapshotResult Conflict(string message)
+        {
+            return new SaveSnapshotResult(false, true, message);
         }
     }
 }

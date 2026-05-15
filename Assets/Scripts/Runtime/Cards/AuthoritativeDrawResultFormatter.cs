@@ -4,40 +4,43 @@ namespace Game.Runtime.Cards
 {
     public static class AuthoritativeDrawResultFormatter
     {
+        private const string DefaultFailureMessage = "Draw failed.";
+
         public static string Format(AuthoritativeDrawResult result)
         {
             if (result == null)
             {
-                return "Draw failed.";
+                return DefaultFailureMessage;
             }
 
-            if (result.Status == AuthoritativeDrawStatus.Success)
+            return result.Status switch
             {
-                string message = "Card: " + result.DrawnCardId;
-                if (!string.IsNullOrEmpty(result.MinigameId))
-                {
-                    message += " | Minigame: " + result.MinigameId;
-                }
+                AuthoritativeDrawStatus.Success => FormatSuccess(result),
+                AuthoritativeDrawStatus.NotEnoughEnergy => "Not enough energy.",
+                AuthoritativeDrawStatus.DeckEmpty => "Deck is empty.",
+                _ => FallbackMessage(result)
+            };
+        }
 
-                return message;
-            }
-
-            if (result.Status == AuthoritativeDrawStatus.NotEnoughEnergy)
+        private static string FormatSuccess(AuthoritativeDrawResult result)
+        {
+            string message = "Card: " + result.DrawnCardId;
+            if (!string.IsNullOrEmpty(result.MinigameId))
             {
-                return "Not enough energy.";
+                message += " | Minigame: " + result.MinigameId;
             }
 
-            if (result.Status == AuthoritativeDrawStatus.DeckEmpty)
-            {
-                return "Deck is empty.";
-            }
+            return message;
+        }
 
+        private static string FallbackMessage(AuthoritativeDrawResult result)
+        {
             if (!string.IsNullOrEmpty(result.Message))
             {
                 return result.Message;
             }
 
-            return "Draw failed.";
+            return DefaultFailureMessage;
         }
     }
 }
