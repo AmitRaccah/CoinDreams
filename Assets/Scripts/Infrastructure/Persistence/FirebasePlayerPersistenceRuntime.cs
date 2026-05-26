@@ -4,10 +4,12 @@ using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Game.Domain.Cards;
 using Game.Domain.Player;
+using Game.Domain.Time;
 using Game.Domain.Village;
 using Game.Runtime;
 using Game.Runtime.Player;
 using UnityEngine;
+using VContainer;
 
 namespace Game.Infrastructure.Persistence
 {
@@ -44,6 +46,8 @@ namespace Game.Infrastructure.Persistence
         private LocalCacheCoordinator? localCache;
         private readonly SemaphoreSlim saveLock = new SemaphoreSlim(1, 1);
 
+        [Inject] private ITimeProvider? injectedTimeProvider;
+
         private bool loadCompleted;
         private bool isSubscribed;
         private bool suppressStateTracking;
@@ -69,8 +73,8 @@ namespace Game.Infrastructure.Persistence
                 return;
             }
 
-            // TODO Phase 1.3: replace direct `new TimeProvider()` with VContainer [Inject] of ITimeProvider.
-            session = new FirebasePlayerSession(new Game.Domain.Time.TimeProvider());
+            // Session creation deferred to StartAsync so VContainer can inject ITimeProvider
+            // between Awake and Start. injectedTimeProvider is the field receiving the dependency.
             autosaveScheduler = new AutosaveScheduler(autosaveIntervalSeconds);
 
             LocalPlayerCacheStore store = LocalPlayerCacheStore.Create(useLocalCache, localCacheFileName);
@@ -125,7 +129,12 @@ namespace Game.Infrastructure.Persistence
                 return;
             }
 
-            bool initialized = await session!.InitializeAsync(
+            // VContainer injects between Awake and Start, so the fallback only runs when this
+            // runtime is instantiated outside any LifetimeScope (e.g. ad-hoc editor scenes).
+            ITimeProvider timeProvider = injectedTimeProvider ?? new Game.Domain.Time.TimeProvider();
+            session = new FirebasePlayerSession(timeProvider);
+
+            bool initialized = await session.InitializeAsync(
                 forceFreshAnonymousIdentityOnStart,
                 verboseLogging,
                 this,
