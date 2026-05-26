@@ -7,7 +7,7 @@ using UnityEngine.Serialization;
 namespace Game.Runtime.Cards
 {
     [DisallowMultipleComponent]
-    public sealed class CardDrawWorkflowController : MonoBehaviour
+    public sealed class CardDrawWorkflowController : MonoBehaviour, ICardDrawWorkflowCommands
     {
         [Header("Dependencies")]
         [FormerlySerializedAs("drawGamePresenter")]
@@ -44,11 +44,15 @@ namespace Game.Runtime.Cards
                 this);
         }
 
-        public void OnDrawButtonClicked() =>
+        public void RequestDraw() =>
             this.HandleDrawClickedAsync().Forget(ex => Debug.LogException(ex, this));
 
-        public void OnReturnButtonClicked() =>
+        public void RequestReturn() =>
             this.HandleReturnClickedAsync().Forget(ex => Debug.LogException(ex, this));
+
+        // Legacy aliases kept for Unity Button OnClick wiring in existing scene assets.
+        public void OnDrawButtonClicked() => this.RequestDraw();
+        public void OnReturnButtonClicked() => this.RequestReturn();
 
         private async UniTask HandleDrawClickedAsync()
         {

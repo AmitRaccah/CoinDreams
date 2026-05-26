@@ -1,14 +1,18 @@
+#nullable enable
+
 using UnityEngine;
 using UnityEngine.UI;
-using Game.Runtime;
+using VContainer;
 
 namespace Game.Runtime.Cards
 {
     [DisallowMultipleComponent]
     public sealed class CardDrawHudInputBinder : MonoBehaviour
     {
-        [SerializeField] private Button drawButton;
-        [SerializeField] private Button returnButton;
+        [SerializeField] private Button? drawButton;
+        [SerializeField] private Button? returnButton;
+
+        [Inject] private ICardDrawWorkflowCommands? workflow;
 
         private bool wired;
 
@@ -29,30 +33,26 @@ namespace Game.Runtime.Cards
 
         private void HandleDraw()
         {
-            ICardDrawWorkflowCommands workflow = ResolveWorkflow();
-            if (workflow == null) return;
+            if (workflow == null)
+            {
+                Debug.LogWarning(
+                    "[CardDrawHudInputBinder] Workflow not injected. Is GameplayLifetimeScope active?",
+                    this);
+                return;
+            }
             workflow.RequestDraw();
         }
 
         private void HandleReturn()
         {
-            ICardDrawWorkflowCommands workflow = ResolveWorkflow();
-            if (workflow == null) return;
-            workflow.RequestReturn();
-        }
-
-        private ICardDrawWorkflowCommands ResolveWorkflow()
-        {
-            if (!RuntimeServiceResolver.TryResolveDrawWorkflowCommands(
-                    null, out ICardDrawWorkflowCommands commands, out _))
+            if (workflow == null)
             {
                 Debug.LogWarning(
-                    "[CardDrawHudInputBinder] No ICardDrawWorkflowCommands in scene. " +
-                    "Is 02_Gameplay loaded with a CardDrawWorkflowController?",
+                    "[CardDrawHudInputBinder] Workflow not injected. Is GameplayLifetimeScope active?",
                     this);
-                return null;
+                return;
             }
-            return commands;
+            workflow.RequestReturn();
         }
     }
 }

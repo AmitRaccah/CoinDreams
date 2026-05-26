@@ -1,5 +1,6 @@
 #nullable enable
 
+using Game.Runtime.Cards;
 using VContainer;
 using VContainer.Unity;
 
@@ -9,19 +10,19 @@ namespace Game.Composition
     {
         protected override void Configure(IContainerBuilder builder)
         {
-            // Gameplay scope: scene-local services. Inherits Persistent's bindings.
-            // Set this scope's Parent field to PersistentLifetimeScope in the inspector.
-            //
-            // Register here in upcoming phases:
+            // CardDrawWorkflowController is the live ICardDrawWorkflowCommands implementation.
+            builder.RegisterComponentInHierarchy<CardDrawWorkflowController>()
+                .As<ICardDrawWorkflowCommands>();
+
+            // CardDrawHudInputBinder receives [Inject] members via this registration.
+            builder.RegisterComponentInHierarchy<CardDrawHudInputBinder>();
+
+            // Upcoming phases will add here:
             //   - PlayerRuntimeContext (RegisterComponentInHierarchy)
-            //   - VillageUpgradeService + catalog
-            //   - DrawWorkflowExecutor + presenters (RegisterEntryPoint for IInitializable)
-            //   - Cards engine bindings
-            //
-            // Pattern reference:
-            //   builder.RegisterComponentInHierarchy<PlayerRuntimeContext>();
-            //   builder.Register<VillageUpgradeService>(Lifetime.Scoped);
-            //   builder.RegisterEntryPoint<DrawWorkflowExecutor>();
+            //   - DrawHudPresenter + DrawActionPresenter
+            //   - VillageUpgradeRuntime + AuthoritativeVillageUpgradeExecutor
+            //   - FirebasePlayerPersistenceRuntime re-exposure as
+            //     IAuthoritativeDrawService + IAuthoritativeVillageUpgradeService
         }
     }
 }
