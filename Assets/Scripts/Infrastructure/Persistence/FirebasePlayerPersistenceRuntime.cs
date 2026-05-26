@@ -69,7 +69,8 @@ namespace Game.Infrastructure.Persistence
                 return;
             }
 
-            session = new FirebasePlayerSession();
+            // TODO Phase 1.3: replace direct `new TimeProvider()` with VContainer [Inject] of ITimeProvider.
+            session = new FirebasePlayerSession(new Game.Domain.Time.TimeProvider());
             autosaveScheduler = new AutosaveScheduler(autosaveIntervalSeconds);
 
             LocalPlayerCacheStore store = LocalPlayerCacheStore.Create(useLocalCache, localCacheFileName);

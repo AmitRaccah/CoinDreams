@@ -12,15 +12,18 @@ namespace Game.Infrastructure.Persistence
     {
         private readonly FirebaseFirestore firestore;
         private readonly string playersCollectionName;
+        private readonly ITimeProvider timeProvider;
 
         public FirestorePlayerRepository(
             FirebaseFirestore firestore,
-            string playersCollectionName)
+            string playersCollectionName,
+            ITimeProvider timeProvider)
         {
             this.firestore = firestore;
             this.playersCollectionName = string.IsNullOrWhiteSpace(playersCollectionName)
                 ? "players"
                 : playersCollectionName.Trim();
+            this.timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         }
 
         public async Task<RemoteSnapshotLoadResult> LoadSnapshotAsync(string playerId)
@@ -172,7 +175,6 @@ namespace Game.Infrastructure.Persistence
                 normalizedPlayerId);
 
             DocumentReference playerDocument = GetPlayerDocument(normalizedPlayerId);
-            ITimeProvider timeProvider = new TimeProvider();
 
             try
             {
@@ -249,7 +251,6 @@ namespace Game.Infrastructure.Persistence
                 normalizedPlayerId);
 
             DocumentReference playerDocument = GetPlayerDocument(normalizedPlayerId);
-            ITimeProvider timeProvider = new TimeProvider();
 
             try
             {
@@ -332,7 +333,6 @@ namespace Game.Infrastructure.Persistence
 
             DocumentReference thiefDocument = GetPlayerDocument(normalizedThiefId);
             DocumentReference victimDocument = GetPlayerDocument(normalizedVictimId);
-            ITimeProvider timeProvider = new TimeProvider();
 
             try
             {

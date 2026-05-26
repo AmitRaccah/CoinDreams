@@ -1,4 +1,6 @@
+using System;
 using System.Threading.Tasks;
+using Game.Domain.Time;
 using UnityEngine;
 
 namespace Game.Infrastructure.Persistence
@@ -8,7 +10,13 @@ namespace Game.Infrastructure.Persistence
     public sealed class FirebasePlayerSession
     {
         private readonly FirebaseConnection connection = new FirebaseConnection();
+        private readonly ITimeProvider timeProvider;
         private IPlayerRepository repository;
+
+        public FirebasePlayerSession(ITimeProvider timeProvider)
+        {
+            this.timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
+        }
 
         public bool IsReady
         {
@@ -42,7 +50,8 @@ namespace Game.Infrastructure.Persistence
 
             repository = new FirestorePlayerRepository(
                 connection.Firestore,
-                playersCollectionName);
+                playersCollectionName,
+                timeProvider);
             return true;
         }
     }
