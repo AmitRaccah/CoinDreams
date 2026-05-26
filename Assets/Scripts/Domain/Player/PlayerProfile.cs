@@ -9,14 +9,18 @@ namespace Game.Domain.Player
 {
     public sealed class PlayerProfile
     {
+        private const int MaxProcessedImpactIds = 10000;
+
         private readonly string playerId;
         private readonly CurrencyService currency;
         private readonly EnergyService energy;
         private readonly VillageProgressState village;
-        private readonly HashSet<string> processedImpactIds;
+        private readonly HashSet<string> processedImpactSet;
+        private readonly Queue<string> processedImpactOrder;
         private int revision;
         private int batchedMutationDepth;
         private bool hasBatchedMutation;
+        private bool isInitializing;
         public event Action Changed;
 
         public PlayerProfile(
@@ -42,14 +46,17 @@ namespace Game.Domain.Player
                 throw new ArgumentNullException("village");
             }
 
+            isInitializing = true;
             this.playerId = NormalizePlayerId(playerId);
             this.currency = currency;
             this.energy = energy;
             this.village = village;
             this.revision = revision < 0 ? 0 : revision;
-            processedImpactIds = new HashSet<string>(StringComparer.Ordinal);
+            processedImpactSet = new HashSet<string>(StringComparer.Ordinal);
+            processedImpactOrder = new Queue<string>();
             SeedProcessedImpactIds(seedProcessedImpactIds);
             SubscribeToStateChanges();
+            isInitializing = false;
         }
 
         public string PlayerId
@@ -89,7 +96,12 @@ namespace Game.Domain.Player
                 return false;
             }
 
-            return processedImpactIds.Contains(impactId.Trim());
+            return processedImpactSet.Contains(impactId.Trim());
+        }
+
+        public void ApplyTimeBasedRegen()
+        {
+            energy.ApplyRegen();
         }
 
         public PlayerImpactApplyResult ApplyExternalImpact(PlayerImpact impact)
@@ -98,36 +110,49 @@ namespace Game.Domain.Player
             {
                 return PlayerImpactApplyResult.Invalid(
                     string.Empty,
-                    PlayerImpactType.CoinsStolen,
+                    PlayerImpactType.None,
                     0,
                     "Impact is null.");
             }
 
-            if (string.IsNullOrWhiteSpace(impact.impactId))
+            PlayerImpact safeImpact = impact.Clone();
+
+            if (string.IsNullOrWhiteSpace(safeImpact.impactId))
             {
                 return PlayerImpactApplyResult.Invalid(
                     string.Empty,
-                    impact.impactType,
-                    impact.amount,
+                    safeImpact.impactType,
+                    safeImpact.amount,
                     "ImpactId is required.");
             }
 
-            string impactId = impact.impactId.Trim();
-            if (processedImpactIds.Contains(impactId))
+            string impactId = safeImpact.impactId.Trim();
+            if (processedImpactSet.Contains(impactId))
             {
-                return PlayerImpactApplyResult.Duplicate(impactId, impact.impactType);
+                return PlayerImpactApplyResult.Duplicate(impactId, safeImpact.impactType);
             }
 
-            if (impact.amount <= 0)
+            if (safeImpact.amount <= 0)
             {
                 return PlayerImpactApplyResult.Invalid(
                     impactId,
-                    impact.impactType,
-                    impact.amount,
+                    safeImpact.impactType,
+                    safeImpact.amount,
                     "Impact amount must be greater than zero.");
             }
 
-            int requestedAmount = impact.amount;
+            if (safeImpact.impactType == PlayerImpactType.None)
+            {
+                return PlayerImpactApplyResult.Invalid(
+                    impactId,
+                    safeImpact.impactType,
+                    safeImpact.amount,
+                    "Unsupported impact type.");
+            }
+
+            RecordProcessedImpactId(impactId);
+
+            int requestedAmount = safeImpact.amount;
             int appliedAmount = 0;
             int coinsDelta = 0;
             int energyDelta = 0;
@@ -135,7 +160,9 @@ namespace Game.Domain.Player
             BeginMutationBatch();
             try
             {
-                if (impact.impactType == PlayerImpactType.CoinsGranted)
+                energy.ApplyRegen();
+
+                if (safeImpact.impactType == PlayerImpactType.CoinsGranted)
                 {
                     int beforeCoins = currency.GetCoins();
                     currency.Add(requestedAmount);
@@ -143,12 +170,12 @@ namespace Game.Domain.Player
                     appliedAmount = afterCoins - beforeCoins;
                     coinsDelta = appliedAmount;
                 }
-                else if (impact.impactType == PlayerImpactType.CoinsStolen)
+                else if (safeImpact.impactType == PlayerImpactType.CoinsStolen)
                 {
                     appliedAmount = SpendCoinsUpTo(requestedAmount);
                     coinsDelta = -appliedAmount;
                 }
-                else if (impact.impactType == PlayerImpactType.EnergyGranted)
+                else if (safeImpact.impactType == PlayerImpactType.EnergyGranted)
                 {
                     int beforeEnergy = energy.GetCurrent();
                     energy.Add(requestedAmount);
@@ -156,22 +183,32 @@ namespace Game.Domain.Player
                     appliedAmount = afterEnergy - beforeEnergy;
                     energyDelta = appliedAmount;
                 }
-                else if (impact.impactType == PlayerImpactType.EnergyRemoved)
+                else if (safeImpact.impactType == PlayerImpactType.EnergyRemoved)
                 {
                     appliedAmount = SpendEnergyUpTo(requestedAmount);
                     energyDelta = -appliedAmount;
                 }
                 else
                 {
+                    UnrecordProcessedImpactId(impactId);
                     return PlayerImpactApplyResult.Invalid(
                         impactId,
-                        impact.impactType,
+                        safeImpact.impactType,
                         requestedAmount,
                         "Unsupported impact type.");
                 }
 
-                processedImpactIds.Add(impactId);
+                if (coinsDelta == 0 && energyDelta == 0)
+                {
+                    return PlayerImpactApplyResult.AppliedNothing(impactId, safeImpact.impactType);
+                }
+
                 MarkChanged();
+            }
+            catch
+            {
+                UnrecordProcessedImpactId(impactId);
+                throw;
             }
             finally
             {
@@ -181,7 +218,7 @@ namespace Game.Domain.Player
             bool isPartial = appliedAmount < requestedAmount;
             return PlayerImpactApplyResult.Applied(
                 impactId,
-                impact.impactType,
+                safeImpact.impactType,
                 requestedAmount,
                 appliedAmount,
                 coinsDelta,
@@ -189,10 +226,12 @@ namespace Game.Domain.Player
                 isPartial);
         }
 
+        /// <summary>
+        /// Pure snapshot accessor. Does NOT mutate state and does NOT bump revision.
+        /// Callers wanting up-to-date regen must invoke <see cref="ApplyTimeBasedRegen"/> first.
+        /// </summary>
         public PlayerProfileSnapshot CreateSnapshot()
         {
-            energy.ApplyRegen();
-
             PlayerProfileSnapshot snapshot = new PlayerProfileSnapshot();
             snapshot.playerId = playerId;
             snapshot.revision = revision;
@@ -202,7 +241,7 @@ namespace Game.Domain.Player
             snapshot.regenIntervalSeconds = energy.GetRegenIntervalSeconds();
             snapshot.lastRegenUtcTicks = energy.GetLastRegenTicks();
             snapshot.villageLevels = village.GetLevelsSnapshot();
-            snapshot.processedImpactIds = CreateProcessedImpactIdsSnapshot(processedImpactIds);
+            snapshot.processedImpactIds = CreateProcessedImpactIdsSnapshot();
             return snapshot;
         }
 
@@ -218,11 +257,14 @@ namespace Game.Domain.Player
                 throw new ArgumentNullException("timeProvider");
             }
 
-            CurrencyService currency = new CurrencyService();
-            if (snapshot.coins > 0)
+            NormalizeSnapshot(snapshot);
+
+            if (snapshot.coins < 0)
             {
-                currency.Add(snapshot.coins);
+                throw new InvalidOperationException("Snapshot has negative coins balance: " + snapshot.coins);
             }
+
+            CurrencyService currency = new CurrencyService(snapshot.coins);
 
             EnergyService energy = new EnergyService(
                 timeProvider,
@@ -241,6 +283,19 @@ namespace Game.Domain.Player
                 village,
                 snapshot.revision,
                 snapshot.processedImpactIds);
+        }
+
+        private static void NormalizeSnapshot(PlayerProfileSnapshot snapshot)
+        {
+            if (snapshot.regenMaxEnergy <= 0)
+            {
+                snapshot.regenMaxEnergy = 10;
+            }
+
+            if (snapshot.regenIntervalSeconds <= 0)
+            {
+                snapshot.regenIntervalSeconds = 300;
+            }
         }
 
         private int SpendCoinsUpTo(int requestedAmount)
@@ -287,17 +342,48 @@ namespace Game.Domain.Player
             return spendAmount;
         }
 
-        private static string[] CreateProcessedImpactIdsSnapshot(HashSet<string> source)
+        private void RecordProcessedImpactId(string impactId)
         {
-            if (source == null || source.Count == 0)
+            if (!processedImpactSet.Add(impactId))
+            {
+                return;
+            }
+
+            processedImpactOrder.Enqueue(impactId);
+
+            while (processedImpactOrder.Count > MaxProcessedImpactIds)
+            {
+                string oldest = processedImpactOrder.Dequeue();
+                processedImpactSet.Remove(oldest);
+            }
+        }
+
+        private void UnrecordProcessedImpactId(string impactId)
+        {
+            if (!processedImpactSet.Remove(impactId))
+            {
+                return;
+            }
+
+            int count = processedImpactOrder.Count;
+            for (int i = 0; i < count; i++)
+            {
+                string current = processedImpactOrder.Dequeue();
+                if (!string.Equals(current, impactId, StringComparison.Ordinal))
+                {
+                    processedImpactOrder.Enqueue(current);
+                }
+            }
+        }
+
+        private string[] CreateProcessedImpactIdsSnapshot()
+        {
+            if (processedImpactOrder.Count == 0)
             {
                 return Array.Empty<string>();
             }
 
-            string[] snapshot = new string[source.Count];
-            source.CopyTo(snapshot);
-            Array.Sort(snapshot, StringComparer.Ordinal);
-            return snapshot;
+            return processedImpactOrder.ToArray();
         }
 
         private void SeedProcessedImpactIds(IEnumerable<string> source)
@@ -314,7 +400,17 @@ namespace Game.Domain.Player
                     continue;
                 }
 
-                processedImpactIds.Add(impactId.Trim());
+                string normalized = impactId.Trim();
+                if (processedImpactSet.Add(normalized))
+                {
+                    processedImpactOrder.Enqueue(normalized);
+                }
+
+                while (processedImpactOrder.Count > MaxProcessedImpactIds)
+                {
+                    string oldest = processedImpactOrder.Dequeue();
+                    processedImpactSet.Remove(oldest);
+                }
             }
         }
 
@@ -364,6 +460,11 @@ namespace Game.Domain.Player
 
         private void MarkChanged()
         {
+            if (isInitializing)
+            {
+                return;
+            }
+
             if (batchedMutationDepth > 0)
             {
                 hasBatchedMutation = true;

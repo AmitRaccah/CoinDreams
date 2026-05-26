@@ -120,20 +120,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 1492714025782943568}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: Game.Runtime.Cards.CardDrawWorkflowController,
-          Assembly-CSharp
-        m_MethodName: OnDrawButtonClicked
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &500629063445001888
 GameObject:
   m_ObjectHideFlags: 0
@@ -769,20 +756,7 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 2849092726832041058}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls:
-      - m_Target: {fileID: 0}
-        m_TargetAssemblyTypeName: Game.Runtime.Cards.CardDrawWorkflowController,
-          Assembly-CSharp
-        m_MethodName: OnReturnButtonClicked
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
+      m_Calls: []
 --- !u!1 &3013943143612553274
 GameObject:
   m_ObjectHideFlags: 0
@@ -968,6 +942,7 @@ GameObject:
   - component: {fileID: 1683904600831233119}
   - component: {fileID: 8017271956769385525}
   - component: {fileID: 7942220905482278329}
+  - component: {fileID: 5856878264190374597}
   m_Layer: 5
   m_Name: ActionPanel
   m_TagString: Untagged
@@ -1063,6 +1038,20 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &5856878264190374597
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4544398004835018988}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 27695fc9528903c4482eab2b032d6d21, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Cards.CardDrawHudInputBinder
+  drawButton: {fileID: 5987882957946903662}
+  returnButton: {fileID: 5509983350445994210}
 --- !u!1 &5627066788288842023
 GameObject:
   m_ObjectHideFlags: 0

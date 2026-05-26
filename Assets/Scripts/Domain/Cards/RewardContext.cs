@@ -1,3 +1,5 @@
+using System;
+
 namespace Game.Domain.Cards
 {
     public sealed class RewardContext
@@ -14,6 +16,11 @@ namespace Game.Domain.Cards
             Game.Domain.Cards.DrawModifiersService modifiers,
             Game.Domain.Minigames.IMinigameLauncher minigames)
         {
+            if (modifiers == null)
+            {
+                throw new ArgumentNullException(nameof(modifiers));
+            }
+
             this.energy = energy;
             this.currency = currency;
             this.modifiers = modifiers;

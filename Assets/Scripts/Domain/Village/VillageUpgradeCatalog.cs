@@ -117,6 +117,11 @@ namespace Game.Domain.Village
             return costs.Length;
         }
 
+        public int GetMaxLevel(int buildingIndex)
+        {
+            return GetMaxLevelByIndex(buildingIndex);
+        }
+
         public bool TryGetUpgradeCostForLevel(int buildingIndex, int currentLevel, out int upgradeCost)
         {
             upgradeCost = 0;

@@ -65,7 +65,7 @@ namespace Game.Runtime.Village
         {
             if (isUpgradeInFlight)
             {
-                return BuildingUpgradeResult.InvalidConfiguration(buildingIndex);
+                return BuildingUpgradeResult.AlreadyInProgress(buildingIndex);
             }
 
             if (catalogData == null)
@@ -83,16 +83,21 @@ namespace Game.Runtime.Village
                 Debug.LogWarning(
                     "[VillageUpgradeRuntime] Authoritative village upgrade service is not ready.",
                     logContext);
-                return BuildingUpgradeResult.InvalidConfiguration(buildingIndex);
+                return AuthoritativeVillageUpgradeResult
+                    .Unavailable("Authoritative village upgrade service is not ready.")
+                    .UpgradeResult;
             }
 
             isUpgradeInFlight = true;
             try
             {
+                string upgradeRequestId = System.Guid.NewGuid().ToString("N");
+
                 AuthoritativeVillageUpgradeRequest request =
                     AuthoritativeVillageUpgradeRequest.ForBuildingIndex(
                         catalogData,
-                        buildingIndex);
+                        buildingIndex,
+                        upgradeRequestId);
 
                 AuthoritativeVillageUpgradeResult authoritativeResult =
                     await upgradeService.TryUpgradeAsync(request);
@@ -118,7 +123,9 @@ namespace Game.Runtime.Village
                     "[VillageUpgradeRuntime] Authoritative village upgrade failed: "
                     + exception.Message,
                     logContext);
-                return BuildingUpgradeResult.InvalidConfiguration(buildingIndex);
+                return AuthoritativeVillageUpgradeResult
+                    .Error(exception.Message)
+                    .UpgradeResult;
             }
             finally
             {

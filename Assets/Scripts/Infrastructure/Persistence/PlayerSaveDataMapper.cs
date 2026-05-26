@@ -15,6 +15,7 @@ namespace Game.Infrastructure.Persistence
             PlayerSaveData saveData = new PlayerSaveData();
             saveData.playerId = snapshot.playerId;
             saveData.revision = snapshot.revision;
+            saveData.schemaVersion = FirestorePlayerSaveDocument.CurrentSchemaVersion;
             saveData.coins = snapshot.coins;
             saveData.currentEnergy = snapshot.currentEnergy;
             saveData.maxEnergy = snapshot.regenMaxEnergy;
@@ -30,6 +31,17 @@ namespace Game.Infrastructure.Persistence
             if (saveData == null)
             {
                 throw new ArgumentNullException("saveData");
+            }
+
+            // Schema version is read for logging only; no migration logic yet.
+            if (saveData.schemaVersion != 0
+                && saveData.schemaVersion != FirestorePlayerSaveDocument.CurrentSchemaVersion)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    "[PlayerSaveDataMapper] Schema version mismatch. saved="
+                    + saveData.schemaVersion
+                    + " current="
+                    + FirestorePlayerSaveDocument.CurrentSchemaVersion);
             }
 
             PlayerProfileSnapshot snapshot = new PlayerProfileSnapshot();

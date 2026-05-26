@@ -61,7 +61,8 @@ namespace Game.Runtime.Cards
 
             if (drawActionPresenter == null)
             {
-                drawActionPresenter = gameObject.AddComponent<DrawActionPresenter>();
+                Debug.LogError("DrawActionPresenter missing on " + gameObject.name, this);
+                return;
             }
 
             if (drawHudPresenter == null)
@@ -71,7 +72,8 @@ namespace Game.Runtime.Cards
 
             if (drawHudPresenter == null)
             {
-                drawHudPresenter = gameObject.AddComponent<DrawHudPresenter>();
+                Debug.LogError("DrawHudPresenter missing on " + gameObject.name, this);
+                return;
             }
 
             drawActions = drawActionPresenter;

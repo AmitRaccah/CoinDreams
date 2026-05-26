@@ -5,14 +5,13 @@ namespace Game.Infrastructure.Persistence
     public sealed class LocalCacheCoordinator
     {
         private readonly LocalPlayerCacheStore store;
-        private readonly float flushIntervalSeconds;
-        private bool dirty;
-        private float nextFlushTime;
+        private bool savePending;
 
         public LocalCacheCoordinator(LocalPlayerCacheStore store, float flushIntervalSeconds)
         {
             this.store = store;
-            this.flushIntervalSeconds = flushIntervalSeconds;
+            // flushIntervalSeconds is intentionally unused: throttle-based flush was removed
+            // because save cadence is owned by the runtime (autosave scheduler + lifecycle hooks).
         }
 
         public bool IsEnabled
@@ -23,6 +22,11 @@ namespace Game.Infrastructure.Persistence
         public string CachePath
         {
             get { return store == null ? string.Empty : store.CachePath; }
+        }
+
+        public bool SavePending
+        {
+            get { return savePending; }
         }
 
         public bool TryLoadSnapshot(out PlayerProfileSnapshot snapshot, out string error)
@@ -52,7 +56,6 @@ namespace Game.Infrastructure.Persistence
                 return false;
             }
 
-            dirty = false;
             return true;
         }
 
@@ -67,20 +70,14 @@ namespace Game.Infrastructure.Persistence
             return store.TryDelete(out error);
         }
 
-        public void MarkDirty(float currentTime)
+        public void MarkPending()
         {
-            if (!IsEnabled)
-            {
-                return;
-            }
-
-            dirty = true;
-            nextFlushTime = currentTime + flushIntervalSeconds;
+            savePending = true;
         }
 
-        public bool ShouldFlush(float currentTime)
+        public void ClearPending()
         {
-            return dirty && currentTime >= nextFlushTime;
+            savePending = false;
         }
     }
 }

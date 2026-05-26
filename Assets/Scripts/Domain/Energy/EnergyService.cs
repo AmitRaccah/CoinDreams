@@ -3,7 +3,7 @@ using Game.Domain.Time;
 
 namespace Game.Domain.Energy
 {
-    public class EnergyService
+    public class EnergyService : IEnergyService
     {
         private readonly ITimeProvider timeProvider;
         private readonly EnergyRegenCalculator calculator;

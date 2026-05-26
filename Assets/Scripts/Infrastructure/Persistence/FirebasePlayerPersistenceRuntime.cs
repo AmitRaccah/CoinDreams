@@ -1,3 +1,4 @@
+using System.Threading;
 using System.Threading.Tasks;
 using Game.Domain.Cards;
 using Game.Domain.Player;
@@ -39,10 +40,12 @@ namespace Game.Infrastructure.Persistence
         private FirebasePlayerSession session;
         private AutosaveScheduler autosaveScheduler;
         private LocalCacheCoordinator localCache;
+        private readonly SemaphoreSlim saveLock = new SemaphoreSlim(1, 1);
 
         private bool loadCompleted;
         private bool isSubscribed;
         private bool suppressStateTracking;
+        private PlayerProfileSnapshot pendingLocalSnapshot;
 
         public bool IsReady
         {
@@ -141,11 +144,6 @@ namespace Game.Infrastructure.Persistence
 
         private void Update()
         {
-            if (localCache.ShouldFlush(Time.unscaledTime))
-            {
-                FlushLocalCacheNow();
-            }
-
             if (!autoSave || !loadCompleted || !session.IsReady)
             {
                 return;
@@ -178,14 +176,12 @@ namespace Game.Infrastructure.Persistence
 
         private void OnApplicationQuit()
         {
-            FlushLocalCacheNow();
-
-            if (!saveOnApplicationQuit)
-            {
-                return;
-            }
-
-            _ = SaveNowAsync();
+            // Mark a sentinel in the local cache so the next launch can reconcile:
+            // if local.savePending && local.revision > server.revision, push local.
+            // We deliberately avoid the fire-and-forget _ = SaveNowAsync() pattern here
+            // because the Unity quit pipeline does not await background tasks.
+            localCache.MarkPending();
+            FlushLocalCacheNow(markPending: true);
         }
 
         public async Task<bool> SaveNowAsync()
@@ -195,38 +191,47 @@ namespace Game.Infrastructure.Persistence
                 return false;
             }
 
-            autosaveScheduler.BeginSave();
+            await saveLock.WaitAsync();
             try
             {
-                PlayerProfileSnapshot snapshot = playerRuntimeContext.CreateSnapshot();
-                snapshot.playerId = session.AuthenticatedPlayerId;
-                int snapshotRevision = snapshot.revision;
-
-                SaveSnapshotResult saveResult = await session.Repository.SaveSnapshotAsync(
-                    session.AuthenticatedPlayerId,
-                    snapshot,
-                    false);
-
-                if (!saveResult.Success)
+                autosaveScheduler.BeginSave();
+                try
                 {
-                    LogSaveFailure(saveResult);
-                    autosaveScheduler.RecordSaveFailure(Time.unscaledTime);
-                    return false;
+                    PlayerProfileSnapshot snapshot = playerRuntimeContext.CreateSnapshot();
+                    snapshot.playerId = session.AuthenticatedPlayerId;
+                    int snapshotRevision = snapshot.revision;
+
+                    SaveSnapshotResult saveResult = await session.Repository.SaveSnapshotAsync(
+                        session.AuthenticatedPlayerId,
+                        snapshot,
+                        false);
+
+                    if (!saveResult.Success)
+                    {
+                        LogSaveFailure(saveResult);
+                        autosaveScheduler.RecordSaveFailure(Time.unscaledTime);
+                        return false;
+                    }
+
+                    int currentRevision = playerRuntimeContext.Profile.Revision;
+                    autosaveScheduler.RecordSaveSuccess(currentRevision, snapshotRevision, Time.unscaledTime);
+
+                    if (currentRevision <= snapshotRevision)
+                    {
+                        PersistToLocalCache(snapshot);
+                        localCache.ClearPending();
+                    }
+
+                    return true;
                 }
-
-                int currentRevision = playerRuntimeContext.Profile.Revision;
-                autosaveScheduler.RecordSaveSuccess(currentRevision, snapshotRevision, Time.unscaledTime);
-
-                if (currentRevision <= snapshotRevision)
+                finally
                 {
-                    PersistToLocalCache(snapshot);
+                    autosaveScheduler.EndSave();
                 }
-
-                return true;
             }
             finally
             {
-                autosaveScheduler.EndSave();
+                saveLock.Release();
             }
         }
 
@@ -243,23 +248,32 @@ namespace Game.Infrastructure.Persistence
                     "Draw authority is not ready. Wait for Firebase load to complete.");
             }
 
-            PlayerProfileSnapshot fallbackSnapshot = CreateSnapshotForInitialization();
-            fallbackSnapshot.playerId = session.AuthenticatedPlayerId;
-
-            AuthoritativeDrawResult drawResult = await session.Repository.ExecuteDrawAsync(
-                session.AuthenticatedPlayerId,
-                fallbackSnapshot,
-                request);
-
-            if (drawResult.Snapshot != null)
+            await saveLock.WaitAsync();
+            try
             {
-                drawResult.Snapshot.playerId = session.AuthenticatedPlayerId;
-                LoadSnapshotWithoutTracking(drawResult.Snapshot);
-                PersistToLocalCache(drawResult.Snapshot);
-                autosaveScheduler.ClearDirty(Time.unscaledTime);
-            }
+                PlayerProfileSnapshot fallbackSnapshot = CreateSnapshotForInitialization();
+                fallbackSnapshot.playerId = session.AuthenticatedPlayerId;
 
-            return drawResult;
+                AuthoritativeDrawResult drawResult = await session.Repository.ExecuteDrawAsync(
+                    session.AuthenticatedPlayerId,
+                    fallbackSnapshot,
+                    request);
+
+                if (drawResult.Snapshot != null)
+                {
+                    drawResult.Snapshot.playerId = session.AuthenticatedPlayerId;
+                    LoadSnapshotWithoutTracking(drawResult.Snapshot);
+                    PersistToLocalCache(drawResult.Snapshot);
+                    localCache.ClearPending();
+                    autosaveScheduler.ClearDirty(Time.unscaledTime);
+                }
+
+                return drawResult;
+            }
+            finally
+            {
+                saveLock.Release();
+            }
         }
 
         public async Task<AuthoritativeVillageUpgradeResult> TryUpgradeAsync(
@@ -276,24 +290,33 @@ namespace Game.Infrastructure.Persistence
                     "Village upgrade authority is not ready. Wait for Firebase load to complete.");
             }
 
-            PlayerProfileSnapshot fallbackSnapshot = CreateSnapshotForInitialization();
-            fallbackSnapshot.playerId = session.AuthenticatedPlayerId;
-
-            AuthoritativeVillageUpgradeResult upgradeResult =
-                await session.Repository.ExecuteVillageUpgradeAsync(
-                    session.AuthenticatedPlayerId,
-                    fallbackSnapshot,
-                    request);
-
-            if (upgradeResult.Snapshot != null)
+            await saveLock.WaitAsync();
+            try
             {
-                upgradeResult.Snapshot.playerId = session.AuthenticatedPlayerId;
-                LoadSnapshotWithoutTracking(upgradeResult.Snapshot);
-                PersistToLocalCache(upgradeResult.Snapshot);
-                autosaveScheduler.ClearDirty(Time.unscaledTime);
-            }
+                PlayerProfileSnapshot fallbackSnapshot = CreateSnapshotForInitialization();
+                fallbackSnapshot.playerId = session.AuthenticatedPlayerId;
 
-            return upgradeResult;
+                AuthoritativeVillageUpgradeResult upgradeResult =
+                    await session.Repository.ExecuteVillageUpgradeAsync(
+                        session.AuthenticatedPlayerId,
+                        fallbackSnapshot,
+                        request);
+
+                if (upgradeResult.Snapshot != null)
+                {
+                    upgradeResult.Snapshot.playerId = session.AuthenticatedPlayerId;
+                    LoadSnapshotWithoutTracking(upgradeResult.Snapshot);
+                    PersistToLocalCache(upgradeResult.Snapshot);
+                    localCache.ClearPending();
+                    autosaveScheduler.ClearDirty(Time.unscaledTime);
+                }
+
+                return upgradeResult;
+            }
+            finally
+            {
+                saveLock.Release();
+            }
         }
 
         private async Task LoadOrCreatePlayerSnapshotAsync()
@@ -342,14 +365,57 @@ namespace Game.Infrastructure.Persistence
 
             if (loadResult.Status == RemoteSnapshotLoadStatus.Found)
             {
-                LoadSnapshotWithoutTracking(loadResult.Snapshot);
-                PersistToLocalCache(loadResult.Snapshot);
+                PlayerProfileSnapshot serverSnapshot = loadResult.Snapshot;
+
+                // Reconcile: if last quit left a pending local snapshot with a higher revision,
+                // push it back to the server before adopting either side.
+                if (pendingLocalSnapshot != null
+                    && pendingLocalSnapshot.revision > serverSnapshot.revision)
+                {
+                    if (verboseLogging)
+                    {
+                        Debug.Log(
+                            "[FirebasePlayerPersistenceRuntime] Reconciling pending local snapshot. local="
+                            + pendingLocalSnapshot.revision
+                            + " server="
+                            + serverSnapshot.revision,
+                            this);
+                    }
+
+                    pendingLocalSnapshot.playerId = session.AuthenticatedPlayerId;
+                    LoadSnapshotWithoutTracking(pendingLocalSnapshot);
+
+                    SaveSnapshotResult pushResult = await session.Repository.SaveSnapshotAsync(
+                        session.AuthenticatedPlayerId,
+                        pendingLocalSnapshot,
+                        false);
+                    if (pushResult.Success)
+                    {
+                        PersistToLocalCache(pendingLocalSnapshot);
+                        localCache.ClearPending();
+                    }
+                    else
+                    {
+                        Debug.LogWarning(
+                            "[FirebasePlayerPersistenceRuntime] Failed to push pending local snapshot: "
+                            + pushResult.ErrorMessage,
+                            this);
+                    }
+
+                    pendingLocalSnapshot = null;
+                    return;
+                }
+
+                LoadSnapshotWithoutTracking(serverSnapshot);
+                PersistToLocalCache(serverSnapshot);
+                localCache.ClearPending();
+                pendingLocalSnapshot = null;
 
                 if (verboseLogging)
                 {
                     Debug.Log(
                         "[FirebasePlayerPersistenceRuntime] Loaded remote player snapshot. Revision="
-                        + loadResult.Snapshot.revision
+                        + serverSnapshot.revision
                         + ".",
                         this);
                 }
@@ -392,6 +458,7 @@ namespace Game.Infrastructure.Persistence
                 else
                 {
                     PersistToLocalCache(localSnapshot);
+                    localCache.ClearPending();
                 }
             }
         }
@@ -406,6 +473,11 @@ namespace Game.Infrastructure.Persistence
             if (localCache.TryLoadSnapshot(out PlayerProfileSnapshot snapshot, out string error))
             {
                 LoadSnapshotWithoutTracking(snapshot);
+
+                // Capture the snapshot for cross-launch reconciliation. The save-pending flag
+                // is read from PlayerSaveData via the cache store; we always remember the
+                // local revision and compare against the server snapshot in LoadOrCreate.
+                pendingLocalSnapshot = CloneSnapshotForPending(snapshot);
 
                 if (verboseLogging)
                 {
@@ -449,12 +521,25 @@ namespace Game.Infrastructure.Persistence
 
         private void FlushLocalCacheNow()
         {
+            FlushLocalCacheNow(markPending: false);
+        }
+
+        private void FlushLocalCacheNow(bool markPending)
+        {
             if (!localCache.IsEnabled || playerRuntimeContext == null)
             {
                 return;
             }
 
             PlayerProfileSnapshot snapshot = CreateSnapshotForInitialization();
+            // markPending is recorded on the coordinator already; the snapshot itself does not
+            // carry the flag, but the savePending field on the JSON record (read on next launch)
+            // is used by LoadOrCreate via the coordinator's SavePending getter and the loaded
+            // PlayerSaveData.savePending field. This keeps the seam in one place.
+            if (markPending)
+            {
+                localCache.MarkPending();
+            }
             PersistToLocalCache(snapshot);
         }
 
@@ -464,8 +549,6 @@ namespace Game.Infrastructure.Persistence
             {
                 return;
             }
-
-            localCache.MarkDirty(Time.unscaledTime);
 
             if (!loadCompleted)
             {
@@ -515,6 +598,17 @@ namespace Game.Infrastructure.Persistence
             {
                 suppressStateTracking = false;
             }
+        }
+
+        private static PlayerProfileSnapshot CloneSnapshotForPending(PlayerProfileSnapshot snapshot)
+        {
+            if (snapshot == null)
+            {
+                return null;
+            }
+
+            PlayerSaveData saveData = PlayerSaveDataMapper.ToSaveData(snapshot);
+            return PlayerSaveDataMapper.ToSnapshot(saveData);
         }
 
         private void LoadSnapshotWithoutTracking(PlayerProfileSnapshot snapshot)

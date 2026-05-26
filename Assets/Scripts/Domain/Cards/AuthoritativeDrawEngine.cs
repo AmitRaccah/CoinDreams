@@ -10,7 +10,9 @@ namespace Game.Domain.Cards
     {
         public static AuthoritativeDrawResult TryExecute(
             PlayerProfileSnapshot snapshot,
-            AuthoritativeDrawRequest request)
+            AuthoritativeDrawRequest request,
+            IRandomSource randomSource,
+            ITimeProvider timeProvider)
         {
             if (snapshot == null)
             {
@@ -22,26 +24,63 @@ namespace Game.Domain.Cards
                 return AuthoritativeDrawResult.Invalid("Draw request is null.");
             }
 
+            if (randomSource == null)
+            {
+                return AuthoritativeDrawResult.Invalid("Random source is null.");
+            }
+
+            if (timeProvider == null)
+            {
+                return AuthoritativeDrawResult.Invalid("Time provider is null.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.DrawId))
+            {
+                return AuthoritativeDrawResult.Invalid("Missing DrawId.");
+            }
+
             if (request.DrawCost < 0)
             {
                 return AuthoritativeDrawResult.Invalid("Draw cost must be zero or positive.");
             }
 
-            CardDefinition[] runtimeCards = BuildRuntimeCards(request.Cards);
-            if (runtimeCards.Length == 0)
+            if (ContainsDrawId(snapshot.processedImpactIds, request.DrawId))
             {
-                return AuthoritativeDrawResult.DeckEmpty(CopySnapshot(snapshot));
+                return AuthoritativeDrawResult.AlreadyProcessed(snapshot);
             }
 
-            PlayerProfile profile;
             try
             {
-                profile = PlayerProfile.FromSnapshot(snapshot, new TimeProvider());
+                return ExecuteCore(snapshot, request, randomSource, timeProvider);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (ArgumentException exception)
+            {
+                return AuthoritativeDrawResult.Invalid(exception.Message);
             }
             catch (Exception exception)
             {
-                return AuthoritativeDrawResult.Error(
-                    "Failed to create profile from snapshot: " + exception.Message);
+                return AuthoritativeDrawResult.Error(exception.Message);
+            }
+        }
+
+        private static AuthoritativeDrawResult ExecuteCore(
+            PlayerProfileSnapshot snapshot,
+            AuthoritativeDrawRequest request,
+            IRandomSource randomSource,
+            ITimeProvider timeProvider)
+        {
+            CardDefinition[] runtimeCards = BuildRuntimeCards(request.Cards);
+
+            PlayerProfile profile = PlayerProfile.FromSnapshot(snapshot, timeProvider);
+
+            if (runtimeCards.Length == 0)
+            {
+                PlayerProfileSnapshot emptySnapshot = profile.CreateSnapshot();
+                return AuthoritativeDrawResult.DeckEmpty(emptySnapshot);
             }
 
             DrawModifiersService modifiers = new DrawModifiersService(request.RequestedMultiplier);
@@ -53,7 +92,7 @@ namespace Game.Domain.Cards
                 modifiers,
                 minigameLauncher);
 
-            ICardDeck deck = new WeightedRandomCardDeck(runtimeCards);
+            ICardDeck deck = new WeightedRandomCardDeck(runtimeCards, randomSource);
             int effectiveDrawCost = ScaleDrawCost(request.DrawCost, request.RequestedMultiplier);
             DrawCardUseCase drawUseCase = new DrawCardUseCase(
                 profile.Energy,
@@ -71,11 +110,46 @@ namespace Game.Domain.Cards
                 return AuthoritativeDrawResult.NotEnoughEnergy(updatedSnapshot);
             }
 
+            StampDrawId(updatedSnapshot, request.DrawId);
+
             string cardId = drawnCard != null ? drawnCard.Id : string.Empty;
             return AuthoritativeDrawResult.Success(
                 updatedSnapshot,
                 cardId,
                 minigameLauncher.LastLaunchedMinigameId);
+        }
+
+        private static void StampDrawId(PlayerProfileSnapshot resultSnapshot, string drawId)
+        {
+            string[] processed = resultSnapshot.processedImpactIds ?? Array.Empty<string>();
+            if (Array.Exists(processed, x => x == drawId))
+            {
+                return;
+            }
+
+            string[] withDraw = new string[processed.Length + 1];
+            Array.Copy(processed, withDraw, processed.Length);
+            withDraw[processed.Length] = drawId;
+            resultSnapshot.processedImpactIds = withDraw;
+        }
+
+        private static bool ContainsDrawId(string[] processedImpactIds, string drawId)
+        {
+            if (processedImpactIds == null || processedImpactIds.Length == 0)
+            {
+                return false;
+            }
+
+            int i;
+            for (i = 0; i < processedImpactIds.Length; i++)
+            {
+                if (string.Equals(processedImpactIds[i], drawId, StringComparison.Ordinal))
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         private static CardDefinition[] BuildRuntimeCards(
@@ -106,7 +180,7 @@ namespace Game.Domain.Cards
                 int weight = sourceCard.Weight;
                 if (weight <= 0)
                 {
-                    weight = 1;
+                    continue;
                 }
 
                 IRewardEffect[] effects = BuildEffects(sourceCard.Effects);
@@ -165,50 +239,6 @@ namespace Game.Domain.Cards
             }
 
             return (int)scaled;
-        }
-
-        private static PlayerProfileSnapshot CopySnapshot(PlayerProfileSnapshot snapshot)
-        {
-            if (snapshot == null)
-            {
-                return null;
-            }
-
-            PlayerProfileSnapshot copy = new PlayerProfileSnapshot();
-            copy.playerId = snapshot.playerId;
-            copy.revision = snapshot.revision;
-            copy.coins = snapshot.coins;
-            copy.currentEnergy = snapshot.currentEnergy;
-            copy.regenMaxEnergy = snapshot.regenMaxEnergy;
-            copy.regenIntervalSeconds = snapshot.regenIntervalSeconds;
-            copy.lastRegenUtcTicks = snapshot.lastRegenUtcTicks;
-            copy.villageLevels = CopyIntArray(snapshot.villageLevels);
-            copy.processedImpactIds = CopyStringArray(snapshot.processedImpactIds);
-            return copy;
-        }
-
-        private static int[] CopyIntArray(int[] source)
-        {
-            if (source == null || source.Length == 0)
-            {
-                return Array.Empty<int>();
-            }
-
-            int[] copy = new int[source.Length];
-            Array.Copy(source, copy, source.Length);
-            return copy;
-        }
-
-        private static string[] CopyStringArray(string[] source)
-        {
-            if (source == null || source.Length == 0)
-            {
-                return Array.Empty<string>();
-            }
-
-            string[] copy = new string[source.Length];
-            Array.Copy(source, copy, source.Length);
-            return copy;
         }
 
         private sealed class CapturingMinigameLauncher : IMinigameLauncher

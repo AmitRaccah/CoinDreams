@@ -4,7 +4,8 @@ namespace Game.Domain.Player
     {
         Applied = 0,
         AppliedPartially = 1,
-        DuplicateIgnored = 2,
-        Invalid = 3
+        AppliedNothing = 2,
+        DuplicateIgnored = 3,
+        Invalid = 4
     }
 }

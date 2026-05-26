@@ -46,5 +46,26 @@ namespace Game.Domain.Village
         {
             return new BuildingUpgradeResult(BuildingUpgradeStatus.Success, buildingIndex, previousLevel, newLevel, cost);
         }
+
+        public static BuildingUpgradeResult AlreadyInProgress(int buildingIndex)
+        {
+            return new BuildingUpgradeResult(BuildingUpgradeStatus.AlreadyInProgress, buildingIndex, 0, 0, 0);
+        }
+
+        public static BuildingUpgradeResult ServiceUnavailable()
+        {
+            return new BuildingUpgradeResult(BuildingUpgradeStatus.ServiceUnavailable, -1, 0, 0, 0);
+        }
+
+        public static BuildingUpgradeResult UnexpectedError(string message)
+        {
+            // Message is intentionally not stored on the struct; callers surface it via the outer result.
+            return new BuildingUpgradeResult(BuildingUpgradeStatus.UnexpectedError, -1, 0, 0, 0);
+        }
+
+        public static BuildingUpgradeResult AlreadyApplied(int buildingIndex, int currentLevel)
+        {
+            return new BuildingUpgradeResult(BuildingUpgradeStatus.AlreadyApplied, buildingIndex, currentLevel, currentLevel, 0);
+        }
     }
 }

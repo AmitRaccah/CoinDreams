@@ -8,7 +8,8 @@ namespace Game.Domain.Village
     {
         public static AuthoritativeVillageUpgradeResult TryExecute(
             PlayerProfileSnapshot snapshot,
-            AuthoritativeVillageUpgradeRequest request)
+            AuthoritativeVillageUpgradeRequest request,
+            ITimeProvider timeProvider)
         {
             if (snapshot == null)
             {
@@ -20,6 +21,16 @@ namespace Game.Domain.Village
                 return AuthoritativeVillageUpgradeResult.Invalid("Upgrade request is null.");
             }
 
+            if (string.IsNullOrWhiteSpace(request.UpgradeRequestId))
+            {
+                return AuthoritativeVillageUpgradeResult.Invalid("Missing UpgradeRequestId.");
+            }
+
+            if (timeProvider == null)
+            {
+                return AuthoritativeVillageUpgradeResult.Invalid("Time provider is null.");
+            }
+
             if (request.Catalog == null
                 || request.Catalog.BuildingIds == null
                 || request.Catalog.UpgradeCostsByBuilding == null)
@@ -27,49 +38,139 @@ namespace Game.Domain.Village
                 return AuthoritativeVillageUpgradeResult.Invalid("Upgrade catalog is missing.");
             }
 
-            VillageUpgradeCatalog catalog;
             try
             {
-                catalog = new VillageUpgradeCatalog(
-                    request.Catalog.BuildingIds,
-                    request.Catalog.UpgradeCostsByBuilding);
+                VillageUpgradeCatalog catalog;
+                try
+                {
+                    catalog = new VillageUpgradeCatalog(
+                        request.Catalog.BuildingIds,
+                        request.Catalog.UpgradeCostsByBuilding);
+                }
+                catch (ArgumentException exception)
+                {
+                    return AuthoritativeVillageUpgradeResult.Invalid(
+                        "Invalid village upgrade catalog: " + exception.Message);
+                }
+
+                PlayerProfile profile;
+                try
+                {
+                    profile = PlayerProfile.FromSnapshot(snapshot, timeProvider);
+                }
+                catch (ArgumentException exception)
+                {
+                    return AuthoritativeVillageUpgradeResult.Invalid(
+                        "Failed to create profile from snapshot: " + exception.Message);
+                }
+
+                // TODO: revisit revision-suppression for capacity grows. EnsureVillageCapacity is a no-op when
+                // already at target length, so a fresh snapshot with matching length will not bump revision.
+                profile.EnsureVillageCapacity(request.Catalog.BuildingIds.Length);
+                profile.Village.ClampToCatalog(catalog);
+
+                int probedBuildingIndex = ResolveBuildingIndex(catalog, request);
+
+                if (profile.HasProcessedImpact(request.UpgradeRequestId))
+                {
+                    int currentLevel = probedBuildingIndex >= 0
+                        ? profile.Village.GetLevelOrDefault(probedBuildingIndex)
+                        : 0;
+
+                    return AuthoritativeVillageUpgradeResult.FromUpgrade(
+                        BuildingUpgradeResult.AlreadyApplied(probedBuildingIndex, currentLevel),
+                        CreateSnapshotWithStamp(profile, request.UpgradeRequestId));
+                }
+
+                VillageUpgradeService upgradeService = new VillageUpgradeService(
+                    catalog,
+                    profile.Village,
+                    profile.Currency);
+
+                if (!upgradeService.IsValid)
+                {
+                    return AuthoritativeVillageUpgradeResult.Invalid(
+                        "Upgrade service is invalid: " + upgradeService.ValidationMessage);
+                }
+
+                BuildingUpgradeResult upgradeResult = request.UseBuildingIndex
+                    ? upgradeService.TryUpgradeByIndex(request.BuildingIndex)
+                    : upgradeService.TryUpgrade(request.BuildingId);
+
+                PlayerProfileSnapshot updatedSnapshot = CreateSnapshotWithStamp(profile, request.UpgradeRequestId);
+                return AuthoritativeVillageUpgradeResult.FromUpgrade(upgradeResult, updatedSnapshot);
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (ArgumentException exception)
+            {
+                return AuthoritativeVillageUpgradeResult.Invalid(exception.Message);
             }
             catch (Exception exception)
             {
-                return AuthoritativeVillageUpgradeResult.Invalid(
-                    "Invalid village upgrade catalog: " + exception.Message);
+                return AuthoritativeVillageUpgradeResult.Error(exception.Message);
             }
+        }
 
-            PlayerProfile profile;
-            try
+        private static int ResolveBuildingIndex(
+            VillageUpgradeCatalog catalog,
+            AuthoritativeVillageUpgradeRequest request)
+        {
+            if (request.UseBuildingIndex)
             {
-                profile = PlayerProfile.FromSnapshot(snapshot, new TimeProvider());
+                return request.BuildingIndex;
             }
-            catch (Exception exception)
+
+            int buildingIndex;
+            if (catalog.TryGetBuildingIndex(request.BuildingId, out buildingIndex))
             {
-                return AuthoritativeVillageUpgradeResult.Error(
-                    "Failed to create profile from snapshot: " + exception.Message);
+                return buildingIndex;
             }
 
-            profile.EnsureVillageCapacity(catalog.BuildingCount);
+            return -1;
+        }
 
-            VillageUpgradeService upgradeService = new VillageUpgradeService(
-                catalog,
-                profile.Village,
-                profile.Currency);
+        private static PlayerProfileSnapshot CreateSnapshotWithStamp(
+            PlayerProfile profile,
+            string upgradeRequestId)
+        {
+            profile.ApplyTimeBasedRegen();
+            PlayerProfileSnapshot snapshot = profile.CreateSnapshot();
+            snapshot.processedImpactIds = AppendProcessedImpactId(
+                snapshot.processedImpactIds,
+                upgradeRequestId);
+            return snapshot;
+        }
 
-            if (!upgradeService.IsValid)
+        private static string[] AppendProcessedImpactId(string[] existing, string upgradeRequestId)
+        {
+            string trimmed = upgradeRequestId == null ? string.Empty : upgradeRequestId.Trim();
+            if (trimmed.Length == 0)
             {
-                return AuthoritativeVillageUpgradeResult.Invalid(
-                    "Upgrade service is invalid: " + upgradeService.ValidationMessage);
+                return existing ?? Array.Empty<string>();
             }
 
-            BuildingUpgradeResult upgradeResult = request.UseBuildingIndex
-                ? upgradeService.TryUpgradeByIndex(request.BuildingIndex)
-                : upgradeService.TryUpgrade(request.BuildingId);
+            if (existing == null || existing.Length == 0)
+            {
+                return new[] { trimmed };
+            }
 
-            PlayerProfileSnapshot updatedSnapshot = profile.CreateSnapshot();
-            return AuthoritativeVillageUpgradeResult.FromUpgrade(upgradeResult, updatedSnapshot);
+            int i;
+            for (i = 0; i < existing.Length; i++)
+            {
+                if (string.Equals(existing[i], trimmed, StringComparison.Ordinal))
+                {
+                    return existing;
+                }
+            }
+
+            string[] copy = new string[existing.Length + 1];
+            Array.Copy(existing, copy, existing.Length);
+            copy[existing.Length] = trimmed;
+            Array.Sort(copy, StringComparer.Ordinal);
+            return copy;
         }
     }
 }

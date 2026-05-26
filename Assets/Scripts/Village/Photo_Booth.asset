@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Photo_Booth
   m_EditorClassIdentifier: Assembly-CSharp::BuildingDefinitionSO
   DisplayName: Photo Booth
-  BuildingID: 0
+  BuildingID: photo_booth
   upgradeSteps:
   - upgradeCost: 10
     nextLevelPartStates:

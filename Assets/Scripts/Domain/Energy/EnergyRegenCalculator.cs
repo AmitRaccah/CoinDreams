@@ -1,18 +1,18 @@
 using System;
-//using UnityEngine;
 
 namespace Game.Domain.Energy
 {
     public sealed class EnergyRegenCalculator
     {
-        //HOW MANY ENERGY POINTS FROM LastTicks to nowTicks
+        private const long MaxFutureClockSkewTicks = TimeSpan.TicksPerHour;
+
         public int CalculateGainedEnergy(long nowTicks, long lastTicks, int intervalSeconds)
         {
             if (intervalSeconds <= 0)
             {
                 intervalSeconds = 1;
             }
-            //CONVERT SECS TO TICKS
+
             long intervalTicks = TimeSpan.FromSeconds(intervalSeconds).Ticks;
 
             if (nowTicks <= lastTicks)
@@ -35,7 +35,6 @@ namespace Game.Domain.Energy
             return (int)gained;
         }
 
-        //SAVES TIME LEFTOVERS
         public long AdvanceLastTicks(long lastTicks, int gainedEnergy, int intervalSeconds)
         {
             if (gainedEnergy <= 0)
@@ -78,6 +77,11 @@ namespace Game.Domain.Energy
             }
 
             return seconds;
+        }
+
+        public static bool IsClockSkewed(long lastTicks, long nowTicks)
+        {
+            return lastTicks > nowTicks + MaxFutureClockSkewTicks;
         }
     }
 }

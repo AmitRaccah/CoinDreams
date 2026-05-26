@@ -9,6 +9,15 @@ namespace Game.Runtime.Cards
     {
         public AuthoritativeDrawRequest Create(int drawCost, int requestedMultiplier, CardDeckSO deckConfig)
         {
+            return Create(drawCost, requestedMultiplier, deckConfig, Guid.NewGuid().ToString("N"));
+        }
+
+        public AuthoritativeDrawRequest Create(
+            int drawCost,
+            int requestedMultiplier,
+            CardDeckSO deckConfig,
+            string drawId)
+        {
             List<AuthoritativeDrawCardDefinition> cards =
                 new List<AuthoritativeDrawCardDefinition>();
 
@@ -43,7 +52,11 @@ namespace Game.Runtime.Cards
                 cards.Add(CreateFallbackCard());
             }
 
-            return new AuthoritativeDrawRequest(drawCost, requestedMultiplier, cards.ToArray());
+            string resolvedDrawId = string.IsNullOrWhiteSpace(drawId)
+                ? Guid.NewGuid().ToString("N")
+                : drawId;
+
+            return new AuthoritativeDrawRequest(drawCost, requestedMultiplier, cards.ToArray(), resolvedDrawId);
         }
 
         private static AuthoritativeDrawCardDefinition CreateFallbackCard()

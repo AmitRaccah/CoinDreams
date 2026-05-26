@@ -4,8 +4,12 @@ using UnityEngine.Serialization;
 namespace Game.Runtime.Cards
 {
     [DisallowMultipleComponent]
-    public sealed class CardDrawWorkflowController : MonoBehaviour
+    public sealed class CardDrawWorkflowController : MonoBehaviour, ICardDrawWorkflowCommands
     {
+        public void RequestDraw() { OnDrawButtonClicked(); }
+        public void RequestReturn() { OnReturnButtonClicked(); }
+
+
         [Header("Dependencies")]
         [FormerlySerializedAs("drawGamePresenter")]
         [SerializeField] private MonoBehaviour drawGameActionsSource;
@@ -44,32 +48,54 @@ namespace Game.Runtime.Cards
 
         public async void OnDrawButtonClicked()
         {
-            DrawWorkflowAction action = workflowState.HandleDrawClicked();
-            if (action == DrawWorkflowAction.None)
+            try
             {
-                return;
-            }
+                DrawWorkflowAction action = workflowState.HandleDrawClicked();
+                if (action == DrawWorkflowAction.None)
+                {
+                    return;
+                }
 
-            if (action == DrawWorkflowAction.MoveToBoard)
-            {
-                await executor.MoveCameraToBoardAsync();
-                return;
-            }
+                if (action == DrawWorkflowAction.MoveToBoard)
+                {
+                    await executor.MoveCameraToBoardAsync();
+                    return;
+                }
 
-            if (action == DrawWorkflowAction.Draw)
+                if (action == DrawWorkflowAction.Draw)
+                {
+                    await executor.ExecuteDrawAsync();
+                }
+            }
+            catch (System.OperationCanceledException)
             {
-                await executor.ExecuteDrawAsync();
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogException(ex, this);
+                workflowState.ResetToIdle();
             }
         }
 
         public async void OnReturnButtonClicked()
         {
-            if (!workflowState.TryBeginReturn())
+            try
             {
-                return;
-            }
+                if (!workflowState.TryBeginReturn())
+                {
+                    return;
+                }
 
-            await executor.ReturnToCityAsync();
+                await executor.ReturnToCityAsync();
+            }
+            catch (System.OperationCanceledException)
+            {
+            }
+            catch (System.Exception ex)
+            {
+                Debug.LogException(ex, this);
+                workflowState.ResetToIdle();
+            }
         }
 
         private void ResolveDependencies()

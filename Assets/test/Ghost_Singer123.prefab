@@ -77,7 +77,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 234e88a30a9476a4aaa14adc9a3c93aa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingVisualController
-  buildingDefinition: {fileID: 11400000, guid: df74b32764b81aa43ab8ded58b016e67, type: 2}
+  buildingDefinition: {fileID: 0}
   partObjects:
   - {fileID: 6699005874811264894}
   - {fileID: 6738782387418201719}

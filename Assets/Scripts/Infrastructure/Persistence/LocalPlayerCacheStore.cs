@@ -50,34 +50,41 @@ namespace Game.Infrastructure.Persistence
                 return false;
             }
 
-            if (string.IsNullOrEmpty(cachePath) || !File.Exists(cachePath))
+            if (string.IsNullOrEmpty(cachePath))
             {
                 return false;
             }
 
-            try
+            if (File.Exists(cachePath))
             {
-                string json = File.ReadAllText(cachePath);
-                if (string.IsNullOrWhiteSpace(json))
+                if (TryParseCacheFile(cachePath, out snapshot, out string primaryError))
                 {
-                    return false;
+                    return true;
                 }
 
-                PlayerSaveData saveData = JsonUtility.FromJson<PlayerSaveData>(json);
-                if (saveData == null)
-                {
-                    error = "Cache file is empty or malformed.";
-                    return false;
-                }
+                error = primaryError;
+            }
 
-                snapshot = PlayerSaveDataMapper.ToSnapshot(saveData);
+            // Primary file missing or unreadable; attempt the .bak fallback.
+            string backupPath = cachePath + ".bak";
+            if (!File.Exists(backupPath))
+            {
+                return false;
+            }
+
+            if (TryParseCacheFile(backupPath, out snapshot, out string backupError))
+            {
+                // Surface that we fell back, but do not treat it as an error.
+                error = string.Empty;
                 return true;
             }
-            catch (Exception exception)
+
+            if (string.IsNullOrEmpty(error))
             {
-                error = exception.Message;
-                return false;
+                error = backupError;
             }
+
+            return false;
         }
 
         public bool TryPersistSnapshot(PlayerProfileSnapshot snapshot, out string error)
@@ -95,7 +102,23 @@ namespace Game.Infrastructure.Persistence
 
                 PlayerSaveData saveData = PlayerSaveDataMapper.ToSaveData(snapshot);
                 string json = JsonUtility.ToJson(saveData, false);
-                File.WriteAllText(cachePath, json);
+
+                string tempPath = cachePath + ".tmp";
+                string backupPath = cachePath + ".bak";
+                File.WriteAllText(tempPath, json);
+
+                if (File.Exists(cachePath))
+                {
+                    if (File.Exists(backupPath))
+                    {
+                        File.Delete(backupPath);
+                    }
+                    File.Replace(tempPath, cachePath, backupPath);
+                }
+                else
+                {
+                    File.Move(tempPath, cachePath);
+                }
                 return true;
             }
             catch (Exception exception)
@@ -116,12 +139,56 @@ namespace Game.Infrastructure.Persistence
 
             try
             {
-                if (!File.Exists(cachePath))
+                if (File.Exists(cachePath))
                 {
-                    return true;
+                    File.Delete(cachePath);
                 }
 
-                File.Delete(cachePath);
+                string backupPath = cachePath + ".bak";
+                if (File.Exists(backupPath))
+                {
+                    File.Delete(backupPath);
+                }
+
+                string tempPath = cachePath + ".tmp";
+                if (File.Exists(tempPath))
+                {
+                    File.Delete(tempPath);
+                }
+
+                return true;
+            }
+            catch (Exception exception)
+            {
+                error = exception.Message;
+                return false;
+            }
+        }
+
+        private static bool TryParseCacheFile(
+            string path,
+            out PlayerProfileSnapshot snapshot,
+            out string error)
+        {
+            snapshot = null;
+            error = string.Empty;
+
+            try
+            {
+                string json = File.ReadAllText(path);
+                if (string.IsNullOrWhiteSpace(json))
+                {
+                    return false;
+                }
+
+                PlayerSaveData saveData = JsonUtility.FromJson<PlayerSaveData>(json);
+                if (saveData == null)
+                {
+                    error = "Cache file is empty or malformed.";
+                    return false;
+                }
+
+                snapshot = PlayerSaveDataMapper.ToSnapshot(saveData);
                 return true;
             }
             catch (Exception exception)

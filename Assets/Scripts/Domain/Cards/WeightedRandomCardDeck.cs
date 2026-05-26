@@ -5,21 +5,26 @@ namespace Game.Domain.Cards
     public sealed class WeightedRandomCardDeck : ICardDeck
     {
         private readonly CardDefinition[] cards;
-        private readonly int[] cumulativeWeights;
-        private readonly int totalWeight;
-        private readonly Random random;
+        private readonly long[] cumulativeWeights;
+        private readonly long totalWeight;
+        private readonly IRandomSource randomSource;
 
-        public WeightedRandomCardDeck(CardDefinition[] cards)
+        public WeightedRandomCardDeck(CardDefinition[] cards, IRandomSource randomSource)
         {
             if (cards == null)
             {
                 throw new ArgumentNullException("cards");
             }
 
+            if (randomSource == null)
+            {
+                throw new ArgumentNullException("randomSource");
+            }
+
+            this.randomSource = randomSource;
             this.cards = FilterCards(cards);
-            cumulativeWeights = new int[this.cards.Length];
+            cumulativeWeights = new long[this.cards.Length];
             totalWeight = BuildWeightCache(this.cards, cumulativeWeights);
-            random = new Random();
         }
 
         public bool TryDraw(out CardDefinition drawnCard)
@@ -33,20 +38,13 @@ namespace Game.Domain.Cards
 
             if (totalWeight <= 0)
             {
-                int anyIndex = random.Next(0, cards.Length);
+                int anyIndex = randomSource.NextInt(0, cards.Length);
                 drawnCard = cards[anyIndex];
                 return drawnCard != null;
             }
 
-            int roll;
-            if (totalWeight == int.MaxValue)
-            {
-                roll = random.Next(0, int.MaxValue) + 1;
-            }
-            else
-            {
-                roll = random.Next(1, totalWeight + 1);
-            }
+            long roll = ((long)randomSource.NextInt(0, int.MaxValue) << 31) | (uint)randomSource.NextInt(0, int.MaxValue);
+            roll = (roll & long.MaxValue) % totalWeight + 1;
 
             int index = FindIndexForRoll(roll);
 
@@ -65,7 +63,7 @@ namespace Game.Domain.Cards
             int i;
             for (i = 0; i < sourceCards.Length; i++)
             {
-                if (sourceCards[i] != null)
+                if (sourceCards[i] != null && sourceCards[i].Weight > 0)
                 {
                     validCount++;
                 }
@@ -80,7 +78,7 @@ namespace Game.Domain.Cards
             int insertIndex = 0;
             for (i = 0; i < sourceCards.Length; i++)
             {
-                if (sourceCards[i] != null)
+                if (sourceCards[i] != null && sourceCards[i].Weight > 0)
                 {
                     filteredCards[insertIndex] = sourceCards[i];
                     insertIndex++;
@@ -90,22 +88,23 @@ namespace Game.Domain.Cards
             return filteredCards;
         }
 
-        private static int BuildWeightCache(CardDefinition[] sourceCards, int[] sourceCumulativeWeights)
+        private static long BuildWeightCache(CardDefinition[] sourceCards, long[] sourceCumulativeWeights)
         {
-            int runningTotal = 0;
+            long runningTotal = 0;
             int i;
 
             for (i = 0; i < sourceCards.Length; i++)
             {
-                int weight = sourceCards[i].Weight;
-                if (weight < 0)
+                long weight = sourceCards[i].Weight;
+                if (weight <= 0)
                 {
-                    weight = 0;
+                    sourceCumulativeWeights[i] = runningTotal;
+                    continue;
                 }
 
-                if (runningTotal > int.MaxValue - weight)
+                if (runningTotal > long.MaxValue - weight)
                 {
-                    runningTotal = int.MaxValue;
+                    runningTotal = long.MaxValue;
                 }
                 else
                 {
@@ -118,16 +117,18 @@ namespace Game.Domain.Cards
             return runningTotal;
         }
 
-        private int FindIndexForRoll(int roll)
+        private int FindIndexForRoll(long roll)
         {
-            int index = Array.BinarySearch(cumulativeWeights, roll);
-
-            if (index < 0)
+            int i;
+            for (i = 0; i < cumulativeWeights.Length; i++)
             {
-                index = ~index;
+                if (roll <= cumulativeWeights[i])
+                {
+                    return i;
+                }
             }
 
-            return index;
+            return cumulativeWeights.Length - 1;
         }
     }
 }

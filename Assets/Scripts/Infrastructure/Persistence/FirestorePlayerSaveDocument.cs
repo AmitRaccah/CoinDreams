@@ -7,11 +7,16 @@ namespace Game.Infrastructure.Persistence
     [FirestoreData]
     public sealed class FirestorePlayerSaveDocument
     {
+        public const int CurrentSchemaVersion = 2;
+
         [FirestoreProperty("playerId")]
         public string PlayerId { get; set; } = string.Empty;
 
         [FirestoreProperty("revision")]
         public int Revision { get; set; }
+
+        [FirestoreProperty("schemaVersion")]
+        public int SchemaVersion { get; set; } = CurrentSchemaVersion;
 
         [FirestoreProperty("coins")]
         public int Coins { get; set; }
@@ -48,6 +53,7 @@ namespace Game.Infrastructure.Persistence
             {
                 PlayerId = saveData.playerId ?? string.Empty,
                 Revision = saveData.revision,
+                SchemaVersion = CurrentSchemaVersion,
                 Coins = saveData.coins,
                 CurrentEnergy = saveData.currentEnergy,
                 MaxEnergy = saveData.maxEnergy,
@@ -64,6 +70,7 @@ namespace Game.Infrastructure.Persistence
             PlayerSaveData saveData = new PlayerSaveData();
             saveData.playerId = PlayerId ?? string.Empty;
             saveData.revision = Revision;
+            saveData.schemaVersion = SchemaVersion;
             saveData.coins = Coins;
             saveData.currentEnergy = CurrentEnergy;
             saveData.maxEnergy = MaxEnergy;

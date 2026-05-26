@@ -23,31 +23,41 @@ namespace Game.Domain.Village
         public readonly string BuildingId;
         public readonly int BuildingIndex;
         public readonly bool UseBuildingIndex;
+        public readonly string UpgradeRequestId;
 
         private AuthoritativeVillageUpgradeRequest(
             AuthoritativeVillageUpgradeCatalogData catalog,
             string buildingId,
             int buildingIndex,
-            bool useBuildingIndex)
+            bool useBuildingIndex,
+            string upgradeRequestId)
         {
             Catalog = catalog;
             BuildingId = buildingId;
             BuildingIndex = buildingIndex;
             UseBuildingIndex = useBuildingIndex;
+            UpgradeRequestId = upgradeRequestId;
+        }
+
+        public bool IsValid
+        {
+            get { return !string.IsNullOrWhiteSpace(UpgradeRequestId); }
         }
 
         public static AuthoritativeVillageUpgradeRequest ForBuildingId(
             AuthoritativeVillageUpgradeCatalogData catalog,
-            string buildingId)
+            string buildingId,
+            string upgradeRequestId)
         {
-            return new AuthoritativeVillageUpgradeRequest(catalog, buildingId, -1, false);
+            return new AuthoritativeVillageUpgradeRequest(catalog, buildingId, -1, false, upgradeRequestId);
         }
 
         public static AuthoritativeVillageUpgradeRequest ForBuildingIndex(
             AuthoritativeVillageUpgradeCatalogData catalog,
-            int buildingIndex)
+            int buildingIndex,
+            string upgradeRequestId)
         {
-            return new AuthoritativeVillageUpgradeRequest(catalog, string.Empty, buildingIndex, true);
+            return new AuthoritativeVillageUpgradeRequest(catalog, string.Empty, buildingIndex, true, upgradeRequestId);
         }
     }
 
@@ -90,7 +100,7 @@ namespace Game.Domain.Village
         public static AuthoritativeVillageUpgradeResult Unavailable(string message)
         {
             return new AuthoritativeVillageUpgradeResult(
-                BuildingUpgradeResult.InvalidConfiguration(),
+                BuildingUpgradeResult.ServiceUnavailable(),
                 null,
                 message);
         }
@@ -98,7 +108,7 @@ namespace Game.Domain.Village
         public static AuthoritativeVillageUpgradeResult Error(string message)
         {
             return new AuthoritativeVillageUpgradeResult(
-                BuildingUpgradeResult.InvalidConfiguration(),
+                BuildingUpgradeResult.UnexpectedError(message),
                 null,
                 message);
         }

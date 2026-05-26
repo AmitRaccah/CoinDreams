@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Shop
   m_EditorClassIdentifier: Assembly-CSharp::BuildingDefinitionSO
   DisplayName: Shop
-  BuildingID: 1
+  BuildingID: shop
   upgradeSteps:
   - upgradeCost: 10
     nextLevelPartStates:

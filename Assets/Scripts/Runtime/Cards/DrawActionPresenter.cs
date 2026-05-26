@@ -21,6 +21,8 @@ namespace Game.Runtime.Cards
         private IDrawResultSink drawResultSink;
         private AuthoritativeDrawRequest drawRequest;
         private bool isDrawInFlight;
+        private int pendingMultiplier = 1;
+        private string pendingDrawId;
         private readonly AuthoritativeDrawRequestFactory drawRequestFactory =
             new AuthoritativeDrawRequestFactory();
 
@@ -39,6 +41,21 @@ namespace Game.Runtime.Cards
             drawResultSinkSource = drawResultSink as MonoBehaviour;
             RebuildDrawRequest();
             ResolveAuthoritativeDrawService();
+        }
+
+        public void SetMultiplier(int multiplier)
+        {
+            if (System.Array.IndexOf(AuthoritativeDrawRequest.AllowedMultipliers, multiplier) < 0)
+            {
+                return;
+            }
+
+            pendingMultiplier = multiplier;
+
+            if (!isDrawInFlight)
+            {
+                RebuildDrawRequest();
+            }
         }
 
         public async Task<AuthoritativeDrawResult> TryDrawAsync()
@@ -71,6 +88,8 @@ namespace Game.Runtime.Cards
             finally
             {
                 isDrawInFlight = false;
+                // Clear so the next workflow attempt mints a fresh drawId.
+                pendingDrawId = null;
             }
         }
 
@@ -124,7 +143,12 @@ namespace Game.Runtime.Cards
 
         private void RebuildDrawRequest()
         {
-            drawRequest = drawRequestFactory.Create(drawCost, 1, deckConfig);
+            if (string.IsNullOrEmpty(pendingDrawId))
+            {
+                pendingDrawId = System.Guid.NewGuid().ToString("N");
+            }
+
+            drawRequest = drawRequestFactory.Create(drawCost, pendingMultiplier, deckConfig, pendingDrawId);
         }
 
         private void ResolveDrawResultSink()

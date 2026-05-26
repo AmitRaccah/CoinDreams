@@ -63,7 +63,7 @@ namespace Game.Runtime.Cards
                 runtimeCards.Add(CreateFallbackCard());
             }
 
-            return new WeightedRandomCardDeck(runtimeCards.ToArray());
+            return new WeightedRandomCardDeck(runtimeCards.ToArray(), new SystemRandomSource());
         }
 
         private static CardDefinition CreateFallbackCard()

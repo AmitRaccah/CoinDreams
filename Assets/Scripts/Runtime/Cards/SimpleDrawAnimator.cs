@@ -12,6 +12,7 @@ namespace Game.Runtime.Cards
     {
         [SerializeField] private Animator animator;
         [SerializeField] private string drawTrigger = "Draw";
+        [Tooltip("Legacy/manual override used as a fallback when the active animator clip length cannot be sampled.")]
         [SerializeField] private float animationDuration = 0.6f;
 
         public bool HasAnimation => animator != null && !string.IsNullOrWhiteSpace(drawTrigger) && animationDuration > 0f;
@@ -30,9 +31,10 @@ namespace Game.Runtime.Cards
         {
             animator.ResetTrigger(drawTrigger);
             animator.SetTrigger(drawTrigger);
+            yield return null;
 
+            float duration = Mathf.Max(0.01f, GetCurrentClipLength());
             float elapsed = 0f;
-            float duration = Mathf.Max(0.01f, animationDuration);
 
             while (elapsed < duration)
             {
@@ -41,6 +43,17 @@ namespace Game.Runtime.Cards
             }
 
             CompleteOperation();
+        }
+
+        private float GetCurrentClipLength()
+        {
+            if (animator == null)
+            {
+                return animationDuration;
+            }
+
+            AnimatorStateInfo state = animator.GetCurrentAnimatorStateInfo(0);
+            return state.length > 0f ? state.length : animationDuration;
         }
 
         protected override string GetDisableCancellationMessage()

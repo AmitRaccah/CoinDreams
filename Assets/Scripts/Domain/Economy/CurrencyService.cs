@@ -7,6 +7,20 @@ namespace Game.Domain.Economy
         private int coins;
         public event Action<int> CoinsChanged;
 
+        public CurrencyService() : this(0)
+        {
+        }
+
+        public CurrencyService(int initialCoins)
+        {
+            if (initialCoins < 0)
+            {
+                throw new ArgumentOutOfRangeException("initialCoins", initialCoins, "initialCoins must be >= 0.");
+            }
+
+            coins = initialCoins;
+        }
+
         public int GetCoins()
         {
             return coins;

@@ -47,18 +47,42 @@ namespace Game.Domain.Cards
 
     public sealed class AuthoritativeDrawRequest
     {
+        public static readonly int[] AllowedMultipliers = { 1, 2, 4, 8 };
+
         public readonly int DrawCost;
         public readonly int RequestedMultiplier;
         public readonly AuthoritativeDrawCardDefinition[] Cards;
+        public readonly string DrawId;
 
         public AuthoritativeDrawRequest(
             int drawCost,
             int requestedMultiplier,
-            AuthoritativeDrawCardDefinition[] cards)
+            AuthoritativeDrawCardDefinition[] cards,
+            string drawId)
         {
             DrawCost = drawCost;
-            RequestedMultiplier = requestedMultiplier < 1 ? 1 : requestedMultiplier;
+            RequestedMultiplier = IsAllowedMultiplier(requestedMultiplier) ? requestedMultiplier : 1;
             Cards = cards ?? Array.Empty<AuthoritativeDrawCardDefinition>();
+            DrawId = drawId ?? string.Empty;
+        }
+
+        public bool IsValid
+        {
+            get { return !string.IsNullOrWhiteSpace(DrawId); }
+        }
+
+        private static bool IsAllowedMultiplier(int candidate)
+        {
+            int i;
+            for (i = 0; i < AllowedMultipliers.Length; i++)
+            {
+                if (AllowedMultipliers[i] == candidate)
+                {
+                    return true;
+                }
+            }
+
+            return false;
         }
     }
 
@@ -69,7 +93,8 @@ namespace Game.Domain.Cards
         DeckEmpty = 2,
         InvalidRequest = 3,
         Unavailable = 4,
-        Error = 5
+        Error = 5,
+        AlreadyProcessed = 6
     }
 
     public sealed class AuthoritativeDrawResult
@@ -160,6 +185,16 @@ namespace Game.Domain.Cards
                 string.Empty,
                 string.Empty,
                 message);
+        }
+
+        public static AuthoritativeDrawResult AlreadyProcessed(PlayerProfileSnapshot snapshot)
+        {
+            return new AuthoritativeDrawResult(
+                AuthoritativeDrawStatus.AlreadyProcessed,
+                snapshot,
+                string.Empty,
+                string.Empty,
+                "Draw already processed.");
         }
     }
 

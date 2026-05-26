@@ -7,12 +7,24 @@ namespace Game.Domain.Cards
     public static class AuthoritativeEffectRegistry
     {
         private static readonly Dictionary<AuthoritativeDrawEffectType, Func<AuthoritativeDrawEffectDefinition, IRewardEffect>> factories =
-            new Dictionary<AuthoritativeDrawEffectType, Func<AuthoritativeDrawEffectDefinition, IRewardEffect>>
+            new Dictionary<AuthoritativeDrawEffectType, Func<AuthoritativeDrawEffectDefinition, IRewardEffect>>();
+
+        static AuthoritativeEffectRegistry()
+        {
+            Register(AuthoritativeDrawEffectType.AddCoins, def => new AddResourceEffect(RewardResourceType.Currency, def.IntValue));
+            Register(AuthoritativeDrawEffectType.AddEnergy, def => new AddResourceEffect(RewardResourceType.Energy, def.IntValue));
+            Register(AuthoritativeDrawEffectType.LaunchMinigame, def => new LaunchMinigameEffect(def.StringValue));
+        }
+
+        public static void Register(AuthoritativeDrawEffectType type, Func<AuthoritativeDrawEffectDefinition, IRewardEffect> factory)
+        {
+            if (factory == null)
             {
-                { AuthoritativeDrawEffectType.AddCoins, def => new AddResourceEffect(RewardResourceType.Currency, def.IntValue) },
-                { AuthoritativeDrawEffectType.AddEnergy, def => new AddResourceEffect(RewardResourceType.Energy, def.IntValue) },
-                { AuthoritativeDrawEffectType.LaunchMinigame, def => new LaunchMinigameEffect(def.StringValue) }
-            };
+                throw new ArgumentNullException(nameof(factory));
+            }
+
+            factories[type] = factory;
+        }
 
         public static bool TryCreate(AuthoritativeDrawEffectDefinition definition, out IRewardEffect effect)
         {

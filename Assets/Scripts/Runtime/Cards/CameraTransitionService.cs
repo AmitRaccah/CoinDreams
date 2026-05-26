@@ -19,14 +19,6 @@ namespace Game.Runtime.Cards
             get { return HasActiveOperation; }
         }
 
-        private void Awake()
-        {
-            if (targetCamera == null)
-            {
-                targetCamera = Camera.main;
-            }
-        }
-
         public Task StartTransitionAsync(Transform destination)
         {
             if (destination == null)

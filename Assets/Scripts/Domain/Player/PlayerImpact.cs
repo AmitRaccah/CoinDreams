@@ -15,7 +15,7 @@ namespace Game.Domain.Player
         {
             impactId = string.Empty;
             sourcePlayerId = string.Empty;
-            impactType = PlayerImpactType.CoinsStolen;
+            impactType = PlayerImpactType.None;
             amount = 0;
             createdAtUtcTicks = 0;
         }
@@ -32,6 +32,16 @@ namespace Game.Domain.Player
             this.impactType = impactType;
             this.amount = amount;
             this.createdAtUtcTicks = createdAtUtcTicks;
+        }
+
+        public PlayerImpact Clone()
+        {
+            return new PlayerImpact(
+                impactId,
+                sourcePlayerId,
+                impactType,
+                amount,
+                createdAtUtcTicks);
         }
     }
 }

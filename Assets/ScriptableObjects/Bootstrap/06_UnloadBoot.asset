@@ -9,8 +9,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 0}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 443091928776f42459614be92f76fb48, type: 3}
-  m_Name: DefaultCardDeck
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Cards.Config.CardDeckSO
-  cards:
-  - {fileID: 11400000, guid: 5fcb1fdd43d140cf8ac4d1375b63a581, type: 2}
+  m_Script: {fileID: 11500000, guid: 8d32dedbd1184c5ea67394a02d34e53a, type: 3}
+  m_Name: 06_UnloadBoot
+  m_EditorClassIdentifier:
+  displayName: Cleanup
+  weight: 0.5
+  bootSceneName: 00_Boot

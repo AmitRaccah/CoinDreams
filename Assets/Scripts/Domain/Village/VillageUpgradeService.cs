@@ -141,16 +141,21 @@ namespace Game.Domain.Village
                 return BuildingUpgradeResult.NotEnough(buildingIndex, currentLevel, nextCost);
             }
 
+            int newLevel = currentLevel + 1;
+            // Validate progress mutation BEFORE spending so we never need a rollback path.
+            if (!progressState.CanSetLevel(buildingIndex, newLevel))
+            {
+                return BuildingUpgradeResult.InvalidConfiguration(buildingIndex);
+            }
+
             if (!wallet.TrySpend(nextCost))
             {
                 return BuildingUpgradeResult.NotEnough(buildingIndex, currentLevel, nextCost);
             }
 
-            int newLevel = currentLevel + 1;
             if (!progressState.TrySetLevel(buildingIndex, newLevel))
             {
-                // Rollback spend in case progress update failed.
-                wallet.Add(nextCost);
+                // CanSetLevel passed, so this is only reachable under a race; surface invalid config without rollback.
                 return BuildingUpgradeResult.InvalidConfiguration(buildingIndex);
             }
 

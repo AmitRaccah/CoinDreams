@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: Tree_Bar
   m_EditorClassIdentifier: Assembly-CSharp::BuildingDefinitionSO
   DisplayName: Tree Bar
-  BuildingID: 2
+  BuildingID: tree_bar
   upgradeSteps:
   - upgradeCost: 10
     nextLevelPartStates:

@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using Firebase.Firestore;
 using Game.Domain.Cards;
 using Game.Domain.Player;
+using Game.Domain.Time;
 using Game.Domain.Village;
 
 namespace Game.Infrastructure.Persistence
@@ -54,6 +55,15 @@ namespace Game.Infrastructure.Persistence
 
                 return RemoteSnapshotLoadResult.Found(loadedSnapshot);
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (FirestoreException firestoreEx) when (IsTransientFirestoreError(firestoreEx))
+            {
+                return RemoteSnapshotLoadResult.Error(
+                    "Firestore temporarily unavailable: " + firestoreEx.Message);
+            }
             catch (Exception exception)
             {
                 return RemoteSnapshotLoadResult.Error(exception.Message);
@@ -99,10 +109,10 @@ namespace Game.Infrastructure.Persistence
                                 out PlayerProfileSnapshot serverSnapshot,
                                 out _))
                         {
-                            if (snapshotToPersist.revision < serverSnapshot.revision)
+                            if (snapshotToPersist.revision <= serverSnapshot.revision)
                             {
                                 return SaveSnapshotResult.Conflict(
-                                    "Server revision is ahead. server="
+                                    "Server revision is ahead or equal. server="
                                     + serverSnapshot.revision
                                     + " client="
                                     + snapshotToPersist.revision);
@@ -121,6 +131,15 @@ namespace Game.Infrastructure.Persistence
                     transaction.Set(playerDocument, CreateFirestoreDocument(snapshotToPersist));
                     return SaveSnapshotResult.Ok();
                 });
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (FirestoreException firestoreEx) when (IsTransientFirestoreError(firestoreEx))
+            {
+                return SaveSnapshotResult.Fail(
+                    "Firestore temporarily unavailable: " + firestoreEx.Message);
             }
             catch (Exception exception)
             {
@@ -163,8 +182,13 @@ namespace Game.Infrastructure.Persistence
                         playerDocument,
                         normalizedFallback);
 
+                    // DrawId-derived seed makes retries deterministic.
+                    IRandomSource randomSource = new SystemRandomSource(
+                        request.DrawId != null ? request.DrawId.GetHashCode() : 0);
+                    ITimeProvider timeProvider = new TimeProvider();
+
                     AuthoritativeDrawResult drawResult =
-                        AuthoritativeDrawEngine.TryExecute(currentSnapshot, request);
+                        AuthoritativeDrawEngine.TryExecute(currentSnapshot, request, randomSource, timeProvider);
 
                     if (drawResult == null)
                     {
@@ -182,6 +206,15 @@ namespace Game.Infrastructure.Persistence
                     transaction.Set(playerDocument, CreateFirestoreDocument(snapshotToPersist));
                     return NormalizeDrawResult(drawResult, snapshotToPersist);
                 });
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (FirestoreException firestoreEx) when (IsTransientFirestoreError(firestoreEx))
+            {
+                return AuthoritativeDrawResult.Unavailable(
+                    "Firestore temporarily unavailable: " + firestoreEx.Message);
             }
             catch (Exception exception)
             {
@@ -225,8 +258,10 @@ namespace Game.Infrastructure.Persistence
                         playerDocument,
                         normalizedFallback);
 
+                    ITimeProvider timeProvider = new TimeProvider();
+
                     AuthoritativeVillageUpgradeResult upgradeResult =
-                        AuthoritativeVillageUpgradeEngine.TryExecute(currentSnapshot, request);
+                        AuthoritativeVillageUpgradeEngine.TryExecute(currentSnapshot, request, timeProvider);
 
                     if (upgradeResult == null)
                     {
@@ -247,11 +282,142 @@ namespace Game.Infrastructure.Persistence
                         snapshotToPersist);
                 });
             }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (FirestoreException firestoreEx) when (IsTransientFirestoreError(firestoreEx))
+            {
+                return AuthoritativeVillageUpgradeResult.Unavailable(
+                    "Firestore temporarily unavailable: " + firestoreEx.Message);
+            }
             catch (Exception exception)
             {
                 return AuthoritativeVillageUpgradeResult.Error(
                     "Upgrade transaction failed: " + exception.Message);
             }
+        }
+
+        // Client-side multi-doc transaction. Server-side enforcement (Firestore Rules / Cloud Function)
+        // is REQUIRED for production use; without it, this call is bypassable.
+        public async Task<AuthoritativeStealResult> ExecuteStealAsync(
+            string thiefPlayerId,
+            string victimPlayerId,
+            AuthoritativeStealRequest request)
+        {
+            if (request == null)
+            {
+                return AuthoritativeStealResult.Invalid("Steal request is null.");
+            }
+
+            if (!TryNormalizePlayerId(thiefPlayerId, out string normalizedThiefId))
+            {
+                return AuthoritativeStealResult.Invalid("Thief player id is missing.");
+            }
+
+            if (!TryNormalizePlayerId(victimPlayerId, out string normalizedVictimId))
+            {
+                return AuthoritativeStealResult.Invalid("Victim player id is missing.");
+            }
+
+            if (string.Equals(normalizedThiefId, normalizedVictimId, StringComparison.Ordinal))
+            {
+                return AuthoritativeStealResult.Invalid("Thief and victim must differ.");
+            }
+
+            if (!IsFirestoreReady())
+            {
+                return AuthoritativeStealResult.Unavailable("Firestore is not initialized.");
+            }
+
+            DocumentReference thiefDocument = GetPlayerDocument(normalizedThiefId);
+            DocumentReference victimDocument = GetPlayerDocument(normalizedVictimId);
+
+            try
+            {
+                return await firestore.RunTransactionAsync(async transaction =>
+                {
+                    DocumentSnapshot thiefDocSnapshot = await transaction.GetSnapshotAsync(thiefDocument);
+                    DocumentSnapshot victimDocSnapshot = await transaction.GetSnapshotAsync(victimDocument);
+
+                    if (thiefDocSnapshot == null || !thiefDocSnapshot.Exists)
+                    {
+                        return AuthoritativeStealResult.Unavailable("Player not found.");
+                    }
+
+                    if (victimDocSnapshot == null || !victimDocSnapshot.Exists)
+                    {
+                        return AuthoritativeStealResult.Unavailable("Player not found.");
+                    }
+
+                    if (!TryConvertDocumentToSnapshot(
+                            thiefDocSnapshot,
+                            normalizedThiefId,
+                            out PlayerProfileSnapshot thiefSnapshot,
+                            out string thiefError))
+                    {
+                        throw new InvalidOperationException(
+                            "Server snapshot unreadable (thief): " + thiefError);
+                    }
+
+                    if (!TryConvertDocumentToSnapshot(
+                            victimDocSnapshot,
+                            normalizedVictimId,
+                            out PlayerProfileSnapshot victimSnapshot,
+                            out string victimError))
+                    {
+                        throw new InvalidOperationException(
+                            "Server snapshot unreadable (victim): " + victimError);
+                    }
+
+                    ITimeProvider timeProvider = new TimeProvider();
+                    AuthoritativeStealResult stealResult = AuthoritativeStealEngine.TryExecute(
+                        thiefSnapshot,
+                        victimSnapshot,
+                        request,
+                        timeProvider);
+
+                    if (stealResult == null)
+                    {
+                        return AuthoritativeStealResult.Error("Steal engine returned null.");
+                    }
+
+                    if (stealResult.ThiefSnapshot == null || stealResult.VictimSnapshot == null)
+                    {
+                        return stealResult;
+                    }
+
+                    PlayerProfileSnapshot thiefPersist = CloneSnapshot(stealResult.ThiefSnapshot);
+                    thiefPersist.playerId = normalizedThiefId;
+
+                    PlayerProfileSnapshot victimPersist = CloneSnapshot(stealResult.VictimSnapshot);
+                    victimPersist.playerId = normalizedVictimId;
+
+                    transaction.Set(thiefDocument, CreateFirestoreDocument(thiefPersist));
+                    transaction.Set(victimDocument, CreateFirestoreDocument(victimPersist));
+                    return stealResult;
+                });
+            }
+            catch (OperationCanceledException)
+            {
+                throw;
+            }
+            catch (FirestoreException firestoreEx) when (IsTransientFirestoreError(firestoreEx))
+            {
+                return AuthoritativeStealResult.Unavailable(
+                    "Firestore temporarily unavailable: " + firestoreEx.Message);
+            }
+            catch (Exception exception)
+            {
+                return AuthoritativeStealResult.Error(
+                    "Steal transaction failed: " + exception.Message);
+            }
+        }
+
+        private static bool IsTransientFirestoreError(FirestoreException firestoreEx)
+        {
+            return firestoreEx.ErrorCode == FirestoreError.Unavailable
+                || firestoreEx.ErrorCode == FirestoreError.DeadlineExceeded;
         }
 
         private bool IsFirestoreReady()
@@ -294,21 +460,27 @@ namespace Game.Infrastructure.Persistence
             return PlayerSaveDataMapper.ToSnapshot(defaultSave);
         }
 
-        private async Task<PlayerProfileSnapshot> LoadSnapshotFromTransactionAsync(
+        private static async Task<PlayerProfileSnapshot> LoadSnapshotFromTransactionAsync(
             Transaction transaction,
             DocumentReference playerDocument,
             PlayerProfileSnapshot fallbackSnapshot)
         {
             DocumentSnapshot documentSnapshot = await transaction.GetSnapshotAsync(playerDocument);
 
-            if (documentSnapshot != null
-                && documentSnapshot.Exists
-                && TryConvertDocumentToSnapshot(
-                    documentSnapshot,
-                    fallbackSnapshot.playerId,
-                    out PlayerProfileSnapshot loadedSnapshot,
-                    out _))
+            if (documentSnapshot != null && documentSnapshot.Exists)
             {
+                // Fail-closed: if a server doc exists but cannot be parsed, do NOT silently
+                // fall back to the client snapshot (which would clobber server state on Set).
+                if (!TryConvertDocumentToSnapshot(
+                        documentSnapshot,
+                        fallbackSnapshot.playerId,
+                        out PlayerProfileSnapshot loadedSnapshot,
+                        out string error))
+                {
+                    throw new InvalidOperationException(
+                        "Server snapshot unreadable: " + error);
+                }
+
                 return loadedSnapshot;
             }
 
@@ -391,6 +563,11 @@ namespace Game.Infrastructure.Persistence
             if (result.Status == AuthoritativeDrawStatus.Unavailable)
             {
                 return AuthoritativeDrawResult.Unavailable(result.Message);
+            }
+
+            if (result.Status == AuthoritativeDrawStatus.AlreadyProcessed)
+            {
+                return AuthoritativeDrawResult.AlreadyProcessed(snapshot);
             }
 
             return AuthoritativeDrawResult.Error(result.Message);

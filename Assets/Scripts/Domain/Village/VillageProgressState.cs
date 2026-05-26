@@ -45,7 +45,7 @@ namespace Game.Domain.Village
             return 0;
         }
 
-        public bool TrySetLevel(int index, int level)
+        public bool CanSetLevel(int index, int level)
         {
             if (index < 0 || index >= buildingLevels.Length)
             {
@@ -53,6 +53,16 @@ namespace Game.Domain.Village
             }
 
             if (level < 0)
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        public bool TrySetLevel(int index, int level)
+        {
+            if (!CanSetLevel(index, level))
             {
                 return false;
             }
@@ -97,21 +107,25 @@ namespace Game.Domain.Village
 
         public void SetLevels(int[] levels)
         {
+            // Grow-only: never shrink the building array implicitly. Use ResetLevels for explicit shrink.
             if (levels == null || levels.Length == 0)
             {
-                if (buildingLevels.Length == 0)
-                {
-                    return;
-                }
-
-                buildingLevels = Array.Empty<int>();
-                NotifyChanged();
                 return;
             }
 
-            int[] copy = new int[levels.Length];
+            int targetLength = levels.Length > buildingLevels.Length
+                ? levels.Length
+                : buildingLevels.Length;
+
+            int[] copy = new int[targetLength];
             int i;
-            for (i = 0; i < levels.Length; i++)
+            for (i = 0; i < buildingLevels.Length; i++)
+            {
+                copy[i] = buildingLevels[i];
+            }
+
+            int copyCount = levels.Length;
+            for (i = 0; i < copyCount; i++)
             {
                 int level = levels[i];
                 if (level < 0)
@@ -129,6 +143,55 @@ namespace Game.Domain.Village
 
             buildingLevels = copy;
             NotifyChanged();
+        }
+
+        public void ResetLevels()
+        {
+            if (buildingLevels.Length == 0)
+            {
+                return;
+            }
+
+            buildingLevels = Array.Empty<int>();
+            NotifyChanged();
+        }
+
+        public void ClampToCatalog(VillageUpgradeCatalog catalog)
+        {
+            if (catalog == null || buildingLevels.Length == 0)
+            {
+                return;
+            }
+
+            bool mutated = false;
+            int i;
+            for (i = 0; i < buildingLevels.Length; i++)
+            {
+                int maxLevel = catalog.GetMaxLevel(i);
+                if (maxLevel < 0)
+                {
+                    maxLevel = 0;
+                }
+
+                int level = buildingLevels[i];
+                if (level < 0)
+                {
+                    buildingLevels[i] = 0;
+                    mutated = true;
+                    continue;
+                }
+
+                if (level > maxLevel)
+                {
+                    buildingLevels[i] = maxLevel;
+                    mutated = true;
+                }
+            }
+
+            if (mutated)
+            {
+                NotifyChanged();
+            }
         }
 
         private static bool AreEqual(int[] a, int[] b)

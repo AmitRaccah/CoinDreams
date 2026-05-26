@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Threading;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -9,10 +10,16 @@ namespace Game.Runtime.Cards
     {
         private Coroutine activeOperationCoroutine;
         private TaskCompletionSource<bool> activeOperationCompletionSource;
+        private CancellationTokenSource cancellationSource;
 
         protected bool HasActiveOperation
         {
             get { return activeOperationCoroutine != null; }
+        }
+
+        public CancellationToken Token
+        {
+            get { return cancellationSource?.Token ?? new CancellationToken(true); }
         }
 
         protected Task RunOperationAsync(Func<IEnumerator> coroutineFactory)
@@ -45,6 +52,7 @@ namespace Game.Runtime.Cards
                 return Task.CompletedTask;
             }
 
+            cancellationSource = new CancellationTokenSource();
             activeOperationCompletionSource = new TaskCompletionSource<bool>(
                 TaskCreationOptions.RunContinuationsAsynchronously);
             activeOperationCoroutine = StartCoroutine(coroutine);
@@ -57,6 +65,10 @@ namespace Game.Runtime.Cards
 
             TaskCompletionSource<bool> completionSource = activeOperationCompletionSource;
             activeOperationCompletionSource = null;
+
+            CancellationTokenSource source = cancellationSource;
+            cancellationSource = null;
+            source?.Dispose();
 
             completionSource?.TrySetResult(true);
         }
@@ -79,6 +91,18 @@ namespace Game.Runtime.Cards
                 activeOperationCoroutine = null;
             }
 
+            CancellationTokenSource source = cancellationSource;
+            cancellationSource = null;
+            CancellationToken cancellationToken = source?.Token ?? CancellationToken.None;
+            try
+            {
+                source?.Cancel();
+            }
+            finally
+            {
+                source?.Dispose();
+            }
+
             TaskCompletionSource<bool> completionSource = activeOperationCompletionSource;
             activeOperationCompletionSource = null;
             if (completionSource == null)
@@ -86,8 +110,10 @@ namespace Game.Runtime.Cards
                 return;
             }
 
-            completionSource.TrySetException(
-                new OperationCanceledException(message ?? string.Empty));
+            // Use TrySetCanceled so awaiters observe a TaskCanceledException tied to the token,
+            // matching standard cancellation semantics rather than a generic exception.
+            _ = message;
+            completionSource.TrySetCanceled(cancellationToken);
         }
 
         protected abstract string GetDisableCancellationMessage();

@@ -60,6 +60,16 @@ namespace Game.Runtime.Cards
 
         public void CompleteMoveToBoard(bool succeeded)
         {
+            if (CurrentState != CardDrawWorkflowState.MovingToBoard)
+            {
+#if UNITY_EDITOR
+                UnityEngine.Debug.LogWarning(
+                    "[CardDrawWorkflowStateMachine] CompleteMoveToBoard ignored; current state is "
+                        + CurrentState + ".");
+#endif
+                return;
+            }
+
             CurrentState = succeeded
                 ? CardDrawWorkflowState.DrawMode
                 : CardDrawWorkflowState.Idle;
@@ -75,9 +85,24 @@ namespace Game.Runtime.Cards
 
         public void CompleteReturn()
         {
+            if (CurrentState != CardDrawWorkflowState.ReturningToCity)
+            {
+#if UNITY_EDITOR
+                UnityEngine.Debug.LogWarning(
+                    "[CardDrawWorkflowStateMachine] CompleteReturn ignored; current state is "
+                        + CurrentState + ".");
+#endif
+                return;
+            }
+
             CurrentState = CardDrawWorkflowState.Idle;
         }
 
+        /// <summary>
+        /// Forces the state machine back to <see cref="CardDrawWorkflowState.Idle"/> without
+        /// validating the current state. Intended only for exception recovery paths where the
+        /// workflow has been aborted and the normal Complete* transitions cannot run.
+        /// </summary>
         public void ResetToIdle()
         {
             CurrentState = CardDrawWorkflowState.Idle;

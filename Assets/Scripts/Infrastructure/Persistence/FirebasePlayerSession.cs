@@ -3,6 +3,8 @@ using UnityEngine;
 
 namespace Game.Infrastructure.Persistence
 {
+    // Init-only wrapper around FirebaseConnection and IPlayerRepository.
+    // Does NOT model auth-state changes, sign-out, or token refresh — those are explicit gaps.
     public sealed class FirebasePlayerSession
     {
         private readonly FirebaseConnection connection = new FirebaseConnection();

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Game.Domain.Economy;
 using Game.Domain.Energy;
 using Game.Domain.Player;
@@ -8,6 +9,11 @@ using UnityEngine;
 
 namespace Game.Runtime.Player
 {
+    public interface IPendingImpactProvider
+    {
+        IReadOnlyList<PlayerImpact> DrainPending();
+    }
+
     [DisallowMultipleComponent]
     public sealed class PlayerRuntimeContext : MonoBehaviour
     {
@@ -29,8 +35,16 @@ namespace Game.Runtime.Player
         [Header("Runtime")]
         [SerializeField] private bool persistAcrossScenes = true;
 
+        [Header("Impact Inbox")]
+        [SerializeField] private MonoBehaviour pendingImpactProviderSource;
+
         private PlayerProfile profile;
         private bool initialized;
+        private IPendingImpactProvider pendingImpactProvider;
+
+        // Fires AFTER the new profile is bound. Subscribers may unsubscribe-then-resubscribe to leaf services
+        // (EnergyChanged, CoinsChanged) here. Subscribers must defensively check `this != null` since
+        // they may receive this during scene teardown.
         public event Action ProfileReplaced;
         public event Action StateChanged;
 
@@ -78,6 +92,11 @@ namespace Game.Runtime.Player
             }
         }
 
+        private void Start()
+        {
+            PollImpactInbox();
+        }
+
         public void EnsureVillageCapacity(int buildingCount)
         {
             EnsureInitialized();
@@ -110,6 +129,39 @@ namespace Game.Runtime.Player
             return results;
         }
 
+        public void PollImpactInbox()
+        {
+            if (this == null || gameObject == null)
+            {
+                return;
+            }
+
+            if (!TryResolveImpactProvider())
+            {
+                return;
+            }
+
+            IReadOnlyList<PlayerImpact> pending = pendingImpactProvider.DrainPending();
+            if (pending == null || pending.Count == 0)
+            {
+                return;
+            }
+
+            EnsureInitialized();
+
+            int i;
+            for (i = 0; i < pending.Count; i++)
+            {
+                PlayerImpact impact = pending[i];
+                if (impact == null)
+                {
+                    continue;
+                }
+
+                profile.ApplyExternalImpact(impact);
+            }
+        }
+
         public PlayerProfileSnapshot CreateSnapshot()
         {
             EnsureInitialized();
@@ -127,6 +179,23 @@ namespace Game.Runtime.Player
             TimeProvider timeProvider = new TimeProvider();
             PlayerProfile loadedProfile = PlayerProfile.FromSnapshot(snapshot, timeProvider);
             ReplaceProfile(loadedProfile, true);
+            PollImpactInbox();
+        }
+
+        private bool TryResolveImpactProvider()
+        {
+            if (pendingImpactProvider != null)
+            {
+                return true;
+            }
+
+            if (pendingImpactProviderSource == null)
+            {
+                return false;
+            }
+
+            pendingImpactProvider = pendingImpactProviderSource as IPendingImpactProvider;
+            return pendingImpactProvider != null;
         }
 
         private void EnsureInitialized()
@@ -168,6 +237,12 @@ namespace Game.Runtime.Player
 
         private void ReplaceProfile(PlayerProfile newProfile, bool notifyReplacement)
         {
+            // Unity-nullity guard: scene teardown can leave this in a destroyed-but-not-collected state.
+            if (this == null || gameObject == null)
+            {
+                return;
+            }
+
             if (newProfile == null)
             {
                 return;

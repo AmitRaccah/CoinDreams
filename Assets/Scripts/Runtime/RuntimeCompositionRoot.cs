@@ -1,7 +1,9 @@
 using Game.Domain.Cards;
 using Game.Domain.Village;
+using Game.Runtime.Cards;
 using Game.Runtime.Player;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 namespace Game.Runtime
 {
@@ -37,14 +39,26 @@ namespace Game.Runtime
             active = this;
             ResolveLocalPlayerContext();
             ResolveLocalAuthoritativeServices();
+
+            SceneManager.sceneUnloaded += OnSceneUnloaded;
         }
 
         private void OnDestroy()
         {
+            SceneManager.sceneUnloaded -= OnSceneUnloaded;
+
             if (active == this)
             {
                 active = null;
             }
+
+            // Cached interface references may outlive their MonoBehaviour sources; flush to avoid MissingReferenceException.
+            RuntimeServiceResolver.ClearCaches();
+        }
+
+        private static void OnSceneUnloaded(Scene scene)
+        {
+            RuntimeServiceResolver.ClearCaches();
         }
 
         public bool TryGetPlayerRuntimeContext(out PlayerRuntimeContext context)
@@ -166,6 +180,66 @@ namespace Game.Runtime
         private static MonoBehaviour cachedAuthoritativeDrawServiceSource;
         private static IAuthoritativeVillageUpgradeService cachedAuthoritativeVillageUpgradeService;
         private static MonoBehaviour cachedAuthoritativeVillageUpgradeServiceSource;
+        private static ICardDrawWorkflowCommands cachedDrawWorkflowCommands;
+        private static MonoBehaviour cachedDrawWorkflowCommandsSource;
+        private static bool drawServiceSearchAttempted;
+        private static bool villageServiceSearchAttempted;
+        private static bool drawWorkflowSearchAttempted;
+
+        public static void ClearCaches()
+        {
+            cachedRoot = null;
+            cachedPlayerRuntimeContext = null;
+            cachedAuthoritativeDrawService = null;
+            cachedAuthoritativeDrawServiceSource = null;
+            cachedAuthoritativeVillageUpgradeService = null;
+            cachedAuthoritativeVillageUpgradeServiceSource = null;
+            cachedDrawWorkflowCommands = null;
+            cachedDrawWorkflowCommandsSource = null;
+            drawServiceSearchAttempted = false;
+            villageServiceSearchAttempted = false;
+            drawWorkflowSearchAttempted = false;
+        }
+
+        public static bool TryResolveDrawWorkflowCommands(
+            MonoBehaviour configuredSource,
+            out ICardDrawWorkflowCommands commands,
+            out MonoBehaviour source)
+        {
+            if (TryResolveConfiguredService(configuredSource, out commands))
+            {
+                source = configuredSource;
+                cachedDrawWorkflowCommands = commands;
+                cachedDrawWorkflowCommandsSource = source;
+                return true;
+            }
+
+            if (cachedDrawWorkflowCommandsSource == null)
+            {
+                cachedDrawWorkflowCommands = null;
+                cachedDrawWorkflowCommandsSource = null;
+            }
+            else if (cachedDrawWorkflowCommands != null)
+            {
+                commands = cachedDrawWorkflowCommands;
+                source = cachedDrawWorkflowCommandsSource;
+                return true;
+            }
+
+            if (drawWorkflowSearchAttempted)
+            {
+                commands = null;
+                source = null;
+                return false;
+            }
+
+            drawWorkflowSearchAttempted = true;
+            return TryResolveSceneService(
+                out cachedDrawWorkflowCommands,
+                out cachedDrawWorkflowCommandsSource,
+                out commands,
+                out source);
+        }
 
         public static bool TryResolvePlayerContext(
             PlayerRuntimeContext configuredContext,
@@ -214,7 +288,13 @@ namespace Game.Runtime
                 return true;
             }
 
-            if (cachedAuthoritativeDrawService != null)
+            // Unity-nullity check: the MonoBehaviour overload of == flags destroyed objects so we re-resolve after scene unload.
+            if (cachedAuthoritativeDrawServiceSource == null)
+            {
+                cachedAuthoritativeDrawService = null;
+                cachedAuthoritativeDrawServiceSource = null;
+            }
+            else if (cachedAuthoritativeDrawService != null)
             {
                 service = cachedAuthoritativeDrawService;
                 source = cachedAuthoritativeDrawServiceSource;
@@ -229,6 +309,14 @@ namespace Game.Runtime
                 return true;
             }
 
+            if (drawServiceSearchAttempted)
+            {
+                service = null;
+                source = null;
+                return false;
+            }
+
+            drawServiceSearchAttempted = true;
             return TryResolveSceneService(
                 out cachedAuthoritativeDrawService,
                 out cachedAuthoritativeDrawServiceSource,
@@ -249,7 +337,12 @@ namespace Game.Runtime
                 return true;
             }
 
-            if (cachedAuthoritativeVillageUpgradeService != null)
+            if (cachedAuthoritativeVillageUpgradeServiceSource == null)
+            {
+                cachedAuthoritativeVillageUpgradeService = null;
+                cachedAuthoritativeVillageUpgradeServiceSource = null;
+            }
+            else if (cachedAuthoritativeVillageUpgradeService != null)
             {
                 service = cachedAuthoritativeVillageUpgradeService;
                 source = cachedAuthoritativeVillageUpgradeServiceSource;
@@ -264,6 +357,14 @@ namespace Game.Runtime
                 return true;
             }
 
+            if (villageServiceSearchAttempted)
+            {
+                service = null;
+                source = null;
+                return false;
+            }
+
+            villageServiceSearchAttempted = true;
             return TryResolveSceneService(
                 out cachedAuthoritativeVillageUpgradeService,
                 out cachedAuthoritativeVillageUpgradeServiceSource,

@@ -23,5 +23,10 @@ namespace Game.Infrastructure.Persistence
             string playerId,
             PlayerProfileSnapshot fallbackSnapshot,
             AuthoritativeVillageUpgradeRequest request);
+
+        Task<AuthoritativeStealResult> ExecuteStealAsync(
+            string thiefPlayerId,
+            string victimPlayerId,
+            AuthoritativeStealRequest request);
     }
 }

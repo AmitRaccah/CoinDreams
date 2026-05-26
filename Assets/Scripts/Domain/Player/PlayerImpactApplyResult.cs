@@ -64,6 +64,21 @@ namespace Game.Domain.Player
                 string.Empty);
         }
 
+        public static PlayerImpactApplyResult AppliedNothing(
+            string impactId,
+            PlayerImpactType impactType)
+        {
+            return new PlayerImpactApplyResult(
+                PlayerImpactApplyStatus.AppliedNothing,
+                impactId,
+                impactType,
+                0,
+                0,
+                0,
+                0,
+                string.Empty);
+        }
+
         public static PlayerImpactApplyResult Duplicate(
             string impactId,
             PlayerImpactType impactType)

@@ -8,6 +8,7 @@ namespace Game.Infrastructure.Persistence
         // Identity / Sync
         public string playerId;
         public int revision;
+        public int schemaVersion;
 
         // Currency
         public int coins;
@@ -24,11 +25,17 @@ namespace Game.Infrastructure.Persistence
         // Idempotency for async external impacts
         public string[] processedImpactIds;
 
+        // Cross-launch reconciliation flag: when true, local snapshot
+        // was not flushed cleanly to the server and should be pushed on next launch
+        // if local.revision > server.revision.
+        public bool savePending;
+
         public PlayerSaveData()
         {
             //Default values
             playerId = "local_player";
             revision = 0;
+            schemaVersion = 0;
             coins = 0;
 
             currentEnergy = 5;
@@ -38,6 +45,7 @@ namespace Game.Infrastructure.Persistence
 
             villageLevels = Array.Empty<int>();
             processedImpactIds = Array.Empty<string>();
+            savePending = false;
         }
     }
 }
