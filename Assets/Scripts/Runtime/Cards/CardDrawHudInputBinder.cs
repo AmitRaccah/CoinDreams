@@ -36,7 +36,7 @@ namespace Game.Runtime.Cards
             if (workflow == null)
             {
                 Debug.LogWarning(
-                    "[CardDrawHudInputBinder] Workflow not injected. Is GameplayLifetimeScope active?",
+                    "[CardDrawHudInputBinder] Workflow not injected. Is PersistentLifetimeScope active?",
                     this);
                 return;
             }
@@ -48,7 +48,7 @@ namespace Game.Runtime.Cards
             if (workflow == null)
             {
                 Debug.LogWarning(
-                    "[CardDrawHudInputBinder] Workflow not injected. Is GameplayLifetimeScope active?",
+                    "[CardDrawHudInputBinder] Workflow not injected. Is PersistentLifetimeScope active?",
                     this);
                 return;
             }

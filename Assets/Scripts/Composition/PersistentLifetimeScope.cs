@@ -5,7 +5,6 @@ using Game.Domain.Time;
 using Game.Infrastructure.Persistence;
 using Game.Runtime.Cards;
 using Game.Runtime.UI;
-using UnityEngine;
 using VContainer;
 using VContainer.Unity;
 
@@ -25,14 +24,11 @@ namespace Game.Composition
             // is registered here, not in GameplayLifetimeScope.
             builder.RegisterComponentInHierarchy<CardDrawHudInputBinder>();
 
-            // ICardDrawWorkflowCommands lives in the Gameplay scene. Persistent scope can't
-            // see Gameplay-scene hierarchy at build time, so resolve lazily via scene search.
-            // TODO Phase 1.4: replace with MessagePipe pub/sub (binder publishes
-            // DrawRequestedSignal / ReturnRequestedSignal, controller subscribes) once the
-            // signals are defined. Drops the FindAnyObjectByType call entirely.
-            builder.Register<ICardDrawWorkflowCommands>(
-                _ => Object.FindAnyObjectByType<CardDrawWorkflowController>(),
-                Lifetime.Singleton);
+            // The controller lives in the Gameplay scene which loads after Persistent's
+            // container builds. LazyCardDrawWorkflowProxy bridges the gap by resolving the
+            // controller on first click and caching it. Replace with MessagePipe pub/sub
+            // in Phase 1.4 final.
+            builder.Register<ICardDrawWorkflowCommands, LazyCardDrawWorkflowProxy>(Lifetime.Singleton);
 
             // Upcoming phases will add here:
             //   - IPlayerRepository (FirestorePlayerRepository) — blocked on Firebase init flow
