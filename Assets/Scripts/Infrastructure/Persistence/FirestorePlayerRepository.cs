@@ -172,6 +172,7 @@ namespace Game.Infrastructure.Persistence
                 normalizedPlayerId);
 
             DocumentReference playerDocument = GetPlayerDocument(normalizedPlayerId);
+            ITimeProvider timeProvider = new TimeProvider();
 
             try
             {
@@ -182,10 +183,10 @@ namespace Game.Infrastructure.Persistence
                         playerDocument,
                         normalizedFallback);
 
-                    // DrawId-derived seed makes retries deterministic.
+                    // DrawId-derived seed makes retries deterministic — RandomSource MUST stay inside the closure
+                    // so each retry gets a fresh instance and replays the same RNG sequence.
                     IRandomSource randomSource = new SystemRandomSource(
                         request.DrawId != null ? request.DrawId.GetHashCode() : 0);
-                    ITimeProvider timeProvider = new TimeProvider();
 
                     AuthoritativeDrawResult drawResult =
                         AuthoritativeDrawEngine.TryExecute(currentSnapshot, request, randomSource, timeProvider);
@@ -248,6 +249,7 @@ namespace Game.Infrastructure.Persistence
                 normalizedPlayerId);
 
             DocumentReference playerDocument = GetPlayerDocument(normalizedPlayerId);
+            ITimeProvider timeProvider = new TimeProvider();
 
             try
             {
@@ -257,8 +259,6 @@ namespace Game.Infrastructure.Persistence
                         transaction,
                         playerDocument,
                         normalizedFallback);
-
-                    ITimeProvider timeProvider = new TimeProvider();
 
                     AuthoritativeVillageUpgradeResult upgradeResult =
                         AuthoritativeVillageUpgradeEngine.TryExecute(currentSnapshot, request, timeProvider);
@@ -332,6 +332,7 @@ namespace Game.Infrastructure.Persistence
 
             DocumentReference thiefDocument = GetPlayerDocument(normalizedThiefId);
             DocumentReference victimDocument = GetPlayerDocument(normalizedVictimId);
+            ITimeProvider timeProvider = new TimeProvider();
 
             try
             {
@@ -370,7 +371,6 @@ namespace Game.Infrastructure.Persistence
                             "Server snapshot unreadable (victim): " + victimError);
                     }
 
-                    ITimeProvider timeProvider = new TimeProvider();
                     AuthoritativeStealResult stealResult = AuthoritativeStealEngine.TryExecute(
                         thiefSnapshot,
                         victimSnapshot,
