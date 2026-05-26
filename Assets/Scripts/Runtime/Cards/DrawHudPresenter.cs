@@ -313,7 +313,7 @@ namespace Game.Runtime.Cards
             uiRefreshCts = null;
         }
 
-        private async UniTaskVoid RefreshUiLoopAsync(CancellationToken token)
+        private async UniTask RefreshUiLoopAsync(CancellationToken token)
         {
             float interval = uiRefreshIntervalSeconds;
             if (interval <= 0f)

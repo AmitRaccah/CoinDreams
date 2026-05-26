@@ -117,7 +117,7 @@ namespace Game.Infrastructure.Persistence
 
         private void Start() => StartAsync().Forget(ex => Debug.LogException(ex, this));
 
-        private async UniTaskVoid StartAsync()
+        private async UniTask StartAsync()
         {
             if (!enabled)
             {
