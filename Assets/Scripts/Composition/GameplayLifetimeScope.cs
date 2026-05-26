@@ -1,6 +1,7 @@
 #nullable enable
 
 using Game.Runtime.Cards;
+using Game.Runtime.Village;
 using VContainer;
 using VContainer.Unity;
 
@@ -20,6 +21,7 @@ namespace Game.Composition
         protected override void Configure(IContainerBuilder builder)
         {
             builder.RegisterComponentInHierarchy<CardDrawWorkflowController>();
+            builder.RegisterComponentInHierarchy<VillageUpgradeRuntime>();
         }
     }
 }

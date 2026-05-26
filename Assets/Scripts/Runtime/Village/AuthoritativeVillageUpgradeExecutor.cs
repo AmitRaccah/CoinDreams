@@ -1,7 +1,8 @@
+#nullable enable
+
 using System;
 using System.Threading.Tasks;
 using Game.Domain.Village;
-using Game.Runtime;
 using UnityEngine;
 
 namespace Game.Runtime.Village
@@ -9,54 +10,20 @@ namespace Game.Runtime.Village
     internal sealed class AuthoritativeVillageUpgradeExecutor
     {
         private readonly MonoBehaviour logContext;
-        private MonoBehaviour serviceSource;
-        private IAuthoritativeVillageUpgradeService upgradeService;
+        private readonly IAuthoritativeVillageUpgradeService? upgradeService;
         private bool isUpgradeInFlight;
 
         public AuthoritativeVillageUpgradeExecutor(
             MonoBehaviour logContext,
-            MonoBehaviour serviceSource)
+            IAuthoritativeVillageUpgradeService? upgradeService)
         {
             this.logContext = logContext;
-            this.serviceSource = serviceSource;
-        }
-
-        public MonoBehaviour ServiceSource
-        {
-            get { return serviceSource; }
-        }
-
-        public void SetServiceSource(MonoBehaviour source)
-        {
-            if (serviceSource == source)
-            {
-                return;
-            }
-
-            serviceSource = source;
-            upgradeService = null;
+            this.upgradeService = upgradeService;
         }
 
         public void ResetInFlight()
         {
             isUpgradeInFlight = false;
-        }
-
-        public bool ResolveService()
-        {
-            if (RuntimeServiceResolver.TryResolveAuthoritativeVillageUpgradeService(
-                    serviceSource,
-                    out upgradeService,
-                    out MonoBehaviour resolvedSource))
-            {
-                serviceSource = resolvedSource;
-                return true;
-            }
-
-            Debug.LogWarning(
-                "[VillageUpgradeRuntime] No IAuthoritativeVillageUpgradeService implementation found in scene.",
-                logContext);
-            return false;
         }
 
         public async Task<BuildingUpgradeResult> TryUpgradeAsync(
@@ -71,11 +38,6 @@ namespace Game.Runtime.Village
             if (catalogData == null)
             {
                 return BuildingUpgradeResult.InvalidConfiguration(buildingIndex);
-            }
-
-            if (upgradeService == null)
-            {
-                ResolveService();
             }
 
             if (upgradeService == null || !upgradeService.IsReady)

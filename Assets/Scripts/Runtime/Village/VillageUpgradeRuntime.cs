@@ -1,10 +1,12 @@
+#nullable enable
+
 using System.Threading.Tasks;
 using Game.Config.Village;
 using Game.Domain.Economy;
 using Game.Domain.Village;
-using Game.Runtime;
 using Game.Runtime.Player;
 using UnityEngine;
+using VContainer;
 
 namespace Game.Runtime.Village
 {
@@ -12,19 +14,19 @@ namespace Game.Runtime.Village
     public sealed class VillageUpgradeRuntime : MonoBehaviour
     {
         [Header("Config")]
-        [SerializeField] private VillageDefinitionSO villageDefinition;
-        [SerializeField] private PlayerRuntimeContext playerRuntimeContext;
-        [SerializeField] private MonoBehaviour authoritativeVillageUpgradeServiceSource;
+        [SerializeField] private VillageDefinitionSO villageDefinition = null!;
+        [Inject] private PlayerRuntimeContext? playerRuntimeContext;
+        [Inject] private IAuthoritativeVillageUpgradeService? authoritativeVillageUpgradeService;
         [SerializeField] private bool applyVisualsOnAwake = true;
 
         [Header("Building Roots")]
         [SerializeField] private BuildingVisualController[] buildingVisualControllers =
             new BuildingVisualController[0];
 
-        private VillageUpgradeService upgradeService;
-        private AuthoritativeVillageUpgradeCatalogData authoritativeCatalogData;
-        private VillageBuildingVisualBindings visualBindings;
-        private AuthoritativeVillageUpgradeExecutor authoritativeUpgradeExecutor;
+        private VillageUpgradeService? upgradeService;
+        private AuthoritativeVillageUpgradeCatalogData? authoritativeCatalogData;
+        private VillageBuildingVisualBindings? visualBindings;
+        private AuthoritativeVillageUpgradeExecutor? authoritativeUpgradeExecutor;
         private bool initialized;
         private bool isContextSubscribed;
 
@@ -35,7 +37,7 @@ namespace Game.Runtime.Village
 
         private void Awake()
         {
-            if (!TryResolvePlayerContext())
+            if (playerRuntimeContext == null)
             {
                 Debug.LogError(
                     "[VillageUpgradeRuntime] Missing PlayerRuntimeContext. Assign PlayerRuntimeContext to use a single player source of truth.",
@@ -45,7 +47,6 @@ namespace Game.Runtime.Village
             }
 
             EnsureHelpers();
-            ResolveAuthoritativeUpgradeService();
             InitializeRuntime();
         }
 
@@ -69,7 +70,7 @@ namespace Game.Runtime.Village
             initialized = true;
             EnsureHelpers();
 
-            if (playerRuntimeContext == null && !TryResolvePlayerContext())
+            if (playerRuntimeContext == null)
             {
                 Debug.LogError(
                     "[VillageUpgradeRuntime] Missing PlayerRuntimeContext. Assign PlayerRuntimeContext to use a single player source of truth.",
@@ -77,7 +78,7 @@ namespace Game.Runtime.Village
                 return;
             }
 
-            ICurrencyWallet wallet = ResolveWallet();
+            ICurrencyWallet? wallet = ResolveWallet();
             if (wallet == null)
             {
                 Debug.LogError("[VillageUpgradeRuntime] Missing PlayerRuntimeContext wallet.", this);
@@ -93,7 +94,7 @@ namespace Game.Runtime.Village
                 return;
             }
 
-            VillageProgressState progressState =
+            VillageProgressState? progressState =
                 ResolveProgressState(runtimeCatalog.Catalog.BuildingCount);
             if (progressState == null)
             {
@@ -114,11 +115,11 @@ namespace Game.Runtime.Village
                 return;
             }
 
-            visualBindings.Rebuild(upgradeService);
+            visualBindings!.Rebuild(upgradeService);
 
             if (applyVisualsOnAwake)
             {
-                visualBindings.ApplyAll(upgradeService);
+                visualBindings!.ApplyAll(upgradeService);
             }
         }
 
@@ -132,7 +133,7 @@ namespace Game.Runtime.Village
             }
 
             int buildingIndex;
-            if (!upgradeService.TryGetBuildingIndex(buildingId, out buildingIndex))
+            if (!upgradeService!.TryGetBuildingIndex(buildingId, out buildingIndex))
             {
                 return BuildingUpgradeResult.InvalidConfiguration();
             }
@@ -161,7 +162,7 @@ namespace Game.Runtime.Village
                 return 0;
             }
 
-            return upgradeService.GetCurrentLevel(buildingId);
+            return upgradeService!.GetCurrentLevel(buildingId);
         }
 
         public int GetCurrentLevelByIndex(int buildingIndex)
@@ -173,7 +174,7 @@ namespace Game.Runtime.Village
                 return 0;
             }
 
-            return upgradeService.GetCurrentLevelByIndex(buildingIndex);
+            return upgradeService!.GetCurrentLevelByIndex(buildingIndex);
         }
 
         public int GetNextCost(string buildingId)
@@ -185,7 +186,7 @@ namespace Game.Runtime.Village
                 return -1;
             }
 
-            return upgradeService.GetNextCost(buildingId);
+            return upgradeService!.GetNextCost(buildingId);
         }
 
         public int GetNextCostByIndex(int buildingIndex)
@@ -197,7 +198,7 @@ namespace Game.Runtime.Village
                 return -1;
             }
 
-            return upgradeService.GetNextCostByIndex(buildingIndex);
+            return upgradeService!.GetNextCostByIndex(buildingIndex);
         }
 
         public int GetMaxLevelByIndex(int buildingIndex)
@@ -209,7 +210,7 @@ namespace Game.Runtime.Village
                 return 0;
             }
 
-            return upgradeService.GetMaxLevelByIndex(buildingIndex);
+            return upgradeService!.GetMaxLevelByIndex(buildingIndex);
         }
 
         public void ApplyAllVisuals()
@@ -221,30 +222,28 @@ namespace Game.Runtime.Village
                 return;
             }
 
-            visualBindings.ApplyAll(upgradeService);
+            visualBindings!.ApplyAll(upgradeService!);
         }
 
         private async Task<BuildingUpgradeResult> TryUpgradeAuthoritativeByIndexInternal(int buildingIndex)
         {
             EnsureHelpers();
 
-            BuildingUpgradeResult result = await authoritativeUpgradeExecutor.TryUpgradeAsync(
+            BuildingUpgradeResult result = await authoritativeUpgradeExecutor!.TryUpgradeAsync(
                 buildingIndex,
-                authoritativeCatalogData);
-
-            authoritativeVillageUpgradeServiceSource = authoritativeUpgradeExecutor.ServiceSource;
+                authoritativeCatalogData!);
 
             if (result.Status == BuildingUpgradeStatus.Success)
             {
-                visualBindings.ApplyForIndex(result.BuildingIndex, result.NewLevel);
+                visualBindings!.ApplyForIndex(result.BuildingIndex, result.NewLevel);
             }
 
             return result;
         }
 
-        private ICurrencyWallet ResolveWallet()
+        private ICurrencyWallet? ResolveWallet()
         {
-            PlayerRuntimeContext playerContext = playerRuntimeContext;
+            PlayerRuntimeContext? playerContext = playerRuntimeContext;
             if (playerContext != null)
             {
                 return playerContext.Wallet;
@@ -253,9 +252,9 @@ namespace Game.Runtime.Village
             return null;
         }
 
-        private VillageProgressState ResolveProgressState(int buildingCount)
+        private VillageProgressState? ResolveProgressState(int buildingCount)
         {
-            PlayerRuntimeContext playerContext = playerRuntimeContext;
+            PlayerRuntimeContext? playerContext = playerRuntimeContext;
             if (playerContext != null)
             {
                 playerContext.EnsureVillageCapacity(buildingCount);
@@ -263,21 +262,6 @@ namespace Game.Runtime.Village
             }
 
             return null;
-        }
-
-        private void ResolveAuthoritativeUpgradeService()
-        {
-            EnsureHelpers();
-            authoritativeUpgradeExecutor.SetServiceSource(authoritativeVillageUpgradeServiceSource);
-            authoritativeUpgradeExecutor.ResolveService();
-            authoritativeVillageUpgradeServiceSource = authoritativeUpgradeExecutor.ServiceSource;
-        }
-
-        private bool TryResolvePlayerContext()
-        {
-            return RuntimeServiceResolver.TryResolvePlayerContext(
-                playerRuntimeContext,
-                out playerRuntimeContext);
         }
 
         private void EnsureInitialized()
@@ -340,7 +324,7 @@ namespace Game.Runtime.Village
             {
                 authoritativeUpgradeExecutor = new AuthoritativeVillageUpgradeExecutor(
                     this,
-                    authoritativeVillageUpgradeServiceSource);
+                    authoritativeVillageUpgradeService);
             }
         }
     }
