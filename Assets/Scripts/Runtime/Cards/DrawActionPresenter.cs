@@ -1,9 +1,10 @@
+#nullable enable
 using System.Threading.Tasks;
 using Game.Config.Cards;
 using Game.Domain.Cards;
-using Game.Runtime;
 using Game.Runtime.Player;
 using UnityEngine;
+using VContainer;
 
 namespace Game.Runtime.Cards
 {
@@ -12,35 +13,30 @@ namespace Game.Runtime.Cards
     {
         [Header("Config")]
         [SerializeField] private int drawCost = 1;
-        [SerializeField] private CardDeckSO deckConfig;
-        [SerializeField] private PlayerRuntimeContext playerRuntimeContext;
-        [SerializeField] private MonoBehaviour authoritativeDrawServiceSource;
-        [SerializeField] private MonoBehaviour drawResultSinkSource;
+        [SerializeField] private CardDeckSO? deckConfig;
+        [SerializeField] private MonoBehaviour? drawResultSinkSource;
 
-        private IAuthoritativeDrawService authoritativeDrawService;
-        private IDrawResultSink drawResultSink;
-        private AuthoritativeDrawRequest drawRequest;
+        [Inject] private PlayerRuntimeContext? playerRuntimeContext;
+        [Inject] private IAuthoritativeDrawService? authoritativeDrawService;
+
+        private IDrawResultSink? drawResultSink;
+        private AuthoritativeDrawRequest? drawRequest;
         private bool isDrawInFlight;
         private int pendingMultiplier = 1;
-        private string pendingDrawId;
+        private string? pendingDrawId;
         private readonly AuthoritativeDrawRequestFactory drawRequestFactory =
             new AuthoritativeDrawRequestFactory();
 
         public void Configure(
             int drawCost,
             CardDeckSO deckConfig,
-            PlayerRuntimeContext playerRuntimeContext,
-            MonoBehaviour authoritativeDrawServiceSource,
             IDrawResultSink drawResultSink)
         {
             this.drawCost = drawCost;
             this.deckConfig = deckConfig;
-            this.playerRuntimeContext = playerRuntimeContext;
-            this.authoritativeDrawServiceSource = authoritativeDrawServiceSource;
             this.drawResultSink = drawResultSink;
             drawResultSinkSource = drawResultSink as MonoBehaviour;
             RebuildDrawRequest();
-            ResolveAuthoritativeDrawService();
         }
 
         public void SetMultiplier(int multiplier)
@@ -60,16 +56,16 @@ namespace Game.Runtime.Cards
 
         public async Task<AuthoritativeDrawResult> TryDrawAsync()
         {
-            if (!TryPrepareDraw(out AuthoritativeDrawResult preconditionFailure))
+            if (!TryPrepareDraw(out AuthoritativeDrawResult? preconditionFailure))
             {
-                PublishResult(preconditionFailure);
-                return preconditionFailure;
+                PublishResult(preconditionFailure!);
+                return preconditionFailure!;
             }
 
             isDrawInFlight = true;
             try
             {
-                AuthoritativeDrawResult result = await authoritativeDrawService.TryDrawAsync(drawRequest);
+                AuthoritativeDrawResult result = await authoritativeDrawService!.TryDrawAsync(drawRequest!);
                 if (result == null)
                 {
                     result = AuthoritativeDrawResult.Error("Draw failed.");
@@ -93,7 +89,7 @@ namespace Game.Runtime.Cards
             }
         }
 
-        private bool TryPrepareDraw(out AuthoritativeDrawResult failureResult)
+        private bool TryPrepareDraw(out AuthoritativeDrawResult? failureResult)
         {
             failureResult = null;
 
@@ -103,15 +99,10 @@ namespace Game.Runtime.Cards
                 return false;
             }
 
-            if (!TryResolvePlayerContext())
+            if (playerRuntimeContext == null)
             {
                 failureResult = AuthoritativeDrawResult.Unavailable("Player context missing.");
                 return false;
-            }
-
-            if (authoritativeDrawService == null)
-            {
-                ResolveAuthoritativeDrawService();
             }
 
             if (authoritativeDrawService == null)
@@ -169,29 +160,6 @@ namespace Game.Runtime.Cards
             }
 
             drawResultSink = GetComponent<IDrawResultSink>();
-        }
-
-        private void ResolveAuthoritativeDrawService()
-        {
-            if (RuntimeServiceResolver.TryResolveAuthoritativeDrawService(
-                    authoritativeDrawServiceSource,
-                    out authoritativeDrawService,
-                    out MonoBehaviour resolvedSource))
-            {
-                authoritativeDrawServiceSource = resolvedSource;
-                return;
-            }
-
-            Debug.LogWarning(
-                "[DrawActionPresenter] No IAuthoritativeDrawService implementation found in scene.",
-                this);
-        }
-
-        private bool TryResolvePlayerContext()
-        {
-            return RuntimeServiceResolver.TryResolvePlayerContext(
-                playerRuntimeContext,
-                out playerRuntimeContext);
         }
 
         private void PublishResult(AuthoritativeDrawResult result)

@@ -20,7 +20,11 @@ namespace Game.Composition
             builder.RegisterInstance(NullMinigameLauncher.Instance).As<IMinigameLauncher>();
 
             builder.RegisterComponentInHierarchy<PlayerRuntimeContext>();
-            builder.RegisterComponentInHierarchy<FirebasePlayerPersistenceRuntime>();
+            builder.RegisterComponentInHierarchy<FirebasePlayerPersistenceRuntime>()
+                .AsImplementedInterfaces()
+                .AsSelf();
+            builder.RegisterComponentInHierarchy<DrawHudPresenter>();
+            builder.RegisterComponentInHierarchy<DrawActionPresenter>();
 
             // UI lives in Persistent scene (per recent scene-split refactor), so the binder
             // is registered here, not in GameplayLifetimeScope.

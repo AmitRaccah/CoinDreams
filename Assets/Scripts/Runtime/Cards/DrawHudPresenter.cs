@@ -5,11 +5,11 @@ using Cysharp.Threading.Tasks;
 using Game.Domain.Cards;
 using Game.Domain.Economy;
 using Game.Domain.Energy;
-using Game.Runtime;
 using Game.Runtime.Player;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
 
 namespace Game.Runtime.Cards
 {
@@ -18,7 +18,6 @@ namespace Game.Runtime.Cards
     {
         [Header("Config")]
         [SerializeField] private float uiRefreshIntervalSeconds = 1f;
-        [SerializeField] private PlayerRuntimeContext? playerRuntimeContext;
 
         [Header("UI")]
         [SerializeField] private Slider? energySlider;
@@ -27,6 +26,8 @@ namespace Game.Runtime.Cards
         [SerializeField] private TMP_Text? extraEnergyText;
         [SerializeField] private TMP_Text? coinsText;
         [SerializeField] private TMP_Text? resultText;
+
+        [Inject] private PlayerRuntimeContext? playerRuntimeContext;
 
         private EnergyService? energyService;
         private CurrencyService? currencyService;
@@ -44,7 +45,7 @@ namespace Game.Runtime.Cards
 
         private void Awake()
         {
-            if (!TryResolvePlayerContext())
+            if (playerRuntimeContext == null)
             {
                 return;
             }
@@ -69,7 +70,6 @@ namespace Game.Runtime.Cards
         }
 
         public void Configure(
-            PlayerRuntimeContext playerRuntimeContext,
             float uiRefreshIntervalSeconds,
             Slider energySlider,
             TMP_Text energyText,
@@ -78,7 +78,6 @@ namespace Game.Runtime.Cards
             TMP_Text coinsText,
             TMP_Text resultText)
         {
-            this.playerRuntimeContext = playerRuntimeContext;
             this.uiRefreshIntervalSeconds = uiRefreshIntervalSeconds;
             this.energySlider = energySlider;
             this.energyText = energyText;
@@ -86,11 +85,6 @@ namespace Game.Runtime.Cards
             this.extraEnergyText = extraEnergyText;
             this.coinsText = coinsText;
             this.resultText = resultText;
-
-            if (!TryResolvePlayerContext())
-            {
-                return;
-            }
 
             RebuildRuntimeBindings();
             RefreshAllUi();
@@ -241,13 +235,6 @@ namespace Game.Runtime.Cards
             {
                 resultText.text = message;
             }
-        }
-
-        private bool TryResolvePlayerContext()
-        {
-            return RuntimeServiceResolver.TryResolvePlayerContext(
-                playerRuntimeContext,
-                out playerRuntimeContext);
         }
 
         private void RebuildRuntimeBindings()
