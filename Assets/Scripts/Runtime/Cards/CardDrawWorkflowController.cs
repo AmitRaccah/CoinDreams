@@ -1,13 +1,17 @@
 #nullable enable
 
+using System;
 using Cysharp.Threading.Tasks;
+using Game.Composition.Signals;
+using MessagePipe;
 using UnityEngine;
 using UnityEngine.Serialization;
+using VContainer;
 
 namespace Game.Runtime.Cards
 {
     [DisallowMultipleComponent]
-    public sealed class CardDrawWorkflowController : MonoBehaviour, ICardDrawWorkflowCommands
+    public sealed class CardDrawWorkflowController : MonoBehaviour
     {
         [Header("Dependencies")]
         [FormerlySerializedAs("drawGamePresenter")]
@@ -26,6 +30,12 @@ namespace Game.Runtime.Cards
         private ICameraTransitionService? cameraTransitionService;
         private IDrawAnimator? drawAnimator;
 
+        [Inject] private ISubscriber<DrawRequestedSignal>? drawSubscriber;
+        [Inject] private ISubscriber<ReturnRequestedSignal>? returnSubscriber;
+
+        private IDisposable? drawSubscription;
+        private IDisposable? returnSubscription;
+
         private readonly CardDrawWorkflowStateMachine workflowState = new CardDrawWorkflowStateMachine();
 
         private DrawWorkflowExecutor? executor;
@@ -42,6 +52,21 @@ namespace Game.Runtime.Cards
                 this.cardBoardAnchor,
                 this.cityViewAnchor,
                 this);
+
+            if (drawSubscriber != null)
+            {
+                this.drawSubscription = drawSubscriber.Subscribe(_ => this.RequestDraw());
+            }
+            if (returnSubscriber != null)
+            {
+                this.returnSubscription = returnSubscriber.Subscribe(_ => this.RequestReturn());
+            }
+        }
+
+        private void OnDestroy()
+        {
+            this.drawSubscription?.Dispose();
+            this.returnSubscription?.Dispose();
         }
 
         public void RequestDraw() =>

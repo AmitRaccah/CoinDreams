@@ -1,5 +1,7 @@
 #nullable enable
 
+using Game.Composition.Signals;
+using MessagePipe;
 using UnityEngine;
 using UnityEngine.UI;
 using VContainer;
@@ -12,7 +14,8 @@ namespace Game.Runtime.Cards
         [SerializeField] private Button? drawButton;
         [SerializeField] private Button? returnButton;
 
-        [Inject] private ICardDrawWorkflowCommands? workflow;
+        [Inject] private IPublisher<DrawRequestedSignal>? drawPublisher;
+        [Inject] private IPublisher<ReturnRequestedSignal>? returnPublisher;
 
         private bool wired;
 
@@ -33,26 +36,26 @@ namespace Game.Runtime.Cards
 
         private void HandleDraw()
         {
-            if (workflow == null)
+            if (drawPublisher == null)
             {
                 Debug.LogWarning(
-                    "[CardDrawHudInputBinder] Workflow not injected. Is PersistentLifetimeScope active?",
+                    "[CardDrawHudInputBinder] Draw publisher not injected. Is PersistentLifetimeScope active?",
                     this);
                 return;
             }
-            workflow.RequestDraw();
+            drawPublisher.Publish(default);
         }
 
         private void HandleReturn()
         {
-            if (workflow == null)
+            if (returnPublisher == null)
             {
                 Debug.LogWarning(
-                    "[CardDrawHudInputBinder] Workflow not injected. Is PersistentLifetimeScope active?",
+                    "[CardDrawHudInputBinder] Return publisher not injected. Is PersistentLifetimeScope active?",
                     this);
                 return;
             }
-            workflow.RequestReturn();
+            returnPublisher.Publish(default);
         }
     }
 }
