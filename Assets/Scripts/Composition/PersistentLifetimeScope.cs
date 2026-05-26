@@ -4,6 +4,7 @@ using Game.Domain.Minigames;
 using Game.Domain.Time;
 using Game.Infrastructure.Persistence;
 using Game.Runtime.Cards;
+using Game.Runtime.Player;
 using Game.Runtime.UI;
 using VContainer;
 using VContainer.Unity;
@@ -18,6 +19,7 @@ namespace Game.Composition
             builder.Register<UiNavigatorStub>(Lifetime.Singleton).As<IUiNavigator>();
             builder.RegisterInstance(NullMinigameLauncher.Instance).As<IMinigameLauncher>();
 
+            builder.RegisterComponentInHierarchy<PlayerRuntimeContext>();
             builder.RegisterComponentInHierarchy<FirebasePlayerPersistenceRuntime>();
 
             // UI lives in Persistent scene (per recent scene-split refactor), so the binder

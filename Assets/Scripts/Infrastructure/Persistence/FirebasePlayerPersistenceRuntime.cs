@@ -6,7 +6,6 @@ using Game.Domain.Cards;
 using Game.Domain.Player;
 using Game.Domain.Time;
 using Game.Domain.Village;
-using Game.Runtime;
 using Game.Runtime.Player;
 using UnityEngine;
 using VContainer;
@@ -47,6 +46,7 @@ namespace Game.Infrastructure.Persistence
         private readonly SemaphoreSlim saveLock = new SemaphoreSlim(1, 1);
 
         [Inject] private ITimeProvider? injectedTimeProvider;
+        [Inject] private PlayerRuntimeContext? injectedPlayerRuntimeContext;
 
         private bool loadCompleted;
         private bool isSubscribed;
@@ -66,7 +66,12 @@ namespace Game.Infrastructure.Persistence
 
         private void Awake()
         {
-            if (!TryResolvePlayerContext())
+            if (playerRuntimeContext == null)
+            {
+                playerRuntimeContext = injectedPlayerRuntimeContext;
+            }
+
+            if (playerRuntimeContext == null)
             {
                 Debug.LogError("[FirebasePlayerPersistenceRuntime] Missing PlayerRuntimeContext.", this);
                 enabled = false;
@@ -597,13 +602,6 @@ namespace Game.Infrastructure.Persistence
 
             playerRuntimeContext.StateChanged -= HandlePlayerStateChanged;
             isSubscribed = false;
-        }
-
-        private bool TryResolvePlayerContext()
-        {
-            return RuntimeServiceResolver.TryResolvePlayerContext(
-                playerRuntimeContext,
-                out playerRuntimeContext);
         }
 
         private PlayerProfileSnapshot CreateSnapshotForInitialization()
