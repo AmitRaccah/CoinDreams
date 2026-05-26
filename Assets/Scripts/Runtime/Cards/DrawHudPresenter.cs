@@ -1,4 +1,7 @@
-using System.Collections;
+#nullable enable
+using System;
+using System.Threading;
+using Cysharp.Threading.Tasks;
 using Game.Domain.Cards;
 using Game.Domain.Economy;
 using Game.Domain.Energy;
@@ -15,19 +18,19 @@ namespace Game.Runtime.Cards
     {
         [Header("Config")]
         [SerializeField] private float uiRefreshIntervalSeconds = 1f;
-        [SerializeField] private PlayerRuntimeContext playerRuntimeContext;
+        [SerializeField] private PlayerRuntimeContext? playerRuntimeContext;
 
         [Header("UI")]
-        [SerializeField] private Slider energySlider;
-        [SerializeField] private TMP_Text energyText;
-        [SerializeField] private TMP_Text energyTimerText;
-        [SerializeField] private TMP_Text extraEnergyText;
-        [SerializeField] private TMP_Text coinsText;
-        [SerializeField] private TMP_Text resultText;
+        [SerializeField] private Slider? energySlider;
+        [SerializeField] private TMP_Text? energyText;
+        [SerializeField] private TMP_Text? energyTimerText;
+        [SerializeField] private TMP_Text? extraEnergyText;
+        [SerializeField] private TMP_Text? coinsText;
+        [SerializeField] private TMP_Text? resultText;
 
-        private EnergyService energyService;
-        private CurrencyService currencyService;
-        private Coroutine uiRefreshRoutine;
+        private EnergyService? energyService;
+        private CurrencyService? currencyService;
+        private CancellationTokenSource? uiRefreshCts;
         private bool isSubscribed;
         private bool energyUiCacheInitialized;
         private bool coinsUiCacheInitialized;
@@ -189,7 +192,10 @@ namespace Game.Runtime.Cards
         private void HandleEnergyChanged(int currentEnergy, int maxEnergyValue, int extraEnergy)
         {
             RefreshEnergyUi(currentEnergy, maxEnergyValue, extraEnergy);
-            RefreshTimerUi(energyService.GetSecondsUntilNext());
+            if (energyService != null)
+            {
+                RefreshTimerUi(energyService.GetSecondsUntilNext());
+            }
         }
 
         private void HandleCoinsChanged(int coins)
@@ -286,26 +292,28 @@ namespace Game.Runtime.Cards
 
         private void StartUiRefreshLoop()
         {
-            if (uiRefreshRoutine != null)
+            if (uiRefreshCts != null)
             {
                 return;
             }
 
-            uiRefreshRoutine = StartCoroutine(RefreshUiLoop());
+            this.uiRefreshCts = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
+            RefreshUiLoopAsync(this.uiRefreshCts.Token).Forget(ex => Debug.LogException(ex, this));
         }
 
         private void StopUiRefreshLoop()
         {
-            if (uiRefreshRoutine == null)
+            if (uiRefreshCts == null)
             {
                 return;
             }
 
-            StopCoroutine(uiRefreshRoutine);
-            uiRefreshRoutine = null;
+            uiRefreshCts.Cancel();
+            uiRefreshCts.Dispose();
+            uiRefreshCts = null;
         }
 
-        private IEnumerator RefreshUiLoop()
+        private async UniTaskVoid RefreshUiLoopAsync(CancellationToken token)
         {
             float interval = uiRefreshIntervalSeconds;
             if (interval <= 0f)
@@ -313,9 +321,9 @@ namespace Game.Runtime.Cards
                 interval = 1f;
             }
 
-            WaitForSecondsRealtime delay = new WaitForSecondsRealtime(interval);
+            TimeSpan delay = TimeSpan.FromSeconds(interval);
 
-            while (true)
+            while (!token.IsCancellationRequested)
             {
                 if (energyService != null)
                 {
@@ -323,7 +331,7 @@ namespace Game.Runtime.Cards
                     RefreshTimerUi(energyService.GetSecondsUntilNext());
                 }
 
-                yield return delay;
+                await UniTask.Delay(delay, DelayType.Realtime, PlayerLoopTiming.Update, token);
             }
         }
 

@@ -1,5 +1,7 @@
+#nullable enable
 using System.Threading;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
 using Game.Domain.Cards;
 using Game.Domain.Player;
 using Game.Domain.Village;
@@ -18,7 +20,7 @@ namespace Game.Infrastructure.Persistence
         private const string PlayersCollectionName = "players";
 
         [Header("References")]
-        [SerializeField] private PlayerRuntimeContext playerRuntimeContext;
+        [SerializeField] private PlayerRuntimeContext? playerRuntimeContext;
 
         [Header("Flow")]
         [SerializeField] private bool autoLoadOnStart = true;
@@ -37,15 +39,15 @@ namespace Game.Infrastructure.Persistence
         [SerializeField] private bool clearLocalCacheOnStart;
         [SerializeField] private bool forceFreshAnonymousIdentityOnStart;
 
-        private FirebasePlayerSession session;
-        private AutosaveScheduler autosaveScheduler;
-        private LocalCacheCoordinator localCache;
+        private FirebasePlayerSession? session;
+        private AutosaveScheduler? autosaveScheduler;
+        private LocalCacheCoordinator? localCache;
         private readonly SemaphoreSlim saveLock = new SemaphoreSlim(1, 1);
 
         private bool loadCompleted;
         private bool isSubscribed;
         private bool suppressStateTracking;
-        private PlayerProfileSnapshot pendingLocalSnapshot;
+        private PlayerProfileSnapshot? pendingLocalSnapshot;
 
         public bool IsReady
         {
@@ -113,14 +115,16 @@ namespace Game.Infrastructure.Persistence
             UnsubscribeFromPlayerState();
         }
 
-        private async void Start()
+        private void Start() => StartAsync().Forget(ex => Debug.LogException(ex, this));
+
+        private async UniTaskVoid StartAsync()
         {
             if (!enabled)
             {
                 return;
             }
 
-            bool initialized = await session.InitializeAsync(
+            bool initialized = await session!.InitializeAsync(
                 forceFreshAnonymousIdentityOnStart,
                 verboseLogging,
                 this,
@@ -139,22 +143,22 @@ namespace Game.Infrastructure.Persistence
 
             await LoadOrCreatePlayerSnapshotAsync();
             loadCompleted = true;
-            autosaveScheduler.ClearDirty(Time.unscaledTime);
+            autosaveScheduler!.ClearDirty(Time.unscaledTime);
         }
 
         private void Update()
         {
-            if (!autoSave || !loadCompleted || !session.IsReady)
+            if (!autoSave || !loadCompleted || session is null || !session.IsReady)
             {
                 return;
             }
 
-            if (!autosaveScheduler.ShouldSave(Time.unscaledTime))
+            if (!autosaveScheduler!.ShouldSave(Time.unscaledTime))
             {
                 return;
             }
 
-            _ = SaveNowAsync();
+            SaveNowAsync().AsUniTask().Forget(ex => Debug.LogException(ex, this));
         }
 
         private void OnApplicationPause(bool pause)
@@ -171,7 +175,7 @@ namespace Game.Infrastructure.Persistence
                 return;
             }
 
-            _ = SaveNowAsync();
+            SaveNowAsync().AsUniTask().Forget(ex => Debug.LogException(ex, this));
         }
 
         private void OnApplicationQuit()
@@ -180,6 +184,11 @@ namespace Game.Infrastructure.Persistence
             // if local.savePending && local.revision > server.revision, push local.
             // We deliberately avoid the fire-and-forget _ = SaveNowAsync() pattern here
             // because the Unity quit pipeline does not await background tasks.
+            if (localCache is null)
+            {
+                return;
+            }
+
             localCache.MarkPending();
             FlushLocalCacheNow(markPending: true);
         }
@@ -194,11 +203,11 @@ namespace Game.Infrastructure.Persistence
             await saveLock.WaitAsync();
             try
             {
-                autosaveScheduler.BeginSave();
+                autosaveScheduler!.BeginSave();
                 try
                 {
-                    PlayerProfileSnapshot snapshot = playerRuntimeContext.CreateSnapshot();
-                    snapshot.playerId = session.AuthenticatedPlayerId;
+                    PlayerProfileSnapshot snapshot = playerRuntimeContext!.CreateSnapshot();
+                    snapshot.playerId = session!.AuthenticatedPlayerId;
                     int snapshotRevision = snapshot.revision;
 
                     SaveSnapshotResult saveResult = await session.Repository.SaveSnapshotAsync(
@@ -219,7 +228,7 @@ namespace Game.Infrastructure.Persistence
                     if (currentRevision <= snapshotRevision)
                     {
                         PersistToLocalCache(snapshot);
-                        localCache.ClearPending();
+                        localCache!.ClearPending();
                     }
 
                     return true;
@@ -252,7 +261,7 @@ namespace Game.Infrastructure.Persistence
             try
             {
                 PlayerProfileSnapshot fallbackSnapshot = CreateSnapshotForInitialization();
-                fallbackSnapshot.playerId = session.AuthenticatedPlayerId;
+                fallbackSnapshot.playerId = session!.AuthenticatedPlayerId;
 
                 AuthoritativeDrawResult drawResult = await session.Repository.ExecuteDrawAsync(
                     session.AuthenticatedPlayerId,
@@ -264,8 +273,8 @@ namespace Game.Infrastructure.Persistence
                     drawResult.Snapshot.playerId = session.AuthenticatedPlayerId;
                     LoadSnapshotWithoutTracking(drawResult.Snapshot);
                     PersistToLocalCache(drawResult.Snapshot);
-                    localCache.ClearPending();
-                    autosaveScheduler.ClearDirty(Time.unscaledTime);
+                    localCache!.ClearPending();
+                    autosaveScheduler!.ClearDirty(Time.unscaledTime);
                 }
 
                 return drawResult;
@@ -294,7 +303,7 @@ namespace Game.Infrastructure.Persistence
             try
             {
                 PlayerProfileSnapshot fallbackSnapshot = CreateSnapshotForInitialization();
-                fallbackSnapshot.playerId = session.AuthenticatedPlayerId;
+                fallbackSnapshot.playerId = session!.AuthenticatedPlayerId;
 
                 AuthoritativeVillageUpgradeResult upgradeResult =
                     await session.Repository.ExecuteVillageUpgradeAsync(
@@ -307,8 +316,8 @@ namespace Game.Infrastructure.Persistence
                     upgradeResult.Snapshot.playerId = session.AuthenticatedPlayerId;
                     LoadSnapshotWithoutTracking(upgradeResult.Snapshot);
                     PersistToLocalCache(upgradeResult.Snapshot);
-                    localCache.ClearPending();
-                    autosaveScheduler.ClearDirty(Time.unscaledTime);
+                    localCache!.ClearPending();
+                    autosaveScheduler!.ClearDirty(Time.unscaledTime);
                 }
 
                 return upgradeResult;
@@ -321,7 +330,7 @@ namespace Game.Infrastructure.Persistence
 
         private async Task LoadOrCreatePlayerSnapshotAsync()
         {
-            if (!session.IsReady || playerRuntimeContext == null)
+            if (session is null || !session.IsReady || playerRuntimeContext == null)
             {
                 return;
             }
@@ -353,7 +362,7 @@ namespace Game.Infrastructure.Persistence
                         Debug.LogWarning(
                             "[FirebasePlayerPersistenceRuntime] Failed to persist fresh profile to remote after force-fresh start.",
                             this);
-                        autosaveScheduler.MarkDirty(Time.unscaledTime);
+                        autosaveScheduler!.MarkDirty(Time.unscaledTime);
                     }
                 }
 
@@ -392,7 +401,7 @@ namespace Game.Infrastructure.Persistence
                     if (pushResult.Success)
                     {
                         PersistToLocalCache(pendingLocalSnapshot);
-                        localCache.ClearPending();
+                        localCache!.ClearPending();
                     }
                     else
                     {
@@ -408,7 +417,7 @@ namespace Game.Infrastructure.Persistence
 
                 LoadSnapshotWithoutTracking(serverSnapshot);
                 PersistToLocalCache(serverSnapshot);
-                localCache.ClearPending();
+                localCache!.ClearPending();
                 pendingLocalSnapshot = null;
 
                 if (verboseLogging)
@@ -453,19 +462,19 @@ namespace Game.Infrastructure.Persistence
                     Debug.LogWarning(
                         "[FirebasePlayerPersistenceRuntime] Failed to create initial remote profile.",
                         this);
-                    autosaveScheduler.MarkDirty(Time.unscaledTime);
+                    autosaveScheduler!.MarkDirty(Time.unscaledTime);
                 }
                 else
                 {
                     PersistToLocalCache(localSnapshot);
-                    localCache.ClearPending();
+                    localCache!.ClearPending();
                 }
             }
         }
 
         private void TryLoadFromLocalCache()
         {
-            if (!localCache.IsEnabled || playerRuntimeContext == null)
+            if (localCache is null || !localCache.IsEnabled || playerRuntimeContext == null)
             {
                 return;
             }
@@ -500,7 +509,7 @@ namespace Game.Infrastructure.Persistence
 
         private bool PersistToLocalCache(PlayerProfileSnapshot snapshot)
         {
-            if (snapshot == null)
+            if (snapshot == null || localCache is null)
             {
                 return false;
             }
@@ -526,7 +535,7 @@ namespace Game.Infrastructure.Persistence
 
         private void FlushLocalCacheNow(bool markPending)
         {
-            if (!localCache.IsEnabled || playerRuntimeContext == null)
+            if (localCache is null || !localCache.IsEnabled || playerRuntimeContext == null)
             {
                 return;
             }
@@ -550,7 +559,7 @@ namespace Game.Infrastructure.Persistence
                 return;
             }
 
-            if (!loadCompleted)
+            if (!loadCompleted || autosaveScheduler is null)
             {
                 return;
             }
@@ -592,7 +601,7 @@ namespace Game.Infrastructure.Persistence
             suppressStateTracking = true;
             try
             {
-                return playerRuntimeContext.CreateSnapshot();
+                return playerRuntimeContext!.CreateSnapshot();
             }
             finally
             {
@@ -600,7 +609,7 @@ namespace Game.Infrastructure.Persistence
             }
         }
 
-        private static PlayerProfileSnapshot CloneSnapshotForPending(PlayerProfileSnapshot snapshot)
+        private static PlayerProfileSnapshot? CloneSnapshotForPending(PlayerProfileSnapshot snapshot)
         {
             if (snapshot == null)
             {
@@ -616,7 +625,7 @@ namespace Game.Infrastructure.Persistence
             suppressStateTracking = true;
             try
             {
-                playerRuntimeContext.LoadSnapshot(snapshot);
+                playerRuntimeContext!.LoadSnapshot(snapshot);
             }
             finally
             {

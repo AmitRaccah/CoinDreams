@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using Game.Domain.Cards.Effects;
@@ -6,27 +7,15 @@ namespace Game.Domain.Cards
 {
     public static class AuthoritativeEffectRegistry
     {
-        private static readonly Dictionary<AuthoritativeDrawEffectType, Func<AuthoritativeDrawEffectDefinition, IRewardEffect>> factories =
-            new Dictionary<AuthoritativeDrawEffectType, Func<AuthoritativeDrawEffectDefinition, IRewardEffect>>();
-
-        static AuthoritativeEffectRegistry()
-        {
-            Register(AuthoritativeDrawEffectType.AddCoins, def => new AddResourceEffect(RewardResourceType.Currency, def.IntValue));
-            Register(AuthoritativeDrawEffectType.AddEnergy, def => new AddResourceEffect(RewardResourceType.Energy, def.IntValue));
-            Register(AuthoritativeDrawEffectType.LaunchMinigame, def => new LaunchMinigameEffect(def.StringValue));
-        }
-
-        public static void Register(AuthoritativeDrawEffectType type, Func<AuthoritativeDrawEffectDefinition, IRewardEffect> factory)
-        {
-            if (factory == null)
+        private static readonly IReadOnlyDictionary<AuthoritativeDrawEffectType, Func<AuthoritativeDrawEffectDefinition, IRewardEffect>> Factories =
+            new Dictionary<AuthoritativeDrawEffectType, Func<AuthoritativeDrawEffectDefinition, IRewardEffect>>
             {
-                throw new ArgumentNullException(nameof(factory));
-            }
+                { AuthoritativeDrawEffectType.AddCoins, def => new AddResourceEffect(RewardResourceType.Currency, def.IntValue) },
+                { AuthoritativeDrawEffectType.AddEnergy, def => new AddResourceEffect(RewardResourceType.Energy, def.IntValue) },
+                { AuthoritativeDrawEffectType.LaunchMinigame, def => new LaunchMinigameEffect(def.StringValue) }
+            };
 
-            factories[type] = factory;
-        }
-
-        public static bool TryCreate(AuthoritativeDrawEffectDefinition definition, out IRewardEffect effect)
+        public static bool TryCreate(AuthoritativeDrawEffectDefinition? definition, out IRewardEffect? effect)
         {
             effect = null;
 
@@ -35,8 +24,7 @@ namespace Game.Domain.Cards
                 return false;
             }
 
-            Func<AuthoritativeDrawEffectDefinition, IRewardEffect> factory;
-            if (!factories.TryGetValue(definition.EffectType, out factory))
+            if (!Factories.TryGetValue(definition.EffectType, out Func<AuthoritativeDrawEffectDefinition, IRewardEffect>? factory))
             {
                 return false;
             }
@@ -45,9 +33,7 @@ namespace Game.Domain.Cards
             return true;
         }
 
-        public static bool IsSupported(AuthoritativeDrawEffectType effectType)
-        {
-            return factories.ContainsKey(effectType);
-        }
+        public static bool IsSupported(AuthoritativeDrawEffectType effectType) =>
+            Factories.ContainsKey(effectType);
     }
 }

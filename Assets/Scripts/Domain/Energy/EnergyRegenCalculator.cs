@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 
 namespace Game.Domain.Energy
@@ -5,6 +6,7 @@ namespace Game.Domain.Energy
     public sealed class EnergyRegenCalculator
     {
         private const long MaxFutureClockSkewTicks = TimeSpan.TicksPerHour;
+        private const long TicksPerSecond = TimeSpan.TicksPerSecond;
 
         public int CalculateGainedEnergy(long nowTicks, long lastTicks, int intervalSeconds)
         {
@@ -13,7 +15,7 @@ namespace Game.Domain.Energy
                 intervalSeconds = 1;
             }
 
-            long intervalTicks = TimeSpan.FromSeconds(intervalSeconds).Ticks;
+            long intervalTicks = (long)intervalSeconds * TicksPerSecond;
 
             if (nowTicks <= lastTicks)
             {
@@ -46,7 +48,7 @@ namespace Game.Domain.Energy
             {
                 intervalSeconds = 1;
             }
-            long intervalTicks = TimeSpan.FromSeconds(intervalSeconds).Ticks;
+            long intervalTicks = (long)intervalSeconds * TicksPerSecond;
             long advanceTicks = (long)gainedEnergy * intervalTicks;
             return lastTicks + advanceTicks;
         }
@@ -58,7 +60,7 @@ namespace Game.Domain.Energy
                 intervalSeconds = 1;
             }
 
-            long intervalTicks = TimeSpan.FromSeconds(intervalSeconds).Ticks;
+            long intervalTicks = (long)intervalSeconds * TicksPerSecond;
 
             if (nowTicks <= lastTicks)
             {
@@ -69,7 +71,7 @@ namespace Game.Domain.Energy
 
             long remainingTicks = intervalTicks - remainder;
 
-            int seconds = (int)TimeSpan.FromTicks(remainingTicks).TotalSeconds;
+            int seconds = (int)(remainingTicks / TicksPerSecond);
 
             if (seconds < 0)
             {

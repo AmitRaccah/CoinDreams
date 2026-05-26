@@ -1,3 +1,4 @@
+#nullable enable
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -5,7 +6,10 @@ namespace Game.Runtime.Village
 {
     internal sealed class GeneratedMeshSet
     {
-        private readonly List<Mesh> meshes = new List<Mesh>();
+        private const int InitialCapacity = 8;
+
+        private readonly List<Mesh> meshes = new List<Mesh>(InitialCapacity);
+        private readonly List<GameObject> hostGameObjects = new List<GameObject>(InitialCapacity);
 
         public void Add(Mesh mesh)
         {
@@ -15,12 +19,20 @@ namespace Game.Runtime.Village
             }
         }
 
+        public void RegisterGameObject(GameObject host)
+        {
+            if (host != null)
+            {
+                hostGameObjects.Add(host);
+            }
+        }
+
         public void DestroyAll()
         {
-            int i;
-            for (i = 0; i < meshes.Count; i++)
+            int meshIndex;
+            for (meshIndex = 0; meshIndex < meshes.Count; meshIndex++)
             {
-                Mesh mesh = meshes[i];
+                Mesh mesh = meshes[meshIndex];
                 if (mesh != null)
                 {
                     Object.Destroy(mesh);
@@ -28,6 +40,18 @@ namespace Game.Runtime.Village
             }
 
             meshes.Clear();
+
+            int hostIndex;
+            for (hostIndex = 0; hostIndex < hostGameObjects.Count; hostIndex++)
+            {
+                GameObject host = hostGameObjects[hostIndex];
+                if (host != null)
+                {
+                    Object.Destroy(host);
+                }
+            }
+
+            hostGameObjects.Clear();
         }
     }
 }

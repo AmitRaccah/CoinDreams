@@ -1,3 +1,4 @@
+#nullable enable
 using System.Collections.Generic;
 using Game.Config.Cards;
 using Game.Domain.Cards;
@@ -6,7 +7,7 @@ namespace Game.Runtime.Cards
 {
     internal static class RewardEffectConfigMapper
     {
-        private static readonly Dictionary<RewardEffectType, AuthoritativeDrawEffectType> configToAuthoritative =
+        private static readonly IReadOnlyDictionary<RewardEffectType, AuthoritativeDrawEffectType> ConfigToAuthoritative =
             new Dictionary<RewardEffectType, AuthoritativeDrawEffectType>
             {
                 { RewardEffectType.AddCoins, AuthoritativeDrawEffectType.AddCoins },
@@ -14,21 +15,17 @@ namespace Game.Runtime.Cards
                 { RewardEffectType.LaunchMinigame, AuthoritativeDrawEffectType.LaunchMinigame }
             };
 
-        public static bool IsSupported(RewardEffectType effectType)
-        {
-            return configToAuthoritative.ContainsKey(effectType);
-        }
+        public static bool IsSupported(RewardEffectType effectType) =>
+            ConfigToAuthoritative.ContainsKey(effectType);
 
         public static bool TryMapToAuthoritativeType(
             RewardEffectType sourceType,
-            out AuthoritativeDrawEffectType mappedType)
-        {
-            return configToAuthoritative.TryGetValue(sourceType, out mappedType);
-        }
+            out AuthoritativeDrawEffectType mappedType) =>
+            ConfigToAuthoritative.TryGetValue(sourceType, out mappedType);
 
         public static bool TryCreateRuntimeEffect(
-            RewardEffectConfig config,
-            out IRewardEffect effect)
+            RewardEffectConfig? config,
+            out IRewardEffect? effect)
         {
             effect = null;
 
@@ -37,8 +34,7 @@ namespace Game.Runtime.Cards
                 return false;
             }
 
-            AuthoritativeDrawEffectType authoritativeType;
-            if (!TryMapToAuthoritativeType(config.EffectType, out authoritativeType))
+            if (!TryMapToAuthoritativeType(config.EffectType, out AuthoritativeDrawEffectType authoritativeType))
             {
                 return false;
             }

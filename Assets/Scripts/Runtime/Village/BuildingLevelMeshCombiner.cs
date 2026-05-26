@@ -1,3 +1,4 @@
+#nullable enable
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
@@ -6,6 +7,8 @@ namespace Game.Runtime.Village
 {
     internal sealed class BuildingLevelMeshCombiner
     {
+        private const int MaterialGroupCapacityCeiling = 8;
+
         public void Combine(GameObject[] levelRoots, GeneratedMeshSet generatedMeshes)
         {
             if (levelRoots == null || generatedMeshes == null)
@@ -34,7 +37,10 @@ namespace Game.Runtime.Village
                 return;
             }
 
-            List<MaterialCombineGroup> materialGroups = new List<MaterialCombineGroup>();
+            int materialGroupsCapacity = meshFilters.Length < MaterialGroupCapacityCeiling
+                ? meshFilters.Length
+                : MaterialGroupCapacityCeiling;
+            List<MaterialCombineGroup> materialGroups = new List<MaterialCombineGroup>(materialGroupsCapacity);
             int sourceRendererCount = 0;
 
             int filterIndex;
@@ -71,6 +77,7 @@ namespace Game.Runtime.Village
             combinedTransform.localPosition = Vector3.zero;
             combinedTransform.localRotation = Quaternion.identity;
             combinedTransform.localScale = Vector3.one;
+            generatedMeshes.RegisterGameObject(combinedRoot);
 
             int groupIndex;
             for (groupIndex = 0; groupIndex < materialGroups.Count; groupIndex++)
@@ -153,6 +160,7 @@ namespace Game.Runtime.Village
             combinedTransform.localPosition = Vector3.zero;
             combinedTransform.localRotation = Quaternion.identity;
             combinedTransform.localScale = Vector3.one;
+            generatedMeshes.RegisterGameObject(combinedObject);
 
             Mesh combinedMesh = new Mesh();
             combinedMesh.name = parent.name + "_" + group.material.name + "_CombinedMesh";

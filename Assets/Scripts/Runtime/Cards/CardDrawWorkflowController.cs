@@ -1,167 +1,159 @@
+#nullable enable
+
+using Cysharp.Threading.Tasks;
 using UnityEngine;
 using UnityEngine.Serialization;
 
 namespace Game.Runtime.Cards
 {
     [DisallowMultipleComponent]
-    public sealed class CardDrawWorkflowController : MonoBehaviour, ICardDrawWorkflowCommands
+    public sealed class CardDrawWorkflowController : MonoBehaviour
     {
-        public void RequestDraw() { OnDrawButtonClicked(); }
-        public void RequestReturn() { OnReturnButtonClicked(); }
-
-
         [Header("Dependencies")]
         [FormerlySerializedAs("drawGamePresenter")]
-        [SerializeField] private MonoBehaviour drawGameActionsSource;
+        [SerializeField] private MonoBehaviour? drawGameActionsSource;
         [FormerlySerializedAs("cameraTransitionService")]
-        [SerializeField] private MonoBehaviour cameraTransitionServiceSource;
+        [SerializeField] private MonoBehaviour? cameraTransitionServiceSource;
 
         [Header("Anchors")]
-        [SerializeField] private Transform cardBoardAnchor;
-        [SerializeField] private Transform cityViewAnchor;
+        [SerializeField] private Transform? cardBoardAnchor;
+        [SerializeField] private Transform? cityViewAnchor;
 
         [Header("Optional")]
-        [SerializeField] private MonoBehaviour drawAnimatorSource;
+        [SerializeField] private MonoBehaviour? drawAnimatorSource;
 
-        private IDrawGameActions drawGameActions;
-        private ICameraTransitionService cameraTransitionService;
-        private IDrawAnimator drawAnimator;
+        private IDrawGameActions? drawGameActions;
+        private ICameraTransitionService? cameraTransitionService;
+        private IDrawAnimator? drawAnimator;
 
-        private readonly CardDrawWorkflowStateMachine workflowState =
-            new CardDrawWorkflowStateMachine();
+        private readonly CardDrawWorkflowStateMachine workflowState = new CardDrawWorkflowStateMachine();
 
-        private DrawWorkflowExecutor executor;
+        private DrawWorkflowExecutor? executor;
 
         private void Awake()
         {
-            ResolveDependencies();
-            ValidateDependencies();
-            executor = new DrawWorkflowExecutor(
-                cameraTransitionService,
-                drawAnimator,
-                drawGameActions,
-                workflowState,
-                cardBoardAnchor,
-                cityViewAnchor,
+            this.ResolveDependencies();
+            this.ValidateDependencies();
+            this.executor = new DrawWorkflowExecutor(
+                this.cameraTransitionService,
+                this.drawAnimator,
+                this.drawGameActions,
+                this.workflowState,
+                this.cardBoardAnchor,
+                this.cityViewAnchor,
                 this);
         }
 
-        public async void OnDrawButtonClicked()
+        public void OnDrawButtonClicked() =>
+            this.HandleDrawClickedAsync().Forget(ex => Debug.LogException(ex, this));
+
+        public void OnReturnButtonClicked() =>
+            this.HandleReturnClickedAsync().Forget(ex => Debug.LogException(ex, this));
+
+        private async UniTask HandleDrawClickedAsync()
         {
-            try
+            DrawWorkflowAction action = this.workflowState.HandleDrawClicked();
+            if (action == DrawWorkflowAction.None)
             {
-                DrawWorkflowAction action = workflowState.HandleDrawClicked();
-                if (action == DrawWorkflowAction.None)
-                {
-                    return;
-                }
-
-                if (action == DrawWorkflowAction.MoveToBoard)
-                {
-                    await executor.MoveCameraToBoardAsync();
-                    return;
-                }
-
-                if (action == DrawWorkflowAction.Draw)
-                {
-                    await executor.ExecuteDrawAsync();
-                }
+                return;
             }
-            catch (System.OperationCanceledException)
+
+            if (this.executor == null)
             {
+                return;
             }
-            catch (System.Exception ex)
+
+            if (action == DrawWorkflowAction.MoveToBoard)
             {
-                Debug.LogException(ex, this);
-                workflowState.ResetToIdle();
+                await this.executor.MoveCameraToBoardAsync();
+                return;
+            }
+
+            if (action == DrawWorkflowAction.Draw)
+            {
+                await this.executor.ExecuteDrawAsync();
             }
         }
 
-        public async void OnReturnButtonClicked()
+        private async UniTask HandleReturnClickedAsync()
         {
-            try
+            if (!this.workflowState.TryBeginReturn())
             {
-                if (!workflowState.TryBeginReturn())
-                {
-                    return;
-                }
+                return;
+            }
 
-                await executor.ReturnToCityAsync();
-            }
-            catch (System.OperationCanceledException)
+            if (this.executor == null)
             {
+                return;
             }
-            catch (System.Exception ex)
-            {
-                Debug.LogException(ex, this);
-                workflowState.ResetToIdle();
-            }
+
+            await this.executor.ReturnToCityAsync();
         }
 
         private void ResolveDependencies()
         {
-            if (drawGameActionsSource != null)
+            if (this.drawGameActionsSource != null)
             {
-                drawGameActions = drawGameActionsSource as IDrawGameActions;
+                this.drawGameActions = this.drawGameActionsSource as IDrawGameActions;
             }
 
-            if (drawGameActions == null)
+            if (this.drawGameActions == null)
             {
-                drawGameActions = GetComponent<IDrawGameActions>();
+                this.drawGameActions = this.GetComponent<IDrawGameActions>();
             }
 
-            if (cameraTransitionServiceSource != null)
+            if (this.cameraTransitionServiceSource != null)
             {
-                cameraTransitionService = cameraTransitionServiceSource as ICameraTransitionService;
+                this.cameraTransitionService = this.cameraTransitionServiceSource as ICameraTransitionService;
             }
 
-            if (cameraTransitionService == null)
+            if (this.cameraTransitionService == null)
             {
-                cameraTransitionService = GetComponent<ICameraTransitionService>();
+                this.cameraTransitionService = this.GetComponent<ICameraTransitionService>();
             }
 
-            if (drawAnimatorSource != null)
+            if (this.drawAnimatorSource != null)
             {
-                drawAnimator = drawAnimatorSource as IDrawAnimator;
+                this.drawAnimator = this.drawAnimatorSource as IDrawAnimator;
             }
 
-            if (drawAnimator == null)
+            if (this.drawAnimator == null)
             {
-                drawAnimator = GetComponent<IDrawAnimator>();
+                this.drawAnimator = this.GetComponent<IDrawAnimator>();
             }
         }
 
         private void ValidateDependencies()
         {
-            if (drawGameActions == null)
+            if (this.drawGameActions == null)
             {
                 Debug.LogWarning(
                     "[CardDrawWorkflowController] Draw game actions dependency is not assigned.",
                     this);
             }
 
-            if (cameraTransitionService == null)
+            if (this.cameraTransitionService == null)
             {
                 Debug.LogWarning(
                     "[CardDrawWorkflowController] Camera transition service dependency is not assigned.",
                     this);
             }
 
-            if (cardBoardAnchor == null)
+            if (this.cardBoardAnchor == null)
             {
                 Debug.LogWarning(
                     "[CardDrawWorkflowController] CardBoardAnchor is not assigned.",
                     this);
             }
 
-            if (cityViewAnchor == null)
+            if (this.cityViewAnchor == null)
             {
                 Debug.LogWarning(
                     "[CardDrawWorkflowController] CityViewAnchor is not assigned.",
                     this);
             }
 
-            if (drawAnimatorSource != null && drawAnimator == null)
+            if (this.drawAnimatorSource != null && this.drawAnimator == null)
             {
                 Debug.LogWarning(
                     "[CardDrawWorkflowController] Draw animator source does not implement IDrawAnimator.",
