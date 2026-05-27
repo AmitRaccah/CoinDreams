@@ -2,6 +2,7 @@
 
 using Game.Runtime.Cards;
 using Game.Runtime.Village;
+using UnityEngine;
 using VContainer;
 using VContainer.Unity;
 
@@ -20,10 +21,26 @@ namespace Game.Composition
 
         protected override void Configure(IContainerBuilder builder)
         {
-            builder.RegisterComponentInHierarchy<CardDrawWorkflowController>();
-            builder.RegisterComponentInHierarchy<DrawHudPresenter>();
-            builder.RegisterComponentInHierarchy<DrawActionPresenter>();
-            builder.RegisterComponentInHierarchy<VillageUpgradeRuntime>();
+            // Guard each registration: VContainer's RegisterComponentInHierarchy throws if no
+            // matching component exists in the scope's scene. Skipping a missing component lets
+            // the rest of the container build instead of taking down the whole scope.
+            TryRegisterInHierarchy<CardDrawWorkflowController>(builder);
+            TryRegisterInHierarchy<DrawHudPresenter>(builder);
+            TryRegisterInHierarchy<DrawActionPresenter>(builder);
+            TryRegisterInHierarchy<VillageUpgradeRuntime>(builder);
+        }
+
+        private static void TryRegisterInHierarchy<T>(IContainerBuilder builder) where T : Component
+        {
+            if (Object.FindAnyObjectByType<T>() != null)
+            {
+                builder.RegisterComponentInHierarchy<T>();
+            }
+            else
+            {
+                Debug.LogWarning(
+                    $"[GameplayLifetimeScope] Skipped registration of {typeof(T).Name} — no instance in any loaded scene.");
+            }
         }
     }
 }
