@@ -2,9 +2,7 @@
 using System.Threading.Tasks;
 using Game.Config.Cards;
 using Game.Domain.Cards;
-using TMPro;
 using UnityEngine;
-using UnityEngine.UI;
 
 namespace Game.Runtime.Cards
 {
@@ -14,15 +12,6 @@ namespace Game.Runtime.Cards
         [Header("Config")]
         [SerializeField] private int drawCost = 1;
         [SerializeField] private CardDeckSO? deckConfig;
-        [SerializeField] private float uiRefreshIntervalSeconds = 1f;
-
-        [Header("UI")]
-        [SerializeField] private Slider? energySlider;
-        [SerializeField] private TMP_Text? energyText;
-        [SerializeField] private TMP_Text? energyTimerText;
-        [SerializeField] private TMP_Text? extraEnergyText;
-        [SerializeField] private TMP_Text? coinsText;
-        [SerializeField] private TMP_Text? resultText;
 
         private DrawActionPresenter? drawActionPresenter;
         private DrawHudPresenter? drawHudPresenter;
@@ -83,15 +72,6 @@ namespace Game.Runtime.Cards
             {
                 return;
             }
-
-            drawHudPresenter.Configure(
-                uiRefreshIntervalSeconds,
-                energySlider!,
-                energyText!,
-                energyTimerText!,
-                extraEnergyText!,
-                coinsText!,
-                resultText!);
 
             drawActionPresenter.Configure(drawCost, deckConfig!, drawHudPresenter);
         }

@@ -19,15 +19,15 @@ namespace Game.Runtime.Cards
         [Header("Config")]
         [SerializeField] private float uiRefreshIntervalSeconds = 1f;
 
-        [Header("UI")]
-        [SerializeField] private Slider? energySlider;
-        [SerializeField] private TMP_Text? energyText;
-        [SerializeField] private TMP_Text? energyTimerText;
-        [SerializeField] private TMP_Text? extraEnergyText;
-        [SerializeField] private TMP_Text? coinsText;
-        [SerializeField] private TMP_Text? resultText;
-
         [Inject] private PlayerRuntimeContext? playerRuntimeContext;
+        [Inject] private CardDrawHudReferences? hudReferences;
+
+        private Slider? energySlider;
+        private TMP_Text? energyText;
+        private TMP_Text? energyTimerText;
+        private TMP_Text? extraEnergyText;
+        private TMP_Text? coinsText;
+        private TMP_Text? resultText;
 
         private EnergyService? energyService;
         private CurrencyService? currencyService;
@@ -45,6 +45,8 @@ namespace Game.Runtime.Cards
 
         private void Awake()
         {
+            BindHudReferences();
+
             if (playerRuntimeContext == null)
             {
                 return;
@@ -52,6 +54,21 @@ namespace Game.Runtime.Cards
 
             RebuildRuntimeBindings();
             RefreshAllUi();
+        }
+
+        private void BindHudReferences()
+        {
+            if (hudReferences == null)
+            {
+                return;
+            }
+
+            energySlider = hudReferences.EnergySlider;
+            energyText = hudReferences.EnergyText;
+            energyTimerText = hudReferences.EnergyTimerText;
+            extraEnergyText = hudReferences.ExtraEnergyText;
+            coinsText = hudReferences.CoinsText;
+            resultText = hudReferences.ResultText;
         }
 
         private void OnEnable()
@@ -67,33 +84,6 @@ namespace Game.Runtime.Cards
             StopUiRefreshLoop();
             UnsubscribeFromStateEvents();
             UnsubscribeFromRuntimeContextEvents();
-        }
-
-        public void Configure(
-            float uiRefreshIntervalSeconds,
-            Slider energySlider,
-            TMP_Text energyText,
-            TMP_Text energyTimerText,
-            TMP_Text extraEnergyText,
-            TMP_Text coinsText,
-            TMP_Text resultText)
-        {
-            this.uiRefreshIntervalSeconds = uiRefreshIntervalSeconds;
-            this.energySlider = energySlider;
-            this.energyText = energyText;
-            this.energyTimerText = energyTimerText;
-            this.extraEnergyText = extraEnergyText;
-            this.coinsText = coinsText;
-            this.resultText = resultText;
-
-            RebuildRuntimeBindings();
-            RefreshAllUi();
-
-            if (isActiveAndEnabled)
-            {
-                StopUiRefreshLoop();
-                StartUiRefreshLoop();
-            }
         }
 
         public void Present(AuthoritativeDrawResult result)
