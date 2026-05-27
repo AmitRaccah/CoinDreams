@@ -14,7 +14,6 @@ namespace Game.Runtime.Cards
         [Header("Config")]
         [SerializeField] private int drawCost = 1;
         [SerializeField] private CardDeckSO? deckConfig;
-        [SerializeField] private MonoBehaviour? drawResultSinkSource;
 
         [Inject] private PlayerRuntimeContext? playerRuntimeContext;
         [Inject] private IAuthoritativeDrawService? authoritativeDrawService;
@@ -26,18 +25,6 @@ namespace Game.Runtime.Cards
         private string? pendingDrawId;
         private readonly AuthoritativeDrawRequestFactory drawRequestFactory =
             new AuthoritativeDrawRequestFactory();
-
-        public void Configure(
-            int drawCost,
-            CardDeckSO deckConfig,
-            IDrawResultSink drawResultSink)
-        {
-            this.drawCost = drawCost;
-            this.deckConfig = deckConfig;
-            this.drawResultSink = drawResultSink;
-            drawResultSinkSource = drawResultSink as MonoBehaviour;
-            RebuildDrawRequest();
-        }
 
         public void SetMultiplier(int multiplier)
         {
@@ -144,16 +131,6 @@ namespace Game.Runtime.Cards
 
         private void ResolveDrawResultSink()
         {
-            if (drawResultSink != null)
-            {
-                return;
-            }
-
-            if (drawResultSinkSource != null)
-            {
-                drawResultSink = drawResultSinkSource as IDrawResultSink;
-            }
-
             if (drawResultSink != null)
             {
                 return;

@@ -14,8 +14,6 @@ namespace Game.Runtime.Cards
     public sealed class CardDrawWorkflowController : MonoBehaviour
     {
         [Header("Dependencies")]
-        [FormerlySerializedAs("drawGamePresenter")]
-        [SerializeField] private MonoBehaviour? drawGameActionsSource;
         [FormerlySerializedAs("cameraTransitionService")]
         [SerializeField] private MonoBehaviour? cameraTransitionServiceSource;
 
@@ -121,15 +119,7 @@ namespace Game.Runtime.Cards
 
         private void ResolveDependencies()
         {
-            if (this.drawGameActionsSource != null)
-            {
-                this.drawGameActions = this.drawGameActionsSource as IDrawGameActions;
-            }
-
-            if (this.drawGameActions == null)
-            {
-                this.drawGameActions = this.GetComponent<IDrawGameActions>();
-            }
+            this.drawGameActions = this.GetComponent<IDrawGameActions>();
 
             if (this.cameraTransitionServiceSource != null)
             {
