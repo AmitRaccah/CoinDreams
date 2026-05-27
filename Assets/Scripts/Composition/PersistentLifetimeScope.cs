@@ -29,11 +29,9 @@ namespace Game.Composition
             builder.RegisterComponentInHierarchy<FirebasePlayerPersistenceRuntime>()
                 .AsImplementedInterfaces()
                 .AsSelf();
-            builder.RegisterComponentInHierarchy<DrawHudPresenter>();
-            builder.RegisterComponentInHierarchy<DrawActionPresenter>();
 
-            // UI lives in Persistent scene (per recent scene-split refactor), so the binder
-            // is registered here, not in GameplayLifetimeScope.
+            // UI binder lives in Persistent scene (per recent scene-split refactor); the Draw
+            // gameplay presenters live in the Gameplay scene and are registered there instead.
             builder.RegisterComponentInHierarchy<CardDrawHudInputBinder>();
 
             // Upcoming phases will add here:

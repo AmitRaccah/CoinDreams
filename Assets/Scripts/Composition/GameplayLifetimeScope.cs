@@ -21,6 +21,8 @@ namespace Game.Composition
         protected override void Configure(IContainerBuilder builder)
         {
             builder.RegisterComponentInHierarchy<CardDrawWorkflowController>();
+            builder.RegisterComponentInHierarchy<DrawHudPresenter>();
+            builder.RegisterComponentInHierarchy<DrawActionPresenter>();
             builder.RegisterComponentInHierarchy<VillageUpgradeRuntime>();
         }
     }
