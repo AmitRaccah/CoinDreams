@@ -34,6 +34,7 @@ namespace Game.Runtime.Cards
 
         public async Task MoveCameraToBoardAsync()
         {
+            Debug.Log("[DIAG] Executor.MoveCameraToBoardAsync entry", logContext);
             if (cameraTransitionService == null || cardBoardAnchor == null)
             {
                 Debug.LogWarning(
@@ -46,6 +47,7 @@ namespace Game.Runtime.Cards
             try
             {
                 await cameraTransitionService.StartTransitionAsync(cardBoardAnchor);
+                Debug.Log("[DIAG] Executor.MoveCameraToBoardAsync completed → DrawMode", logContext);
                 workflowState.CompleteMoveToBoard(true);
             }
             catch (OperationCanceledException)
