@@ -53,22 +53,13 @@ namespace Game.Runtime.Cards
                 this.cityViewAnchor,
                 this);
 
-            Debug.Log($"[DIAG] CardDrawWorkflowController.Awake — drawSubscriber={(drawSubscriber == null ? "NULL" : "ok")}, returnSubscriber={(returnSubscriber == null ? "NULL" : "ok")}, executor={(executor == null ? "NULL" : "ok")}", this);
             if (drawSubscriber != null)
             {
-                this.drawSubscription = drawSubscriber.Subscribe(_ =>
-                {
-                    Debug.Log("[DIAG] CardDrawWorkflowController received DrawRequestedSignal", this);
-                    this.RequestDraw();
-                });
+                this.drawSubscription = drawSubscriber.Subscribe(_ => this.RequestDraw());
             }
             if (returnSubscriber != null)
             {
-                this.returnSubscription = returnSubscriber.Subscribe(_ =>
-                {
-                    Debug.Log("[DIAG] CardDrawWorkflowController received ReturnRequestedSignal", this);
-                    this.RequestReturn();
-                });
+                this.returnSubscription = returnSubscriber.Subscribe(_ => this.RequestReturn());
             }
         }
 
@@ -91,7 +82,6 @@ namespace Game.Runtime.Cards
         private async UniTask HandleDrawClickedAsync()
         {
             DrawWorkflowAction action = this.workflowState.HandleDrawClicked();
-            Debug.Log($"[DIAG] HandleDrawClickedAsync — state action={action}, executor={(this.executor == null ? "NULL" : "ok")}", this);
             if (action == DrawWorkflowAction.None)
             {
                 return;

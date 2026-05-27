@@ -36,7 +36,6 @@ namespace Game.Runtime.Cards
 
         private void HandleDraw()
         {
-            Debug.Log("[DIAG] CardDrawHudInputBinder.HandleDraw fired", this);
             if (drawPublisher == null)
             {
                 Debug.LogWarning(
@@ -44,7 +43,6 @@ namespace Game.Runtime.Cards
                     this);
                 return;
             }
-            Debug.Log("[DIAG] CardDrawHudInputBinder publishing DrawRequestedSignal", this);
             drawPublisher.Publish(default);
         }
 
