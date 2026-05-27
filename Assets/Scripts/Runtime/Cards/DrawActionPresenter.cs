@@ -43,20 +43,16 @@ namespace Game.Runtime.Cards
 
         public async Task<AuthoritativeDrawResult> TryDrawAsync()
         {
-            Debug.Log("[DIAG] DrawActionPresenter.TryDrawAsync entry", this);
             if (!TryPrepareDraw(out AuthoritativeDrawResult? preconditionFailure))
             {
-                Debug.Log($"[DIAG] DrawActionPresenter precondition failed: status={preconditionFailure?.Status}, message={preconditionFailure?.Message}", this);
                 PublishResult(preconditionFailure!);
                 return preconditionFailure!;
             }
 
-            Debug.Log($"[DIAG] DrawActionPresenter awaiting Firebase TryDrawAsync (drawId={pendingDrawId})", this);
             isDrawInFlight = true;
             try
             {
                 AuthoritativeDrawResult result = await authoritativeDrawService!.TryDrawAsync(drawRequest!);
-                Debug.Log($"[DIAG] DrawActionPresenter got result: status={result?.Status}, message={result?.Message}", this);
                 if (result == null)
                 {
                     result = AuthoritativeDrawResult.Error("Draw failed.");
@@ -75,8 +71,8 @@ namespace Game.Runtime.Cards
             finally
             {
                 isDrawInFlight = false;
-                // Clear so the next workflow attempt mints a fresh drawId.
                 pendingDrawId = null;
+                drawRequest = null;
             }
         }
 

@@ -36,7 +36,6 @@ namespace Game.Runtime.Cards
 
         private void HandleDraw()
         {
-            Debug.Log("[DIAG] Binder.HandleDraw click", this);
             if (drawPublisher == null)
             {
                 Debug.LogWarning(
