@@ -7,16 +7,12 @@ namespace Game.Runtime.Bootstrap
     using Game.Runtime.Bootstrap.UI;
     using Game.Runtime.Scenes;
     using UnityEngine;
-    using UnityEngine.AddressableAssets;
 
     [DisallowMultipleComponent]
     public sealed class AppBootstrap : MonoBehaviour
     {
         [Header("Splash UI")]
         [SerializeField] private BootSplashView splashView;
-
-        [Header("Boot scene reference (for unload)")]
-        [SerializeField] private AssetReference bootSceneReference;
 
         [Header("Step Sequence (run in order)")]
         [SerializeField] private List<BootstrapStepAsset> steps = new List<BootstrapStepAsset>();

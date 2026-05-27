@@ -1,3 +1,5 @@
+#nullable enable
+
 using System;
 using System.Threading.Tasks;
 using Game.Domain.Time;
@@ -5,33 +7,22 @@ using UnityEngine;
 
 namespace Game.Infrastructure.Persistence
 {
-    // Init-only wrapper around FirebaseConnection and IPlayerRepository.
-    // Does NOT model auth-state changes, sign-out, or token refresh — those are explicit gaps.
-    public sealed class FirebasePlayerSession
+    public sealed class FirebaseAuthService : IFirebaseAuthService
     {
         private readonly FirebaseConnection connection = new FirebaseConnection();
         private readonly ITimeProvider timeProvider;
-        private IPlayerRepository repository;
+        private IPlayerRepository? repository;
 
-        public FirebasePlayerSession(ITimeProvider timeProvider)
+        public FirebaseAuthService(ITimeProvider timeProvider)
         {
             this.timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         }
 
-        public bool IsReady
-        {
-            get { return connection.IsReady && repository != null; }
-        }
+        public bool IsReady => connection.IsReady && repository != null;
 
-        public string AuthenticatedPlayerId
-        {
-            get { return connection.AuthenticatedPlayerId; }
-        }
+        public string AuthenticatedPlayerId => connection.AuthenticatedPlayerId;
 
-        public IPlayerRepository Repository
-        {
-            get { return repository; }
-        }
+        public IPlayerRepository? Repository => repository;
 
         public async Task<bool> InitializeAsync(
             bool forceFreshAnonymousIdentity,

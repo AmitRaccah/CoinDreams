@@ -11,6 +11,5 @@ namespace Game.Runtime.Bootstrap
 
         SceneHandle PersistentSceneHandle { get; set; }
         SceneHandle GameplaySceneHandle { get; set; }
-        SceneHandle BootSceneHandle { get; set; }
     }
 }

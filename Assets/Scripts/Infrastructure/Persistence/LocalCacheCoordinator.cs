@@ -7,11 +7,9 @@ namespace Game.Infrastructure.Persistence
         private readonly LocalPlayerCacheStore store;
         private bool savePending;
 
-        public LocalCacheCoordinator(LocalPlayerCacheStore store, float flushIntervalSeconds)
+        public LocalCacheCoordinator(LocalPlayerCacheStore store)
         {
             this.store = store;
-            // flushIntervalSeconds is intentionally unused: throttle-based flush was removed
-            // because save cadence is owned by the runtime (autosave scheduler + lifecycle hooks).
         }
 
         public bool IsEnabled

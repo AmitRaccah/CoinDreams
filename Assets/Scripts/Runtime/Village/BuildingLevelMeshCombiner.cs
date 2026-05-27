@@ -52,6 +52,16 @@ namespace Game.Runtime.Village
                     continue;
                 }
 
+                // Skip meshes whose Read/Write is disabled. Mesh.CombineMeshes cannot read
+                // their vertex data and would spam "Cannot combine mesh that does not allow
+                // access" warnings (one per CombineInstance, hundreds per scene load). The
+                // source MeshRenderer is intentionally left enabled in DisableSourceRenderers
+                // below so the building geometry stays visible.
+                if (!meshFilter.sharedMesh.isReadable)
+                {
+                    continue;
+                }
+
                 MeshRenderer meshRenderer = meshFilter.GetComponent<MeshRenderer>();
                 if (meshRenderer == null || meshRenderer.sharedMaterials == null)
                 {
@@ -183,6 +193,15 @@ namespace Game.Runtime.Village
             {
                 MeshFilter meshFilter = meshFilters[i];
                 if (meshFilter == null)
+                {
+                    continue;
+                }
+
+                // Only disable renderers whose mesh actually contributed to the combine.
+                // Non-readable meshes are skipped above; disabling their renderer here would
+                // make that geometry silently disappear from the scene.
+                Mesh sharedMesh = meshFilter.sharedMesh;
+                if (sharedMesh == null || !sharedMesh.isReadable)
                 {
                     continue;
                 }

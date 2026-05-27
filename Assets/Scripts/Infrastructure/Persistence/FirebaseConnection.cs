@@ -49,6 +49,12 @@ namespace Game.Infrastructure.Persistence
                     return false;
                 }
 
+                // Suppress Firebase SDK's internal Info-level chatter (e.g. the
+                // "USE_AUTH_EMULATOR not set." line that fires from native callbacks during
+                // SignInAnonymously / DeleteUser). Errors and warnings still surface; flip
+                // verboseLogging in PersistenceSettings to get the full Firebase output back.
+                FirebaseApp.LogLevel = verboseLogging ? LogLevel.Info : LogLevel.Warning;
+
                 app = FirebaseApp.DefaultInstance;
                 auth = FirebaseAuth.DefaultInstance;
                 firestore = FirebaseFirestore.DefaultInstance;

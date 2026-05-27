@@ -275,7 +275,11 @@ namespace Game.Runtime.Cards
             }
 
             this.uiRefreshCts = CancellationTokenSource.CreateLinkedTokenSource(this.GetCancellationTokenOnDestroy());
-            RefreshUiLoopAsync(this.uiRefreshCts.Token).Forget(ex => Debug.LogException(ex, this));
+            RefreshUiLoopAsync(this.uiRefreshCts.Token).Forget(ex =>
+            {
+                if (ex is OperationCanceledException) return;
+                Debug.LogException(ex, this);
+            });
         }
 
         private void StopUiRefreshLoop()

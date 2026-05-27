@@ -558,9 +558,10 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 410919964}
-  - component: {fileID: 410919965}
   - component: {fileID: 410919967}
   - component: {fileID: 410919966}
+  - component: {fileID: 410919968}
+  - component: {fileID: 410919969}
   m_Layer: 0
   m_Name: Draw
   m_TagString: Untagged
@@ -583,29 +584,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 2060570681}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &410919965
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 410919963}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 13cb72a8d89f07840b5151c181eb7c89, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Cards.DrawGamePresenter
-  drawCost: 1
-  deckConfig: {fileID: 11400000, guid: b9f48a734afb6804d86c0c6636ae8d22, type: 2}
-  uiRefreshIntervalSeconds: 1
-  playerRuntimeContext: {fileID: 0}
-  authoritativeDrawServiceSource: {fileID: 0}
-  energySlider: {fileID: 0}
-  energyText: {fileID: 0}
-  energyTimerText: {fileID: 0}
-  extraEnergyText: {fileID: 0}
-  coinsText: {fileID: 0}
-  resultText: {fileID: 0}
 --- !u!114 &410919966
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -656,11 +634,44 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 3718fb82c1768f04280b2954105ce4b4, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Cards.CardDrawWorkflowController
-  drawGameActionsSource: {fileID: 410919965}
   cameraTransitionServiceSource: {fileID: 410919966}
   cardBoardAnchor: {fileID: 1243665886}
   cityViewAnchor: {fileID: 256613967}
   drawAnimatorSource: {fileID: 0}
+--- !u!114 &410919968
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 410919963}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8b054ed6b9ff46f0910d303d28723899, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Cards.DrawHudPresenter
+  uiRefreshIntervalSeconds: 1
+  energySlider: {fileID: 0}
+  energyText: {fileID: 0}
+  energyTimerText: {fileID: 0}
+  extraEnergyText: {fileID: 0}
+  coinsText: {fileID: 0}
+  resultText: {fileID: 0}
+--- !u!114 &410919969
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 410919963}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 2854eaab0d4547f6b22fd39364dff7c4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Cards.DrawActionPresenter
+  drawCost: 1
+  deckConfig: {fileID: 11400000, guid: b9f48a734afb6804d86c0c6636ae8d22, type: 2}
+  drawResultSinkSource: {fileID: 0}
 --- !u!20 &441918781 stripped
 Camera:
   m_CorrespondingSourceObject: {fileID: 3947192585272176858, guid: 987f04c59c4ed314dae89b7a000fc770, type: 3}
@@ -987,8 +998,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.VillageUpgradeRuntime
   villageDefinition: {fileID: 11400000, guid: 03dbec92c331c2e48a8842e3ee8a5ec0, type: 2}
-  playerRuntimeContext: {fileID: 0}
-  authoritativeVillageUpgradeServiceSource: {fileID: 0}
   applyVisualsOnAwake: 1
   buildingVisualControllers:
   - {fileID: 289853532}

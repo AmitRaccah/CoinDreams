@@ -14,7 +14,7 @@ namespace Game.Runtime.Bootstrap.Steps
         public override async UniTask ExecuteAsync(IBootContext context, CancellationToken cancellationToken)
         {
             // Activate on load so the Persistent scene's Awakes can run.
-            // FirebasePlayerPersistenceRuntime needs to Awake to start its init pipeline.
+            // FirebasePersistenceBootstrap needs to Awake to start its init pipeline.
             SceneHandle handle = await context.SceneLoader.LoadAdditiveAsync(
                 persistentScene,
                 true,

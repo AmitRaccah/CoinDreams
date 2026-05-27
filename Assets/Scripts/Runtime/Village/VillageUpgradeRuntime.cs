@@ -1,10 +1,13 @@
 #nullable enable
 
+using System;
 using System.Threading.Tasks;
+using Game.Composition.Signals;
 using Game.Config.Village;
 using Game.Domain.Economy;
 using Game.Domain.Village;
 using Game.Runtime.Player;
+using MessagePipe;
 using UnityEngine;
 using VContainer;
 
@@ -17,6 +20,7 @@ namespace Game.Runtime.Village
         [SerializeField] private VillageDefinitionSO villageDefinition = null!;
         [Inject] private PlayerRuntimeContext? playerRuntimeContext;
         [Inject] private IAuthoritativeVillageUpgradeService? authoritativeVillageUpgradeService;
+        [Inject] private ISubscriber<VillageUpgradeRequestedSignal>? upgradeRequestSubscriber;
         [SerializeField] private bool applyVisualsOnAwake = true;
 
         [Header("Building Roots")]
@@ -27,6 +31,7 @@ namespace Game.Runtime.Village
         private AuthoritativeVillageUpgradeCatalogData? authoritativeCatalogData;
         private VillageBuildingVisualBindings? visualBindings;
         private AuthoritativeVillageUpgradeExecutor? authoritativeUpgradeExecutor;
+        private IDisposable? upgradeSubscription;
         private bool initialized;
         private bool isContextSubscribed;
 
@@ -39,11 +44,7 @@ namespace Game.Runtime.Village
         {
             if (playerRuntimeContext == null)
             {
-                Debug.LogError(
-                    "[VillageUpgradeRuntime] Missing PlayerRuntimeContext. Assign PlayerRuntimeContext to use a single player source of truth.",
-                    this);
-                enabled = false;
-                return;
+                throw new InvalidOperationException("VillageUpgradeRuntime requires a PlayerRuntimeContext. Ensure it is registered in PersistentLifetimeScope.");
             }
 
             EnsureHelpers();
@@ -53,11 +54,31 @@ namespace Game.Runtime.Village
         private void OnEnable()
         {
             SubscribeToRuntimeContextEvents();
+
+            if (upgradeRequestSubscriber != null && upgradeSubscription == null)
+            {
+                upgradeSubscription = upgradeRequestSubscriber.Subscribe(HandleUpgradeRequested);
+            }
         }
 
         private void OnDisable()
         {
             UnsubscribeFromRuntimeContextEvents();
+
+            upgradeSubscription?.Dispose();
+            upgradeSubscription = null;
+        }
+
+        private void HandleUpgradeRequested(VillageUpgradeRequestedSignal signal)
+        {
+            if (signal.UseIndex)
+            {
+                _ = TryUpgradeByIndex(signal.BuildingIndex);
+            }
+            else
+            {
+                _ = TryUpgrade(signal.BuildingId);
+            }
         }
 
         public void InitializeRuntime()
@@ -72,17 +93,13 @@ namespace Game.Runtime.Village
 
             if (playerRuntimeContext == null)
             {
-                Debug.LogError(
-                    "[VillageUpgradeRuntime] Missing PlayerRuntimeContext. Assign PlayerRuntimeContext to use a single player source of truth.",
-                    this);
-                return;
+                throw new InvalidOperationException("VillageUpgradeRuntime.InitializeRuntime called without PlayerRuntimeContext.");
             }
 
             ICurrencyWallet? wallet = ResolveWallet();
             if (wallet == null)
             {
-                Debug.LogError("[VillageUpgradeRuntime] Missing PlayerRuntimeContext wallet.", this);
-                return;
+                throw new InvalidOperationException("PlayerRuntimeContext.Wallet is null. Cannot construct VillageUpgradeService.");
             }
 
             if (!VillageUpgradeCatalogFactory.TryCreate(
@@ -90,16 +107,14 @@ namespace Game.Runtime.Village
                     out VillageUpgradeRuntimeCatalog runtimeCatalog,
                     out string error))
             {
-                Debug.LogError("[VillageUpgradeRuntime] " + error, this);
-                return;
+                throw new InvalidOperationException("VillageUpgradeCatalogFactory failed: " + error);
             }
 
             VillageProgressState? progressState =
                 ResolveProgressState(runtimeCatalog.Catalog.BuildingCount);
             if (progressState == null)
             {
-                Debug.LogError("[VillageUpgradeRuntime] Missing PlayerRuntimeContext village progress state.", this);
-                return;
+                throw new InvalidOperationException("PlayerRuntimeContext.VillageProgressState is null.");
             }
 
             upgradeService = new VillageUpgradeService(
@@ -111,8 +126,7 @@ namespace Game.Runtime.Village
 
             if (!upgradeService.IsValid)
             {
-                Debug.LogError("[VillageUpgradeRuntime] Invalid runtime: " + upgradeService.ValidationMessage, this);
-                return;
+                throw new InvalidOperationException("VillageUpgradeService is invalid: " + upgradeService.ValidationMessage);
             }
 
             visualBindings!.Rebuild(upgradeService);

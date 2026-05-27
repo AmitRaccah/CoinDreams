@@ -1,6 +1,10 @@
-using Game.Domain.Village;
+#nullable enable
+
+using Game.Composition.Signals;
+using MessagePipe;
 using UnityEngine;
 using UnityEngine.UI;
+using VContainer;
 
 namespace Game.Runtime.Village
 {
@@ -14,16 +18,14 @@ namespace Game.Runtime.Village
         }
 
         [Header("References")]
-        [SerializeField] private VillageUpgradeRuntime villageUpgradeRuntime;
-        [SerializeField] private Button buttonComponent;
+        [SerializeField] private Button? buttonComponent;
 
         [Header("Target")]
         [SerializeField] private TargetMode targetMode = TargetMode.ByBuildingId;
-        [SerializeField] private string buildingId;
+        [SerializeField] private string buildingId = string.Empty;
         [SerializeField] private int buildingIndex;
 
-        [Header("Debug")]
-        [SerializeField] private bool logResult = true;
+        [Inject] private IPublisher<VillageUpgradeRequestedSignal>? upgradePublisher;
 
         private void Awake()
         {
@@ -33,56 +35,13 @@ namespace Game.Runtime.Village
             }
         }
 
-        public async void OnUpgradeClicked()
+        public void OnUpgradeClicked()
         {
-            if (buttonComponent != null)
-            {
-                buttonComponent.interactable = false;
-            }
-
-            try
-            {
-                if (villageUpgradeRuntime == null)
-                {
-                    Debug.LogError("[VillageUpgradeButtonHandler] Missing VillageUpgradeRuntime.", this);
-                    return;
-                }
-
-                BuildingUpgradeResult result = targetMode == TargetMode.ByBuildingIndex
-                    ? await villageUpgradeRuntime.TryUpgradeByIndex(buildingIndex)
-                    : await villageUpgradeRuntime.TryUpgrade(buildingId);
-
-                if (logResult)
-                {
-                    Debug.Log(
-                        "[VillageUpgradeButtonHandler] Upgrade result: "
-                        + result.Status
-                        + " | BuildingIndex="
-                        + result.BuildingIndex
-                        + " | PrevLevel="
-                        + result.PreviousLevel
-                        + " | NewLevel="
-                        + result.NewLevel
-                        + " | Cost="
-                        + result.Cost,
-                        this);
-                }
-            }
-            catch (System.OperationCanceledException)
-            {
-                // Intentionally swallowed: user navigated away or scope was disposed.
-            }
-            catch (System.Exception ex)
-            {
-                Debug.LogException(ex, this);
-            }
-            finally
-            {
-                if (buttonComponent != null)
-                {
-                    buttonComponent.interactable = true;
-                }
-            }
+            upgradePublisher?.Publish(
+                new VillageUpgradeRequestedSignal(
+                    buildingId,
+                    buildingIndex,
+                    targetMode == TargetMode.ByBuildingIndex));
         }
     }
 }

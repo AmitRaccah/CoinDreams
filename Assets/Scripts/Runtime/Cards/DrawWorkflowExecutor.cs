@@ -7,7 +7,6 @@ namespace Game.Runtime.Cards
     public sealed class DrawWorkflowExecutor
     {
         private readonly ICameraTransitionService cameraTransitionService;
-        private readonly IDrawAnimator drawAnimator;
         private readonly IDrawGameActions drawGameActions;
         private readonly CardDrawWorkflowStateMachine workflowState;
         private readonly Transform cardBoardAnchor;
@@ -16,7 +15,6 @@ namespace Game.Runtime.Cards
 
         public DrawWorkflowExecutor(
             ICameraTransitionService cameraTransitionService,
-            IDrawAnimator drawAnimator,
             IDrawGameActions drawGameActions,
             CardDrawWorkflowStateMachine workflowState,
             Transform cardBoardAnchor,
@@ -24,7 +22,6 @@ namespace Game.Runtime.Cards
             UnityEngine.Object logContext)
         {
             this.cameraTransitionService = cameraTransitionService;
-            this.drawAnimator = drawAnimator;
             this.drawGameActions = drawGameActions;
             this.workflowState = workflowState;
             this.cardBoardAnchor = cardBoardAnchor;
@@ -74,11 +71,6 @@ namespace Game.Runtime.Cards
 
             try
             {
-                if (drawAnimator != null && drawAnimator.HasAnimation)
-                {
-                    await drawAnimator.PlayDrawAnimationAsync();
-                }
-
                 await drawGameActions.TryDrawAsync();
             }
             catch (OperationCanceledException)

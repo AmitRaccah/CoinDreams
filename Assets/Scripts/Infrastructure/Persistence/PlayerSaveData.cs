@@ -1,4 +1,6 @@
 using System;
+using Game.Domain.Energy;
+using Game.Domain.Player;
 
 namespace Game.Infrastructure.Persistence
 {
@@ -33,14 +35,14 @@ namespace Game.Infrastructure.Persistence
         public PlayerSaveData()
         {
             //Default values
-            playerId = "local_player";
+            playerId = PlayerDefaults.PlaceholderPlayerId;
             revision = 0;
             schemaVersion = 0;
             coins = 0;
 
-            currentEnergy = 5;
-            maxEnergy = 10;
-            regenIntervalSeconds = 300;
+            currentEnergy = EnergyDefaults.DefaultStartingEnergy;
+            maxEnergy = EnergyDefaults.DefaultMaxEnergy;
+            regenIntervalSeconds = EnergyDefaults.DefaultRegenIntervalSeconds;
             lastRegenUtcTicks = 0;
 
             villageLevels = Array.Empty<int>();

@@ -1,3 +1,4 @@
+#nullable enable
 using System;
 using System.Collections.Generic;
 using Game.Domain.Economy;
@@ -6,6 +7,7 @@ using Game.Domain.Player;
 using Game.Domain.Time;
 using Game.Domain.Village;
 using UnityEngine;
+using VContainer;
 
 namespace Game.Runtime.Player
 {
@@ -18,15 +20,15 @@ namespace Game.Runtime.Player
     public sealed class PlayerRuntimeContext : MonoBehaviour
     {
         [Header("Identity")]
-        [SerializeField] private string playerId = "local_player";
+        [SerializeField] private string playerId = PlayerDefaults.PlaceholderPlayerId;
 
         [Header("Initial Economy")]
         [SerializeField] private int startingCoins;
 
         [Header("Initial Energy")]
-        [SerializeField] private int startingEnergy = 5;
-        [SerializeField] private int maxEnergy = 10;
-        [SerializeField] private int regenIntervalSeconds = 300;
+        [SerializeField] private int startingEnergy = EnergyDefaults.DefaultStartingEnergy;
+        [SerializeField] private int maxEnergy = EnergyDefaults.DefaultMaxEnergy;
+        [SerializeField] private int regenIntervalSeconds = EnergyDefaults.DefaultRegenIntervalSeconds;
         [SerializeField] private long lastRegenUtcTicks;
 
         [Header("Initial Village")]
@@ -36,24 +38,26 @@ namespace Game.Runtime.Player
         [SerializeField] private bool persistAcrossScenes = true;
 
         [Header("Impact Inbox")]
-        [SerializeField] private MonoBehaviour pendingImpactProviderSource;
+        [SerializeField] private MonoBehaviour? pendingImpactProviderSource;
 
-        private PlayerProfile profile;
+        private PlayerProfile? profile;
         private bool initialized;
-        private IPendingImpactProvider pendingImpactProvider;
+        private IPendingImpactProvider? pendingImpactProvider;
+
+        [Inject] private ITimeProvider? injectedTimeProvider;
 
         // Fires AFTER the new profile is bound. Subscribers may unsubscribe-then-resubscribe to leaf services
         // (EnergyChanged, CoinsChanged) here. Subscribers must defensively check `this != null` since
         // they may receive this during scene teardown.
-        public event Action ProfileReplaced;
-        public event Action StateChanged;
+        public event Action? ProfileReplaced;
+        public event Action? StateChanged;
 
         public PlayerProfile Profile
         {
             get
             {
                 EnsureInitialized();
-                return profile;
+                return profile!;
             }
         }
 
@@ -100,13 +104,13 @@ namespace Game.Runtime.Player
         public void EnsureVillageCapacity(int buildingCount)
         {
             EnsureInitialized();
-            profile.EnsureVillageCapacity(buildingCount);
+            profile!.EnsureVillageCapacity(buildingCount);
         }
 
         public PlayerImpactApplyResult ApplyExternalImpact(PlayerImpact impact)
         {
             EnsureInitialized();
-            return profile.ApplyExternalImpact(impact);
+            return profile!.ApplyExternalImpact(impact);
         }
 
         public PlayerImpactApplyResult[] ApplyExternalImpacts(PlayerImpact[] impacts)
@@ -123,7 +127,7 @@ namespace Game.Runtime.Player
             int i;
             for (i = 0; i < impacts.Length; i++)
             {
-                results[i] = profile.ApplyExternalImpact(impacts[i]);
+                results[i] = profile!.ApplyExternalImpact(impacts[i]);
             }
 
             return results;
@@ -141,7 +145,7 @@ namespace Game.Runtime.Player
                 return;
             }
 
-            IReadOnlyList<PlayerImpact> pending = pendingImpactProvider.DrainPending();
+            IReadOnlyList<PlayerImpact> pending = pendingImpactProvider!.DrainPending();
             if (pending == null || pending.Count == 0)
             {
                 return;
@@ -158,14 +162,14 @@ namespace Game.Runtime.Player
                     continue;
                 }
 
-                profile.ApplyExternalImpact(impact);
+                profile!.ApplyExternalImpact(impact);
             }
         }
 
         public PlayerProfileSnapshot CreateSnapshot()
         {
             EnsureInitialized();
-            return profile.CreateSnapshot();
+            return profile!.CreateSnapshot();
         }
 
         public void LoadSnapshot(PlayerProfileSnapshot snapshot)
@@ -176,7 +180,7 @@ namespace Game.Runtime.Player
                 return;
             }
 
-            TimeProvider timeProvider = new TimeProvider();
+            ITimeProvider timeProvider = ResolveTimeProvider();
             PlayerProfile loadedProfile = PlayerProfile.FromSnapshot(snapshot, timeProvider);
             ReplaceProfile(loadedProfile, true);
             PollImpactInbox();
@@ -207,7 +211,7 @@ namespace Game.Runtime.Player
 
             initialized = true;
 
-            TimeProvider timeProvider = new TimeProvider();
+            ITimeProvider timeProvider = ResolveTimeProvider();
 
             EnergyService energy = new EnergyService(
                 timeProvider,
@@ -235,6 +239,13 @@ namespace Game.Runtime.Player
             ReplaceProfile(initialProfile, false);
         }
 
+        // Fallback `new TimeProvider()` mirrors FirebasePlayerPersistenceRuntime: defensive pattern for
+        // ad-hoc editor scenes instantiated outside any LifetimeScope where DI hasn't run.
+        private ITimeProvider ResolveTimeProvider()
+        {
+            return injectedTimeProvider ?? new TimeProvider();
+        }
+
         private void ReplaceProfile(PlayerProfile newProfile, bool notifyReplacement)
         {
             // Unity-nullity guard: scene teardown can leave this in a destroyed-but-not-collected state.
@@ -259,7 +270,7 @@ namespace Game.Runtime.Player
 
             if (notifyReplacement)
             {
-                Action replacementHandler = ProfileReplaced;
+                Action? replacementHandler = ProfileReplaced;
                 if (replacementHandler != null)
                 {
                     replacementHandler();
@@ -276,7 +287,7 @@ namespace Game.Runtime.Player
 
         private void NotifyStateChanged()
         {
-            Action handler = StateChanged;
+            Action? handler = StateChanged;
             if (handler != null)
             {
                 handler();

@@ -7,8 +7,6 @@ namespace Game.Infrastructure.Persistence
 {
     public sealed class LocalPlayerCacheStore
     {
-        private const string DefaultCacheFileName = "player_save_cache.json";
-
         private readonly bool isEnabled;
         private readonly string cachePath;
 
@@ -202,7 +200,9 @@ namespace Game.Infrastructure.Persistence
         {
             if (string.IsNullOrWhiteSpace(fileName))
             {
-                return DefaultCacheFileName;
+                throw new ArgumentException(
+                    "Local cache file name must be provided via PersistenceSettings.",
+                    nameof(fileName));
             }
 
             string sanitized = fileName.Trim();
@@ -215,7 +215,9 @@ namespace Game.Infrastructure.Persistence
 
             if (string.IsNullOrWhiteSpace(sanitized))
             {
-                return DefaultCacheFileName;
+                throw new ArgumentException(
+                    "Local cache file name contains only invalid characters.",
+                    nameof(fileName));
             }
 
             return sanitized;

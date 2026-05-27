@@ -36,7 +36,6 @@ namespace Game.Runtime.Bootstrap
 
         public SceneHandle PersistentSceneHandle { get; set; }
         public SceneHandle GameplaySceneHandle { get; set; }
-        public SceneHandle BootSceneHandle { get; set; }
 
         public void SetStepProgress(IProgress<float> progress)
         {

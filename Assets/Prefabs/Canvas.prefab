@@ -290,7 +290,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_text: NEWTEXT
+  m_text: EN SLIDER
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
   m_sharedMaterial: {fileID: 2180264, guid: 8f586378b4e144a9851e7b34d9b748ee, type: 2}
@@ -943,6 +943,7 @@ GameObject:
   - component: {fileID: 8017271956769385525}
   - component: {fileID: 7942220905482278329}
   - component: {fileID: 5856878264190374597}
+  - component: {fileID: 112001628745287628}
   m_Layer: 5
   m_Name: ActionPanel
   m_TagString: Untagged
@@ -1052,6 +1053,24 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Cards.CardDrawHudInputBinder
   drawButton: {fileID: 5987882957946903662}
   returnButton: {fileID: 5509983350445994210}
+--- !u!114 &112001628745287628
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4544398004835018988}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 93121064f7a109f42998f10f2ab2b665, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Cards.CardDrawHudReferences
+  energySlider: {fileID: 325115818108238656}
+  energyText: {fileID: 1590675778157089891}
+  energyTimerText: {fileID: 7068424599140986530}
+  extraEnergyText: {fileID: 5518425747626712819}
+  coinsText: {fileID: 1618472769509264906}
+  resultText: {fileID: 2879536025610071285}
 --- !u!1 &5627066788288842023
 GameObject:
   m_ObjectHideFlags: 0

@@ -131,6 +131,7 @@ GameObject:
   - component: {fileID: 245205528}
   - component: {fileID: 245205529}
   - component: {fileID: 245205530}
+  - component: {fileID: 245205531}
   m_Layer: 0
   m_Name: Player
   m_TagString: Untagged
@@ -183,21 +184,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 245205526}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 6c188a72e82a4e77911d2f21e0f170f3, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Infrastructure.Persistence.FirebasePlayerPersistenceRuntime
-  playerRuntimeContext: {fileID: 245205528}
-  autoLoadOnStart: 0
-  autoSave: 0
-  autosaveIntervalSeconds: 0.25
-  saveOnApplicationPause: 0
-  saveOnApplicationQuit: 0
-  createRemoteDocumentIfMissing: 0
-  verboseLogging: 0
-  useLocalCache: 0
-  localCacheFileName: player_save_cache.json
-  clearLocalCacheOnStart: 1
-  forceFreshAnonymousIdentityOnStart: 1
+  m_Script: {fileID: 11500000, guid: b02709954ea67184b9141df455201f8f, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Infrastructure.Persistence.FirebasePersistenceBootstrap
 --- !u!114 &245205530
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -207,12 +196,21 @@ MonoBehaviour:
   m_GameObject: {fileID: 245205526}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f15235588cbd4b4488a64ca5ec9b5a91, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.RuntimeCompositionRoot
-  playerRuntimeContext: {fileID: 245205528}
-  authoritativeDrawServiceSource: {fileID: 245205529}
-  authoritativeVillageUpgradeServiceSource: {fileID: 245205529}
+  m_Script: {fileID: 11500000, guid: 81258bb6063f79047a157b42eab7b879, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Infrastructure.Persistence.AutosaveDriver
+--- !u!114 &245205531
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 245205526}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 3446c976d3824ba78d41a7b92ecadc65, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Lifecycle.AppLifecycleObserver
 --- !u!1 &613652387
 GameObject:
   m_ObjectHideFlags: 0
@@ -503,9 +501,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Composition.PersistentLifetimeScope
   parentReference:
-    TypeName: 
+    TypeName:
   autoRun: 1
   autoInjectGameObjects: []
+  persistenceSettings: {fileID: 11400000, guid: d2e8f4a16c7b04d3a59e1f8c6b3a7d09, type: 2}
 --- !u!4 &1398919730
 Transform:
   m_ObjectHideFlags: 0

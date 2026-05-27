@@ -20,9 +20,13 @@ namespace Game.Infrastructure.Persistence
             ITimeProvider timeProvider)
         {
             this.firestore = firestore;
-            this.playersCollectionName = string.IsNullOrWhiteSpace(playersCollectionName)
-                ? "players"
-                : playersCollectionName.Trim();
+            if (string.IsNullOrWhiteSpace(playersCollectionName))
+            {
+                throw new ArgumentException(
+                    "Players collection name must be provided via PersistenceSettings.",
+                    nameof(playersCollectionName));
+            }
+            this.playersCollectionName = playersCollectionName.Trim();
             this.timeProvider = timeProvider ?? throw new ArgumentNullException(nameof(timeProvider));
         }
 

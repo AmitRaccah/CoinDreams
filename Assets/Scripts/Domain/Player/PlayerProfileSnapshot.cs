@@ -1,4 +1,5 @@
 using System;
+using Game.Domain.Energy;
 
 namespace Game.Domain.Player
 {
@@ -25,8 +26,8 @@ namespace Game.Domain.Player
             coins = 0;
 
             currentEnergy = 0;
-            regenMaxEnergy = 10;
-            regenIntervalSeconds = 300;
+            regenMaxEnergy = EnergyDefaults.DefaultMaxEnergy;
+            regenIntervalSeconds = EnergyDefaults.DefaultRegenIntervalSeconds;
             lastRegenUtcTicks = 0;
 
             villageLevels = Array.Empty<int>();

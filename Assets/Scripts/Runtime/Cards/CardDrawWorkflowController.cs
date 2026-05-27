@@ -5,7 +5,6 @@ using Cysharp.Threading.Tasks;
 using Game.Composition.Signals;
 using MessagePipe;
 using UnityEngine;
-using UnityEngine.Serialization;
 using VContainer;
 
 namespace Game.Runtime.Cards
@@ -14,19 +13,14 @@ namespace Game.Runtime.Cards
     public sealed class CardDrawWorkflowController : MonoBehaviour
     {
         [Header("Dependencies")]
-        [FormerlySerializedAs("cameraTransitionService")]
         [SerializeField] private MonoBehaviour? cameraTransitionServiceSource;
 
         [Header("Anchors")]
         [SerializeField] private Transform? cardBoardAnchor;
         [SerializeField] private Transform? cityViewAnchor;
 
-        [Header("Optional")]
-        [SerializeField] private MonoBehaviour? drawAnimatorSource;
-
         private IDrawGameActions? drawGameActions;
         private ICameraTransitionService? cameraTransitionService;
-        private IDrawAnimator? drawAnimator;
 
         [Inject] private ISubscriber<DrawRequestedSignal>? drawSubscriber;
         [Inject] private ISubscriber<ReturnRequestedSignal>? returnSubscriber;
@@ -38,13 +32,23 @@ namespace Game.Runtime.Cards
 
         private DrawWorkflowExecutor? executor;
 
+        private readonly Action<Exception> logUnlessCanceled;
+
+        public CardDrawWorkflowController()
+        {
+            this.logUnlessCanceled = ex =>
+            {
+                if (ex is OperationCanceledException) return;
+                Debug.LogException(ex, this);
+            };
+        }
+
         private void Awake()
         {
             this.ResolveDependencies();
             this.ValidateDependencies();
             this.executor = new DrawWorkflowExecutor(
                 this.cameraTransitionService,
-                this.drawAnimator,
                 this.drawGameActions,
                 this.workflowState,
                 this.cardBoardAnchor,
@@ -67,11 +71,9 @@ namespace Game.Runtime.Cards
             this.returnSubscription?.Dispose();
         }
 
-        public void RequestDraw() =>
-            this.HandleDrawClickedAsync().Forget(ex => Debug.LogException(ex, this));
+        public void RequestDraw() => this.HandleDrawClickedAsync().Forget(this.logUnlessCanceled);
 
-        public void RequestReturn() =>
-            this.HandleReturnClickedAsync().Forget(ex => Debug.LogException(ex, this));
+        public void RequestReturn() => this.HandleReturnClickedAsync().Forget(this.logUnlessCanceled);
 
         // Legacy aliases kept for Unity Button OnClick wiring in existing scene assets.
         public void OnDrawButtonClicked() => this.RequestDraw();
@@ -130,16 +132,6 @@ namespace Game.Runtime.Cards
             {
                 this.cameraTransitionService = this.GetComponent<ICameraTransitionService>();
             }
-
-            if (this.drawAnimatorSource != null)
-            {
-                this.drawAnimator = this.drawAnimatorSource as IDrawAnimator;
-            }
-
-            if (this.drawAnimator == null)
-            {
-                this.drawAnimator = this.GetComponent<IDrawAnimator>();
-            }
         }
 
         private void ValidateDependencies()
@@ -169,13 +161,6 @@ namespace Game.Runtime.Cards
             {
                 Debug.LogWarning(
                     "[CardDrawWorkflowController] CityViewAnchor is not assigned.",
-                    this);
-            }
-
-            if (this.drawAnimatorSource != null && this.drawAnimator == null)
-            {
-                Debug.LogWarning(
-                    "[CardDrawWorkflowController] Draw animator source does not implement IDrawAnimator.",
                     this);
             }
         }

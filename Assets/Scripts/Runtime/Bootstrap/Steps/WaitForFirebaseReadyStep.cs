@@ -10,16 +10,16 @@ namespace Game.Runtime.Bootstrap.Steps
     {
         public override async UniTask ExecuteAsync(IBootContext context, CancellationToken cancellationToken)
         {
-            FirebasePlayerPersistenceRuntime runtime = null;
+            FirebasePersistenceBootstrap bootstrap = null;
             await UniTask.WaitUntil(
                 () =>
                 {
-                    if (runtime == null)
+                    if (bootstrap == null)
                     {
-                        runtime = Object.FindAnyObjectByType<FirebasePlayerPersistenceRuntime>();
+                        bootstrap = Object.FindAnyObjectByType<FirebasePersistenceBootstrap>();
                     }
 
-                    return runtime != null && runtime.IsReady;
+                    return bootstrap != null && bootstrap.IsReady;
                 },
                 cancellationToken: cancellationToken);
         }

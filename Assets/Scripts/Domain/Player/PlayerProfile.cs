@@ -289,12 +289,12 @@ namespace Game.Domain.Player
         {
             if (snapshot.regenMaxEnergy <= 0)
             {
-                snapshot.regenMaxEnergy = 10;
+                snapshot.regenMaxEnergy = EnergyDefaults.DefaultMaxEnergy;
             }
 
             if (snapshot.regenIntervalSeconds <= 0)
             {
-                snapshot.regenIntervalSeconds = 300;
+                snapshot.regenIntervalSeconds = EnergyDefaults.DefaultRegenIntervalSeconds;
             }
         }
 
@@ -489,7 +489,7 @@ namespace Game.Domain.Player
         {
             if (string.IsNullOrWhiteSpace(value))
             {
-                return "local_player";
+                return PlayerDefaults.PlaceholderPlayerId;
             }
 
             return value.Trim();
