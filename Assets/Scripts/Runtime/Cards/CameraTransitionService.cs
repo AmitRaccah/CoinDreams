@@ -3,6 +3,7 @@
 using System;
 using System.Collections;
 using System.Threading.Tasks;
+using Game.Runtime.Cameras;
 using UnityEngine;
 
 namespace Game.Runtime.Cards
@@ -20,6 +21,20 @@ namespace Game.Runtime.Cards
 
         public bool IsTransitioning => this.HasActiveOperation;
 
+        public CameraPose CurrentPose
+        {
+            get
+            {
+                Camera? camera = this.GetCamera();
+                if (camera == null)
+                {
+                    throw new InvalidOperationException("No camera available for transition.");
+                }
+
+                return CameraPose.FromCamera(camera);
+            }
+        }
+
         private void Awake() => this.cachedCamera = this.ResolveCamera();
 
         public Task StartTransitionAsync(Transform destination)
@@ -35,7 +50,18 @@ namespace Game.Runtime.Cards
                 return Task.FromException(new InvalidOperationException("No camera available for transition."));
             }
 
-            return this.RunOperationAsync(() => this.TransitionCoroutine(camera, destination));
+            return this.StartTransitionAsync(camera, ResolveDestinationPose(destination));
+        }
+
+        public Task StartTransitionAsync(CameraPose destination)
+        {
+            Camera? camera = this.GetCamera();
+            if (camera == null)
+            {
+                return Task.FromException(new InvalidOperationException("No camera available for transition."));
+            }
+
+            return this.StartTransitionAsync(camera, destination);
         }
 
         private Camera? GetCamera()
@@ -51,13 +77,28 @@ namespace Game.Runtime.Cards
 
         private Camera? ResolveCamera() => this.targetCamera != null ? this.targetCamera : Camera.main;
 
-        private IEnumerator TransitionCoroutine(Camera camera, Transform destination)
+        private Task StartTransitionAsync(Camera camera, CameraPose destination)
+        {
+            return this.RunOperationAsync(() => this.TransitionCoroutine(camera, destination));
+        }
+
+        private static CameraPose ResolveDestinationPose(Transform destination)
+        {
+            ICameraPoseProvider? poseProvider = destination.GetComponent<ICameraPoseProvider>();
+            return poseProvider != null ? poseProvider.GetPose() : CameraPose.FromTransform(destination);
+        }
+
+        private IEnumerator TransitionCoroutine(Camera camera, CameraPose destination)
         {
             Transform cameraTransform = camera.transform;
             Vector3 startPosition = cameraTransform.position;
             Quaternion startRotation = cameraTransform.rotation;
-            Vector3 targetPosition = destination.position;
-            Quaternion targetRotation = destination.rotation;
+            float startOrthographicSize = camera.orthographicSize;
+            Vector3 targetPosition = destination.Position;
+            Quaternion targetRotation = destination.Rotation;
+            float targetOrthographicSize = destination.HasOrthographicSize
+                ? Mathf.Max(0.0001f, destination.OrthographicSize)
+                : startOrthographicSize;
 
             float duration = Mathf.Max(0.0001f, this.transitionDuration);
             float elapsed = 0f;
@@ -70,12 +111,20 @@ namespace Game.Runtime.Cards
 
                 cameraTransform.position = Vector3.Lerp(startPosition, targetPosition, eased);
                 cameraTransform.rotation = Quaternion.Slerp(startRotation, targetRotation, eased);
+                if (camera.orthographic && destination.HasOrthographicSize)
+                {
+                    camera.orthographicSize = Mathf.Lerp(startOrthographicSize, targetOrthographicSize, eased);
+                }
 
                 yield return null;
             }
 
             cameraTransform.position = targetPosition;
             cameraTransform.rotation = targetRotation;
+            if (camera.orthographic && destination.HasOrthographicSize)
+            {
+                camera.orthographicSize = targetOrthographicSize;
+            }
 
             this.CompleteOperation();
         }

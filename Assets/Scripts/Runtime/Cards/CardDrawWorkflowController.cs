@@ -3,6 +3,7 @@
 using System;
 using Cysharp.Threading.Tasks;
 using Game.Composition.Signals;
+using Game.Runtime.Cameras;
 using MessagePipe;
 using UnityEngine;
 using VContainer;
@@ -24,6 +25,7 @@ namespace Game.Runtime.Cards
 
         [Inject] private ISubscriber<DrawRequestedSignal>? drawSubscriber;
         [Inject] private ISubscriber<ReturnRequestedSignal>? returnSubscriber;
+        [Inject] private ICameraViewModeWriter? cameraViewModeWriter;
 
         private IDisposable? drawSubscription;
         private IDisposable? returnSubscription;
@@ -53,6 +55,7 @@ namespace Game.Runtime.Cards
                 this.workflowState,
                 this.cardBoardAnchor,
                 this.cityViewAnchor,
+                this.cameraViewModeWriter,
                 this);
 
             if (drawSubscriber != null)

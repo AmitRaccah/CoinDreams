@@ -526,6 +526,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingVisualController
   buildingDefinition: {fileID: 0}
   partObjects: []
+  levelVisuals: []
+  usePartObjectsAsLevelVisuals: 0
+  combineLevelMeshesOnAwake: 0
   autoCollectChildrenWhenEmpty: 1
   applyLevelZeroOnAwake: 1
 --- !u!1 &122546981941467762
@@ -948,8 +951,8 @@ Transform:
   m_GameObject: {fileID: 216110162594203491}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_LocalPosition: {x: -1.1936, y: 0, z: 2.9564}
+  m_LocalScale: {x: 2.2281532, y: 1, z: 1.4263}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 4212043267484182630}
@@ -7101,6 +7104,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingVisualController
   buildingDefinition: {fileID: 0}
   partObjects: []
+  levelVisuals: []
+  usePartObjectsAsLevelVisuals: 0
+  combineLevelMeshesOnAwake: 0
   autoCollectChildrenWhenEmpty: 1
   applyLevelZeroOnAwake: 1
 --- !u!1 &2086112056086897888
@@ -12935,6 +12941,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingVisualController
   buildingDefinition: {fileID: 0}
   partObjects: []
+  levelVisuals: []
+  usePartObjectsAsLevelVisuals: 0
+  combineLevelMeshesOnAwake: 0
   autoCollectChildrenWhenEmpty: 1
   applyLevelZeroOnAwake: 1
 --- !u!1 &4043189679460860305
@@ -19078,6 +19087,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingVisualController
   buildingDefinition: {fileID: 0}
   partObjects: []
+  levelVisuals: []
+  usePartObjectsAsLevelVisuals: 0
+  combineLevelMeshesOnAwake: 0
   autoCollectChildrenWhenEmpty: 1
   applyLevelZeroOnAwake: 1
 --- !u!1 &5847725476828012895
@@ -21513,6 +21525,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingVisualController
   buildingDefinition: {fileID: 0}
   partObjects: []
+  levelVisuals: []
+  usePartObjectsAsLevelVisuals: 0
+  combineLevelMeshesOnAwake: 0
   autoCollectChildrenWhenEmpty: 1
   applyLevelZeroOnAwake: 1
 --- !u!1 &6421625739865847077

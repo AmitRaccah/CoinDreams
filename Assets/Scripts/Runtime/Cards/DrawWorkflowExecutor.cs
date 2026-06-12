@@ -1,5 +1,6 @@
 using System;
 using System.Threading.Tasks;
+using Game.Runtime.Cameras;
 using UnityEngine;
 
 namespace Game.Runtime.Cards
@@ -11,7 +12,9 @@ namespace Game.Runtime.Cards
         private readonly CardDrawWorkflowStateMachine workflowState;
         private readonly Transform cardBoardAnchor;
         private readonly Transform cityViewAnchor;
+        private readonly ICameraViewModeWriter cameraViewModeWriter;
         private readonly UnityEngine.Object logContext;
+        private CameraPose? lastCityPose;
 
         public DrawWorkflowExecutor(
             ICameraTransitionService cameraTransitionService,
@@ -19,6 +22,7 @@ namespace Game.Runtime.Cards
             CardDrawWorkflowStateMachine workflowState,
             Transform cardBoardAnchor,
             Transform cityViewAnchor,
+            ICameraViewModeWriter cameraViewModeWriter,
             UnityEngine.Object logContext)
         {
             this.cameraTransitionService = cameraTransitionService;
@@ -26,6 +30,7 @@ namespace Game.Runtime.Cards
             this.workflowState = workflowState;
             this.cardBoardAnchor = cardBoardAnchor;
             this.cityViewAnchor = cityViewAnchor;
+            this.cameraViewModeWriter = cameraViewModeWriter;
             this.logContext = logContext;
         }
 
@@ -37,17 +42,22 @@ namespace Game.Runtime.Cards
                     "[DrawWorkflowExecutor] Missing camera transition service or board anchor.",
                     logContext);
                 workflowState.CompleteMoveToBoard(false);
+                cameraViewModeWriter?.SetMode(CameraViewMode.City);
                 return;
             }
 
             try
             {
+                lastCityPose = cameraTransitionService.CurrentPose;
+                cameraViewModeWriter?.SetMode(CameraViewMode.Transitioning);
                 await cameraTransitionService.StartTransitionAsync(cardBoardAnchor);
                 workflowState.CompleteMoveToBoard(true);
+                cameraViewModeWriter?.SetMode(CameraViewMode.Board);
             }
             catch (OperationCanceledException)
             {
                 workflowState.CompleteMoveToBoard(false);
+                cameraViewModeWriter?.SetMode(CameraViewMode.City);
             }
             catch (Exception exception)
             {
@@ -55,6 +65,7 @@ namespace Game.Runtime.Cards
                     "[DrawWorkflowExecutor] Failed to move camera to board: " + exception.Message,
                     logContext);
                 workflowState.CompleteMoveToBoard(false);
+                cameraViewModeWriter?.SetMode(CameraViewMode.City);
             }
         }
 
@@ -96,12 +107,24 @@ namespace Game.Runtime.Cards
                     "[DrawWorkflowExecutor] Missing camera transition service or city anchor.",
                     logContext);
                 workflowState.CompleteReturn();
+                cameraViewModeWriter?.SetMode(CameraViewMode.City);
                 return;
             }
 
+            bool returnedToCity = false;
             try
             {
-                await cameraTransitionService.StartTransitionAsync(cityViewAnchor);
+                cameraViewModeWriter?.SetMode(CameraViewMode.Transitioning);
+                if (lastCityPose.HasValue)
+                {
+                    await cameraTransitionService.StartTransitionAsync(lastCityPose.Value);
+                }
+                else
+                {
+                    await cameraTransitionService.StartTransitionAsync(cityViewAnchor);
+                }
+
+                returnedToCity = true;
             }
             catch (OperationCanceledException)
             {
@@ -115,6 +138,12 @@ namespace Game.Runtime.Cards
             finally
             {
                 workflowState.CompleteReturn();
+                if (returnedToCity)
+                {
+                    lastCityPose = null;
+                }
+
+                cameraViewModeWriter?.SetMode(returnedToCity ? CameraViewMode.City : CameraViewMode.Board);
             }
         }
     }

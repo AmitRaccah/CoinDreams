@@ -1,6 +1,7 @@
 #nullable enable
 
 using Game.Runtime.Cards;
+using Game.Runtime.Cameras;
 using Game.Runtime.Scenes;
 using Game.Runtime.Village;
 using UnityEngine;
@@ -22,9 +23,15 @@ namespace Game.Composition
 
         protected override void Configure(IContainerBuilder builder)
         {
+            builder.Register<CameraViewModeService>(Lifetime.Scoped)
+                .As<ICameraViewModeReader>()
+                .As<ICameraViewModeWriter>()
+                .AsSelf();
+
             // Guard each registration: VContainer's RegisterComponentInHierarchy throws if no
             // matching component exists in the scope's scene. Skipping a missing component lets
             // the rest of the container build instead of taking down the whole scope.
+            TryRegisterInHierarchy<MapOrbitCameraController>(builder);
             TryRegisterInHierarchy<CardDrawWorkflowController>(builder);
             TryRegisterInHierarchy<DrawHudPresenter>(builder);
             TryRegisterInHierarchy<DrawActionPresenter>(builder);
