@@ -5,7 +5,7 @@ using Game.Domain.Player;
 namespace Game.Infrastructure.Persistence
 {
     [System.Serializable]
-    public class PlayerSaveData
+    public sealed class PlayerSaveData
     {
         // Identity / Sync
         public string playerId;

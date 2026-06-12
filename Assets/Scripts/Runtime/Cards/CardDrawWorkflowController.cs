@@ -60,11 +60,11 @@ namespace Game.Runtime.Cards
 
             if (drawSubscriber != null)
             {
-                this.drawSubscription = drawSubscriber.Subscribe(_ => this.RequestDraw());
+                this.drawSubscription = drawSubscriber.Subscribe(this.OnDrawSignal);
             }
             if (returnSubscriber != null)
             {
-                this.returnSubscription = returnSubscriber.Subscribe(_ => this.RequestReturn());
+                this.returnSubscription = returnSubscriber.Subscribe(this.OnReturnSignal);
             }
         }
 
@@ -73,6 +73,10 @@ namespace Game.Runtime.Cards
             this.drawSubscription?.Dispose();
             this.returnSubscription?.Dispose();
         }
+
+        private void OnDrawSignal(DrawRequestedSignal _) => this.RequestDraw();
+
+        private void OnReturnSignal(ReturnRequestedSignal _) => this.RequestReturn();
 
         public void RequestDraw() => this.HandleDrawClickedAsync().Forget(this.logUnlessCanceled);
 

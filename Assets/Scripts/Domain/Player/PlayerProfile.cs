@@ -64,12 +64,12 @@ namespace Game.Domain.Player
             get { return playerId; }
         }
 
-        public CurrencyService Currency
+        public ICurrencyWallet Currency
         {
             get { return currency; }
         }
 
-        public EnergyService Energy
+        public IEnergyService Energy
         {
             get { return energy; }
         }

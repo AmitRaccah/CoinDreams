@@ -1,10 +1,8 @@
 namespace Game.Domain.Economy
 {
-    public interface ICurrencyWallet
+    public interface ICurrencyWallet : IReadOnlyCurrencyWallet
     {
-        int GetCoins();
         void Add(int amount);
-        bool CanAfford(int amount);
         bool TrySpend(int amount);
     }
 }

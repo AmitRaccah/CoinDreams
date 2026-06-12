@@ -110,7 +110,7 @@ namespace Game.Runtime.Village
                 throw new InvalidOperationException("VillageUpgradeCatalogFactory failed: " + error);
             }
 
-            VillageProgressState? progressState =
+            IVillageProgressStateWriter? progressState =
                 ResolveProgressState(runtimeCatalog.Catalog.BuildingCount);
             if (progressState == null)
             {
@@ -266,7 +266,7 @@ namespace Game.Runtime.Village
             return null;
         }
 
-        private VillageProgressState? ResolveProgressState(int buildingCount)
+        private IVillageProgressStateWriter? ResolveProgressState(int buildingCount)
         {
             PlayerRuntimeContext? playerContext = playerRuntimeContext;
             if (playerContext != null)

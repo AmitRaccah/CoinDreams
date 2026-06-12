@@ -2,7 +2,7 @@ using System;
 
 namespace Game.Domain.Economy
 {
-    public class CurrencyService : ICurrencyWallet
+    public sealed class CurrencyService : ICurrencyWallet, IReadOnlyCurrencyWallet
     {
         private int coins;
         public event Action<int> CoinsChanged;

@@ -12,14 +12,18 @@ namespace Game.Runtime.Cameras
         [SerializeField] private MonoBehaviour? inputSource;
         [SerializeField] private MonoBehaviour? orbitRigSource;
         [SerializeField] private MonoBehaviour? zoomRigSource;
+        [SerializeField] private MonoBehaviour? panInputSource;
+        [SerializeField] private MonoBehaviour? panRigSource;
 
         [Header("Sensitivity")]
         [SerializeField] private float horizontalDegreesPerPixel = 0.08f;
         [SerializeField] private float verticalZoomSizePerPixel = 0.004f;
+        [SerializeField] private float horizontalPanWorldUnitsPerPixel = 0.01f;
 
         [Header("Axes")]
         [SerializeField] private bool invertHorizontal;
         [SerializeField] private bool invertVerticalZoom;
+        [SerializeField] private bool invertPanHorizontal;
 
         [Header("Filtering")]
         [SerializeField] private float deadZonePixels = 0.01f;
@@ -29,6 +33,8 @@ namespace Game.Runtime.Cameras
         private ICameraOrbitInputSource? resolvedInputSource;
         private IOrbitCameraRig? orbitRig;
         private ICameraZoomRig? zoomRig;
+        private IPanInputSource? resolvedPanInputSource;
+        private IPanRig? panRig;
         private bool referencesResolved;
 
         private void Awake()
@@ -54,34 +60,52 @@ namespace Game.Runtime.Cameras
             }
 
             resolvedInputSource?.CancelGesture();
+            resolvedPanInputSource?.CancelGesture();
             orbitRig?.CancelMotion();
             zoomRig?.CancelMotion();
+            panRig?.CancelMotion();
         }
 
         private void Update()
         {
             ResolveReferences();
 
-            if (viewModeReader != null && !viewModeReader.IsCityView)
+            // The rigs unconditionally rewrite rigRoot.position/rotation in ApplyCurrentYaw/Pan
+            // every frame based on the initialOffset captured at Awake. When CameraTransitionService
+            // drives the camera to the board anchor, ticking the rigs would immediately overwrite
+            // that position next frame and snap the camera back to the city pose. While the camera
+            // is not in CityView, the transition service owns the transform — stay out of its way.
+            bool ownsCamera = viewModeReader == null || viewModeReader.IsCityView;
+            if (!ownsCamera)
             {
                 return;
             }
 
-            OrbitCameraInputFrame inputFrame = resolvedInputSource != null
+            OrbitCameraInputFrame orbitFrame = resolvedInputSource != null
                 ? resolvedInputSource.ReadFrame()
                 : OrbitCameraInputFrame.None;
 
-            if (inputFrame.HasInput)
+            if (orbitFrame.HasInput)
             {
-                ApplyInput(inputFrame.Delta);
+                ApplyOrbitInput(orbitFrame.Delta);
+            }
+
+            PanInputFrame panFrame = resolvedPanInputSource != null
+                ? resolvedPanInputSource.ReadFrame()
+                : PanInputFrame.None;
+
+            if (panFrame.HasInput)
+            {
+                ApplyPanInput(panFrame.Delta);
             }
 
             float deltaTime = Time.deltaTime;
+            panRig?.Tick(deltaTime);
             orbitRig?.Tick(deltaTime);
             zoomRig?.Tick(deltaTime);
         }
 
-        private void ApplyInput(Vector2 delta)
+        private void ApplyOrbitInput(Vector2 delta)
         {
             if (Mathf.Abs(delta.x) > deadZonePixels && orbitRig != null)
             {
@@ -96,6 +120,17 @@ namespace Game.Runtime.Cameras
             }
         }
 
+        private void ApplyPanInput(Vector2 delta)
+        {
+            if (panRig == null || Mathf.Abs(delta.x) <= deadZonePixels)
+            {
+                return;
+            }
+
+            float direction = invertPanHorizontal ? -1f : 1f;
+            panRig.AddPanDelta(delta.x * horizontalPanWorldUnitsPerPixel * direction);
+        }
+
         private void HandleModeChanged(CameraViewMode mode)
         {
             if (mode == CameraViewMode.City)
@@ -104,8 +139,10 @@ namespace Game.Runtime.Cameras
             }
 
             resolvedInputSource?.CancelGesture();
+            resolvedPanInputSource?.CancelGesture();
             orbitRig?.CancelMotion();
             zoomRig?.CancelMotion();
+            panRig?.CancelMotion();
         }
 
         private void ResolveReferences()
@@ -118,6 +155,8 @@ namespace Game.Runtime.Cameras
             resolvedInputSource = inputSource as ICameraOrbitInputSource;
             orbitRig = orbitRigSource as IOrbitCameraRig;
             zoomRig = zoomRigSource as ICameraZoomRig;
+            resolvedPanInputSource = panInputSource as IPanInputSource;
+            panRig = panRigSource as IPanRig;
 
             if (resolvedInputSource == null)
             {
@@ -132,6 +171,16 @@ namespace Game.Runtime.Cameras
             if (zoomRig == null)
             {
                 zoomRig = GetComponent<ICameraZoomRig>();
+            }
+
+            if (resolvedPanInputSource == null)
+            {
+                resolvedPanInputSource = GetComponent<IPanInputSource>();
+            }
+
+            if (panRig == null)
+            {
+                panRig = GetComponent<IPanRig>();
             }
 
             referencesResolved = true;
@@ -149,6 +198,16 @@ namespace Game.Runtime.Cameras
             if (zoomRig == null)
             {
                 Debug.LogWarning("[MapOrbitCameraController] Missing zoom rig.", this);
+            }
+
+            if (resolvedPanInputSource == null && panInputSource != null)
+            {
+                Debug.LogWarning("[MapOrbitCameraController] Pan input source assigned but does not implement IPanInputSource.", this);
+            }
+
+            if (panRig == null && panRigSource != null)
+            {
+                Debug.LogWarning("[MapOrbitCameraController] Pan rig assigned but does not implement IPanRig.", this);
             }
         }
     }

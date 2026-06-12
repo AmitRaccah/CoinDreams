@@ -12,11 +12,11 @@ namespace Game.Runtime.Cards
     public sealed class DrawActionPresenter : MonoBehaviour, IDrawGameActions
     {
         [Header("Config")]
-        [SerializeField] private int drawCost = 1;
         [SerializeField] private CardDeckSO? deckConfig;
 
         [Inject] private PlayerRuntimeContext? playerRuntimeContext;
         [Inject] private IAuthoritativeDrawService? authoritativeDrawService;
+        [Inject] private CardDrawConfigSO? cardDrawConfig;
 
         private IDrawResultSink? drawResultSink;
         private AuthoritativeDrawRequest? drawRequest;
@@ -98,6 +98,12 @@ namespace Game.Runtime.Cards
                 return false;
             }
 
+            if (cardDrawConfig == null)
+            {
+                failureResult = AuthoritativeDrawResult.Unavailable("Draw config missing.");
+                return false;
+            }
+
             if (!authoritativeDrawService.IsReady)
             {
                 failureResult = AuthoritativeDrawResult.Unavailable("Syncing player state...");
@@ -121,12 +127,22 @@ namespace Game.Runtime.Cards
 
         private void RebuildDrawRequest()
         {
+            if (cardDrawConfig == null)
+            {
+                drawRequest = null;
+                return;
+            }
+
             if (string.IsNullOrEmpty(pendingDrawId))
             {
                 pendingDrawId = System.Guid.NewGuid().ToString("N");
             }
 
-            drawRequest = drawRequestFactory.Create(drawCost, pendingMultiplier, deckConfig, pendingDrawId);
+            drawRequest = drawRequestFactory.Create(
+                cardDrawConfig.DrawCost,
+                pendingMultiplier,
+                deckConfig,
+                pendingDrawId);
         }
 
         private void ResolveDrawResultSink()

@@ -19,7 +19,7 @@ namespace Game.Infrastructure.Persistence
     {
         private readonly IFirebaseAuthService auth;
         private readonly ILocalSnapshotCache cache;
-        private readonly Game.Runtime.Player.PlayerRuntimeContext context;
+        private readonly IPlayerStateGateway context;
         private readonly AutosaveScheduler scheduler;
 
         // Serialises every write that touches the repository or the local cache.
@@ -35,7 +35,7 @@ namespace Game.Infrastructure.Persistence
         public PlayerSnapshotService(
             IFirebaseAuthService auth,
             ILocalSnapshotCache cache,
-            Game.Runtime.Player.PlayerRuntimeContext context,
+            IPlayerStateGateway context,
             AutosaveScheduler scheduler)
         {
             this.auth = auth ?? throw new ArgumentNullException(nameof(auth));
@@ -295,7 +295,7 @@ namespace Game.Infrastructure.Persistence
                         return false;
                     }
 
-                    int currentRevision = context.Profile.Revision;
+                    int currentRevision = context.CurrentRevision;
                     scheduler.RecordSaveSuccess(currentRevision, snapshotRevision, Time.unscaledTime);
 
                     if (currentRevision <= snapshotRevision)

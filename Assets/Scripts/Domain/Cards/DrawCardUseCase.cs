@@ -2,13 +2,13 @@ namespace Game.Domain.Cards
 {
     public sealed class DrawCardUseCase
     {
-        private readonly Game.Domain.Energy.EnergyService energy;
+        private readonly Game.Domain.Energy.IEnergyService energy;
         private readonly ICardDeck deck;
         private readonly RewardContext context;
         private readonly int drawCost;
 
         public DrawCardUseCase(
-            Game.Domain.Energy.EnergyService energy,
+            Game.Domain.Energy.IEnergyService energy,
             ICardDeck deck,
             RewardContext context,
             int drawCost)

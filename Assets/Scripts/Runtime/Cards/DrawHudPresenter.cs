@@ -29,8 +29,8 @@ namespace Game.Runtime.Cards
         private TMP_Text? coinsText;
         private TMP_Text? resultText;
 
-        private EnergyService? energyService;
-        private CurrencyService? currencyService;
+        private IReadOnlyEnergyService? energyService;
+        private IReadOnlyCurrencyWallet? currencyService;
         private CancellationTokenSource? uiRefreshCts;
         private bool isSubscribed;
         private bool energyUiCacheInitialized;
@@ -236,13 +236,9 @@ namespace Game.Runtime.Cards
                 return;
             }
 
-            energyService = playerRuntimeContext.EnergyService;
-            currencyService = playerRuntimeContext.CurrencyService;
-
-            if (energyService != null)
-            {
-                energyService.ApplyRegen();
-            }
+            playerRuntimeContext.RefreshRegen();
+            energyService = playerRuntimeContext.EnergyView;
+            currencyService = playerRuntimeContext.CurrencyView;
         }
 
         private void SubscribeToRuntimeContextEvents()
@@ -306,9 +302,9 @@ namespace Game.Runtime.Cards
 
             while (!token.IsCancellationRequested)
             {
-                if (energyService != null)
+                if (playerRuntimeContext != null && energyService != null)
                 {
-                    energyService.ApplyRegen();
+                    playerRuntimeContext.RefreshRegen();
                     RefreshTimerUi(energyService.GetSecondsUntilNext());
                 }
 
@@ -318,18 +314,18 @@ namespace Game.Runtime.Cards
 
         private void OnApplicationFocus(bool hasFocus)
         {
-            if (hasFocus && energyService != null)
+            if (hasFocus && playerRuntimeContext != null)
             {
-                energyService.ApplyRegen();
+                playerRuntimeContext.RefreshRegen();
                 RefreshAllUi();
             }
         }
 
         private void OnApplicationPause(bool pause)
         {
-            if (!pause && energyService != null)
+            if (!pause && playerRuntimeContext != null)
             {
-                energyService.ApplyRegen();
+                playerRuntimeContext.RefreshRegen();
                 RefreshAllUi();
             }
         }

@@ -6,6 +6,7 @@ using Game.Domain.Energy;
 using Game.Domain.Player;
 using Game.Domain.Time;
 using Game.Domain.Village;
+using Game.Infrastructure.Persistence;
 using UnityEngine;
 using VContainer;
 
@@ -17,7 +18,7 @@ namespace Game.Runtime.Player
     }
 
     [DisallowMultipleComponent]
-    public sealed class PlayerRuntimeContext : MonoBehaviour
+    public sealed class PlayerRuntimeContext : MonoBehaviour, IPlayerStateGateway
     {
         [Header("Identity")]
         [SerializeField] private string playerId = PlayerDefaults.PlaceholderPlayerId;
@@ -61,12 +62,15 @@ namespace Game.Runtime.Player
             }
         }
 
-        public CurrencyService CurrencyService
+        // Concrete service getters below are intended for Domain-side engine consumers
+        // (e.g. VillageUpgradeRuntime constructing VillageUpgradeService). UI/view layers
+        // MUST consume the IReadOnly* views (CurrencyView/EnergyView/VillageView) instead.
+        public ICurrencyWallet CurrencyService
         {
             get { return Profile.Currency; }
         }
 
-        public EnergyService EnergyService
+        public IEnergyService EnergyService
         {
             get { return Profile.Energy; }
         }
@@ -76,14 +80,40 @@ namespace Game.Runtime.Player
             get { return CurrencyService; }
         }
 
-        public VillageProgressState VillageProgressState
+        public IVillageProgressStateWriter VillageProgressState
         {
             get { return Profile.Village; }
+        }
+
+        public IReadOnlyCurrencyWallet CurrencyView
+        {
+            get { return Profile.Currency; }
+        }
+
+        public IReadOnlyEnergyService EnergyView
+        {
+            get { return Profile.Energy; }
+        }
+
+        public IReadOnlyVillageProgressState VillageView
+        {
+            get { return Profile.Village; }
+        }
+
+        public void RefreshRegen()
+        {
+            EnsureInitialized();
+            profile!.ApplyTimeBasedRegen();
         }
 
         public string PlayerId
         {
             get { return Profile.PlayerId; }
+        }
+
+        public int CurrentRevision
+        {
+            get { return Profile.Revision; }
         }
 
         private void Awake()

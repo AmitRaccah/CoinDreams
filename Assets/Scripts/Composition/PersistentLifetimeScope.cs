@@ -2,6 +2,7 @@
 
 using System;
 using Game.Composition.Signals;
+using Game.Config.Cards;
 using Game.Domain.Minigames;
 using Game.Domain.Time;
 using Game.Infrastructure.Persistence;
@@ -19,6 +20,7 @@ namespace Game.Composition
     public sealed class PersistentLifetimeScope : LifetimeScope
     {
         [SerializeField] private PersistenceSettings? persistenceSettings;
+        [SerializeField] private CardDrawConfigSO? cardDrawConfig;
 
         protected override void Configure(IContainerBuilder builder)
         {
@@ -40,6 +42,14 @@ namespace Game.Composition
             }
             builder.RegisterInstance(persistenceSettings);
 
+            if (cardDrawConfig == null)
+            {
+                throw new InvalidOperationException(
+                    "PersistentLifetimeScope: CardDrawConfigSO asset is not assigned. "
+                    + "Drag a CardDrawConfigSO ScriptableObject into the inspector slot.");
+            }
+            builder.RegisterInstance(cardDrawConfig);
+
             builder.Register<AutosaveScheduler>(
                 _ => new AutosaveScheduler(persistenceSettings.AutosaveIntervalSeconds),
                 Lifetime.Singleton);
@@ -58,7 +68,9 @@ namespace Game.Composition
             builder.Register<AuthoritativeActionsService>(Lifetime.Singleton)
                 .AsImplementedInterfaces();    // picks up IAuthoritativeDrawService, IAuthoritativeVillageUpgradeService, IAuthoritativeActionsService
 
-            builder.RegisterComponentInHierarchy<PlayerRuntimeContext>();
+            builder.RegisterComponentInHierarchy<PlayerRuntimeContext>()
+                .AsImplementedInterfaces()
+                .AsSelf();
             builder.RegisterComponentInHierarchy<FirebasePersistenceBootstrap>();
             builder.RegisterComponentInHierarchy<AutosaveDriver>();
             builder.RegisterComponentInHierarchy<AppLifecycleObserver>()

@@ -4,15 +4,15 @@ namespace Game.Domain.Cards
 {
     public sealed class RewardContext
     {
-        private readonly Game.Domain.Energy.EnergyService energy;
-        private readonly Game.Domain.Economy.CurrencyService currency;
+        private readonly Game.Domain.Energy.IEnergyService energy;
+        private readonly Game.Domain.Economy.ICurrencyWallet currency;
         private readonly Game.Domain.Cards.DrawModifiersService modifiers;
         private readonly Game.Domain.Minigames.IMinigameLauncher minigames;
         private readonly int drawMultiplier;
 
         public RewardContext(
-            Game.Domain.Energy.EnergyService energy,
-            Game.Domain.Economy.CurrencyService currency,
+            Game.Domain.Energy.IEnergyService energy,
+            Game.Domain.Economy.ICurrencyWallet currency,
             Game.Domain.Cards.DrawModifiersService modifiers,
             Game.Domain.Minigames.IMinigameLauncher minigames)
         {
@@ -28,12 +28,12 @@ namespace Game.Domain.Cards
             drawMultiplier = modifiers.GetCurrentDrawMultiplier();
         }
 
-        public Game.Domain.Energy.EnergyService Energy
+        public Game.Domain.Energy.IEnergyService Energy
         {
             get { return energy; }
         }
 
-        public Game.Domain.Economy.CurrencyService Currency
+        public Game.Domain.Economy.ICurrencyWallet Currency
         {
             get { return currency; }
         }

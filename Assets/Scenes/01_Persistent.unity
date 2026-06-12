@@ -505,6 +505,7 @@ MonoBehaviour:
   autoRun: 1
   autoInjectGameObjects: []
   persistenceSettings: {fileID: 11400000, guid: d2e8f4a16c7b04d3a59e1f8c6b3a7d09, type: 2}
+  cardDrawConfig: {fileID: 11400000, guid: c4f8e2a1b9d3e7f5a2c8d4e6f1b5a3c9, type: 2}
 --- !u!4 &1398919730
 Transform:
   m_ObjectHideFlags: 0

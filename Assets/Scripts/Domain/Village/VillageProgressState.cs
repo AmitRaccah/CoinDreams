@@ -2,7 +2,7 @@ using System;
 
 namespace Game.Domain.Village
 {
-    public sealed class VillageProgressState
+    public sealed class VillageProgressState : IReadOnlyVillageProgressState, IVillageProgressStateWriter
     {
         private int[] buildingLevels;
         public event Action Changed;

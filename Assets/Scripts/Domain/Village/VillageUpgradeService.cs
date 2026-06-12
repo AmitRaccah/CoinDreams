@@ -5,14 +5,14 @@ namespace Game.Domain.Village
     public sealed class VillageUpgradeService
     {
         private readonly ICurrencyWallet wallet;
-        private readonly VillageProgressState progressState;
+        private readonly IVillageProgressStateWriter progressState;
         private readonly VillageUpgradeCatalog catalog;
         private readonly bool isValid;
         private readonly string validationMessage;
 
         public VillageUpgradeService(
             VillageUpgradeCatalog catalog,
-            VillageProgressState progressState,
+            IVillageProgressStateWriter progressState,
             ICurrencyWallet wallet)
         {
             this.catalog = catalog;

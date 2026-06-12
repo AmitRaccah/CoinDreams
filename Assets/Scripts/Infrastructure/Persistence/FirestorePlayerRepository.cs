@@ -191,8 +191,7 @@ namespace Game.Infrastructure.Persistence
 
                     // DrawId-derived seed makes retries deterministic — RandomSource MUST stay inside the closure
                     // so each retry gets a fresh instance and replays the same RNG sequence.
-                    IRandomSource randomSource = new SystemRandomSource(
-                        request.DrawId != null ? request.DrawId.GetHashCode() : 0);
+                    IRandomSource randomSource = new SystemRandomSource(StableSeedFromDrawId(request.DrawId));
 
                     AuthoritativeDrawResult drawResult =
                         AuthoritativeDrawEngine.TryExecute(currentSnapshot, request, randomSource, timeProvider);
@@ -575,6 +574,28 @@ namespace Game.Infrastructure.Persistence
             }
 
             return AuthoritativeDrawResult.Error(result.Message);
+        }
+
+        private static int StableSeedFromDrawId(string drawId)
+        {
+            if (string.IsNullOrEmpty(drawId))
+            {
+                return 0;
+            }
+
+            // FNV-1a 32-bit over UTF-8 bytes — deterministic across runtimes/platforms
+            // so the same DrawId always produces the same RNG sequence on retry.
+            const int FnvOffsetBasis = unchecked((int)2166136261);
+            const int FnvPrime = 16777619;
+
+            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(drawId);
+            int hash = FnvOffsetBasis;
+            int i;
+            for (i = 0; i < bytes.Length; i++)
+            {
+                hash = unchecked((hash ^ bytes[i]) * FnvPrime);
+            }
+            return hash;
         }
     }
 }
