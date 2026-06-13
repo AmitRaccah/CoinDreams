@@ -53,11 +53,19 @@ namespace Game.Infrastructure.Persistence
                 // "USE_AUTH_EMULATOR not set." line that fires from native callbacks during
                 // SignInAnonymously / DeleteUser). Errors and warnings still surface; flip
                 // verboseLogging in PersistenceSettings to get the full Firebase output back.
-                FirebaseApp.LogLevel = verboseLogging ? LogLevel.Info : LogLevel.Warning;
+                LogLevel postInitLevel = verboseLogging ? LogLevel.Info : LogLevel.Warning;
+
+                // During DefaultInstance access Firebase emits a "Database URL not set"
+                // warning because this project uses Firestore only (no Realtime Database).
+                // Stay one notch quieter during the init burst to hide that benign warning,
+                // then restore the normal level immediately after the SDK handles are cached.
+                FirebaseApp.LogLevel = verboseLogging ? LogLevel.Info : LogLevel.Error;
 
                 app = FirebaseApp.DefaultInstance;
                 auth = FirebaseAuth.DefaultInstance;
                 firestore = FirebaseFirestore.DefaultInstance;
+
+                FirebaseApp.LogLevel = postInitLevel;
 
                 if (forceFreshAnonymousIdentity)
                 {
