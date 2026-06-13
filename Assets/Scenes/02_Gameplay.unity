@@ -1014,6 +1014,8 @@ GameObject:
   - component: {fileID: 3001000014}
   - component: {fileID: 3001000015}
   - component: {fileID: 3001000016}
+  - component: {fileID: 3001000017}
+  - component: {fileID: 3001000018}
   m_Layer: 0
   m_Name: CameraControls
   m_TagString: Untagged
@@ -1077,8 +1079,8 @@ MonoBehaviour:
   rigRoot: {fileID: 0}
   targetCamera: {fileID: 441918781}
   orbitCenter: {fileID: 3001000002}
-  minYawDegrees: -55
-  maxYawDegrees: 55
+  minYawDegrees: -10
+  maxYawDegrees: 10
   damping: 18
 --- !u!114 &3001000015
 MonoBehaviour:
@@ -1111,11 +1113,45 @@ MonoBehaviour:
   inputSource: {fileID: 3001000013}
   orbitRigSource: {fileID: 3001000014}
   zoomRigSource: {fileID: 3001000015}
-  horizontalDegreesPerPixel: 0.08
+  panInputSource: {fileID: 3001000017}
+  panRigSource: {fileID: 3001000018}
+  horizontalDegreesPerPixel: 0.015
   verticalZoomSizePerPixel: 0.004
+  horizontalPanWorldUnitsPerPixel: 0.012
   invertHorizontal: 0
   invertVerticalZoom: 0
+  invertPanHorizontal: 0
   deadZonePixels: 0.01
+--- !u!114 &3001000017
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3001000010}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: da36de529ff69fc47a8bce5afb92da8a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  inputBlockerSource: {fileID: 3001000012}
+  enableMouseDrag: 1
+--- !u!114 &3001000018
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3001000010}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 20ea0c38a7c7405478962975eaf53789, type: 3}
+  m_Name:
+  m_EditorClassIdentifier:
+  orbitCenter: {fileID: 3001000002}
+  minPanWorldUnits: -5
+  maxPanWorldUnits: 5
+  damping: 18
 --- !u!1 &2076768696
 GameObject:
   m_ObjectHideFlags: 0
