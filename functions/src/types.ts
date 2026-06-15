@@ -51,7 +51,7 @@ export interface PlayerProfileSnapshot {
 export enum AuthoritativeDrawEffectType {
     AddCoins = 0,
     AddEnergy = 1,
-    LaunchMinigame = 2,
+    LaunchSteal = 2,
 }
 
 export interface AuthoritativeDrawEffectDefinition {
@@ -87,7 +87,7 @@ export interface AuthoritativeDrawResult {
     status: AuthoritativeDrawStatus;
     snapshot: PlayerProfileSnapshot | null;
     drawnCardId: string;
-    minigameId: string;
+    stealTriggerId: string;
     message: string;
 }
 
@@ -159,5 +159,42 @@ export interface AuthoritativeStealResult {
     thiefSnapshot: PlayerProfileSnapshot | null;
     victimSnapshot: PlayerProfileSnapshot | null;
     stolenAmount: number;
+    message: string;
+}
+
+// ---------------------------------------------------------------------------
+// Voodoo session — begin & stab DTOs
+// ---------------------------------------------------------------------------
+
+// beginVoodooSession takes NO request body. The server uses request.auth.uid
+// as the thief, picks a random victim, and creates /stealSessions/{sessionId}.
+export interface VoodooSessionBeginResult {
+    sessionId: string;
+    victimPlayerId: string;
+    victimDisplayName: string;
+    maxStabs: number;
+}
+
+export interface VoodooStabRequest {
+    sessionId: string;
+}
+
+export enum VoodooStabStatus {
+    Success = 0,
+    SessionNotFound = 1,
+    SessionExhausted = 2,
+    SessionExpired = 3,
+    VictimEmpty = 4,
+    InvalidRequest = 5,
+    Unauthorized = 6,
+    Error = 7,
+}
+
+export interface VoodooStabResult {
+    status: VoodooStabStatus;
+    stolenAmount: number;
+    stabsRemaining: number;
+    isDollBroken: boolean;
+    thiefSnapshot: PlayerProfileSnapshot | null;
     message: string;
 }

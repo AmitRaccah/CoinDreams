@@ -12,7 +12,7 @@ namespace Game.Runtime.Cards
             {
                 { RewardEffectType.AddCoins, AuthoritativeDrawEffectType.AddCoins },
                 { RewardEffectType.AddEnergy, AuthoritativeDrawEffectType.AddEnergy },
-                { RewardEffectType.LaunchMinigame, AuthoritativeDrawEffectType.LaunchMinigame }
+                { RewardEffectType.LaunchSteal, AuthoritativeDrawEffectType.LaunchSteal }
             };
 
         public static bool IsSupported(RewardEffectType effectType) =>

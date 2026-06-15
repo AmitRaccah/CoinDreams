@@ -3,7 +3,7 @@
 using System;
 using Game.Composition.Signals;
 using Game.Config.Cards;
-using Game.Domain.Minigames;
+using Game.Domain.Steal;
 using Game.Domain.Time;
 using Game.Infrastructure.Persistence;
 using Game.Runtime.Cards;
@@ -31,7 +31,7 @@ namespace Game.Composition
 
             builder.Register<TimeProvider>(Lifetime.Singleton).As<ITimeProvider>();
             builder.Register<UiNavigatorStub>(Lifetime.Singleton).As<IUiNavigator>();
-            builder.RegisterInstance(NullMinigameLauncher.Instance).As<IMinigameLauncher>();
+            builder.RegisterInstance(NullStealCardLauncher.Instance).As<IStealCardLauncher>();
 
             // ===== Persistence (Phase 2 split) =====
             if (persistenceSettings == null)

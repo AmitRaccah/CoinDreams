@@ -7,14 +7,14 @@ namespace Game.Domain.Cards
         private readonly Game.Domain.Energy.IEnergyService energy;
         private readonly Game.Domain.Economy.ICurrencyWallet currency;
         private readonly Game.Domain.Cards.DrawModifiersService modifiers;
-        private readonly Game.Domain.Minigames.IMinigameLauncher minigames;
+        private readonly Game.Domain.Steal.IStealCardLauncher stealCardLauncher;
         private readonly int drawMultiplier;
 
         public RewardContext(
             Game.Domain.Energy.IEnergyService energy,
             Game.Domain.Economy.ICurrencyWallet currency,
             Game.Domain.Cards.DrawModifiersService modifiers,
-            Game.Domain.Minigames.IMinigameLauncher minigames)
+            Game.Domain.Steal.IStealCardLauncher stealCardLauncher)
         {
             if (modifiers == null)
             {
@@ -24,7 +24,7 @@ namespace Game.Domain.Cards
             this.energy = energy;
             this.currency = currency;
             this.modifiers = modifiers;
-            this.minigames = minigames;
+            this.stealCardLauncher = stealCardLauncher;
             drawMultiplier = modifiers.GetCurrentDrawMultiplier();
         }
 
@@ -43,9 +43,9 @@ namespace Game.Domain.Cards
             get { return modifiers; }
         }
 
-        public Game.Domain.Minigames.IMinigameLauncher Minigames
+        public Game.Domain.Steal.IStealCardLauncher StealCardLauncher
         {
-            get { return minigames; }
+            get { return stealCardLauncher; }
         }
 
         public void AddToResource(RewardResourceType resourceType, int baseAmount)

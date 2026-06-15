@@ -27,7 +27,7 @@ import {
  *   4. Regenerate energy from `lastRegenUtcTicks` -> now.
  *   5. Validate energy >= effectiveCost (cost * multiplier).
  *   6. Cryptographically-random weighted pick from `request.cards`.
- *   7. Apply effects (AddCoins / AddEnergy / LaunchMinigame).
+ *   7. Apply effects (AddCoins / AddEnergy / LaunchSteal).
  *   8. Bump revision, stamp drawId into processedImpactIds (cap size),
  *      stamp updatedAtUtcTicks.
  *   9. Commit and return AuthoritativeDrawResult.Success.
@@ -81,7 +81,7 @@ export const executeDraw = onCall<AuthoritativeDrawRequest, Promise<Authoritativ
                 status: AuthoritativeDrawStatus.Error,
                 snapshot: null,
                 drawnCardId: "",
-                minigameId: "",
+                stealTriggerId: "",
                 message: "Internal server error.",
             };
             return result;

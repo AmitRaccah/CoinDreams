@@ -12,7 +12,7 @@ namespace Game.Domain.Cards
             {
                 { AuthoritativeDrawEffectType.AddCoins, def => new AddResourceEffect(RewardResourceType.Currency, def.IntValue) },
                 { AuthoritativeDrawEffectType.AddEnergy, def => new AddResourceEffect(RewardResourceType.Energy, def.IntValue) },
-                { AuthoritativeDrawEffectType.LaunchMinigame, def => new LaunchMinigameEffect(def.StringValue) }
+                { AuthoritativeDrawEffectType.LaunchSteal, def => new LaunchStealEffect(def.StringValue) }
             };
 
         public static bool TryCreate(AuthoritativeDrawEffectDefinition? definition, out IRewardEffect? effect)

@@ -1,6 +1,6 @@
 using System;
 using System.Collections.Generic;
-using Game.Domain.Minigames;
+using Game.Domain.Steal;
 using Game.Domain.Player;
 using Game.Domain.Time;
 
@@ -84,13 +84,13 @@ namespace Game.Domain.Cards
             }
 
             DrawModifiersService modifiers = new DrawModifiersService(request.RequestedMultiplier);
-            CapturingMinigameLauncher minigameLauncher = new CapturingMinigameLauncher();
+            CapturingStealCardLauncher stealCardLauncher = new CapturingStealCardLauncher();
 
             RewardContext rewardContext = new RewardContext(
                 profile.Energy,
                 profile.Currency,
                 modifiers,
-                minigameLauncher);
+                stealCardLauncher);
 
             ICardDeck deck = new WeightedRandomCardDeck(runtimeCards, randomSource);
             int effectiveDrawCost = ScaleDrawCost(request.DrawCost, request.RequestedMultiplier);
@@ -116,7 +116,7 @@ namespace Game.Domain.Cards
             return AuthoritativeDrawResult.Success(
                 updatedSnapshot,
                 cardId,
-                minigameLauncher.LastLaunchedMinigameId);
+                stealCardLauncher.LastLaunchedTriggerId);
         }
 
         private static void StampDrawId(PlayerProfileSnapshot resultSnapshot, string drawId)
@@ -241,18 +241,18 @@ namespace Game.Domain.Cards
             return (int)scaled;
         }
 
-        private sealed class CapturingMinigameLauncher : IMinigameLauncher
+        private sealed class CapturingStealCardLauncher : IStealCardLauncher
         {
-            public string LastLaunchedMinigameId { get; private set; }
+            public string LastLaunchedTriggerId { get; private set; }
 
-            public CapturingMinigameLauncher()
+            public CapturingStealCardLauncher()
             {
-                LastLaunchedMinigameId = string.Empty;
+                LastLaunchedTriggerId = string.Empty;
             }
 
-            public void Launch(string minigameId)
+            public void Launch(string triggerId)
             {
-                LastLaunchedMinigameId = minigameId ?? string.Empty;
+                LastLaunchedTriggerId = triggerId ?? string.Empty;
             }
         }
     }

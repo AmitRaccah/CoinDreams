@@ -8,7 +8,7 @@ namespace Game.Domain.Cards
     {
         AddCoins = 0,
         AddEnergy = 1,
-        LaunchMinigame = 2
+        LaunchSteal = 2
     }
 
     public sealed class AuthoritativeDrawEffectDefinition
@@ -102,7 +102,7 @@ namespace Game.Domain.Cards
         public readonly AuthoritativeDrawStatus Status;
         public readonly PlayerProfileSnapshot Snapshot;
         public readonly string DrawnCardId;
-        public readonly string MinigameId;
+        public readonly string StealTriggerId;
         public readonly string Message;
 
         public bool IsSuccess
@@ -114,26 +114,26 @@ namespace Game.Domain.Cards
             AuthoritativeDrawStatus status,
             PlayerProfileSnapshot snapshot,
             string drawnCardId,
-            string minigameId,
+            string stealTriggerId,
             string message)
         {
             Status = status;
             Snapshot = snapshot;
             DrawnCardId = drawnCardId ?? string.Empty;
-            MinigameId = minigameId ?? string.Empty;
+            StealTriggerId = stealTriggerId ?? string.Empty;
             Message = message ?? string.Empty;
         }
 
         public static AuthoritativeDrawResult Success(
             PlayerProfileSnapshot snapshot,
             string drawnCardId,
-            string minigameId)
+            string stealTriggerId)
         {
             return new AuthoritativeDrawResult(
                 AuthoritativeDrawStatus.Success,
                 snapshot,
                 drawnCardId,
-                minigameId,
+                stealTriggerId,
                 string.Empty);
         }
 

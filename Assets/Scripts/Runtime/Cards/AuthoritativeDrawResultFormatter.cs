@@ -25,9 +25,9 @@ namespace Game.Runtime.Cards
         private static string FormatSuccess(AuthoritativeDrawResult result)
         {
             string message = "Card: " + result.DrawnCardId;
-            if (!string.IsNullOrEmpty(result.MinigameId))
+            if (!string.IsNullOrEmpty(result.StealTriggerId))
             {
-                message += " | Minigame: " + result.MinigameId;
+                message += " | Steal: " + result.StealTriggerId;
             }
 
             return message;

@@ -545,7 +545,7 @@ namespace Game.Infrastructure.Persistence
                 return AuthoritativeDrawResult.Success(
                     snapshot,
                     result.DrawnCardId,
-                    result.MinigameId);
+                    result.StealTriggerId);
             }
 
             if (result.Status == AuthoritativeDrawStatus.NotEnoughEnergy)

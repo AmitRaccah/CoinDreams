@@ -15,6 +15,13 @@ service cloud.firestore {
       }
     }
 
+    // Voodoo steal sessions — created/updated only by Cloud Functions (Admin SDK).
+    // The thief reads to display session state; no one writes from the client.
+    match /stealSessions/{sessionId} {
+      allow read: if request.auth != null && resource.data.thiefId == request.auth.uid;
+      allow write: if false;
+    }
+
     // Default deny everything else.
     match /{document=**} {
       allow read, write: if false;
