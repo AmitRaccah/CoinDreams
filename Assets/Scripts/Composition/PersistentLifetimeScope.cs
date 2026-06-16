@@ -5,10 +5,12 @@ using Game.Composition.Signals;
 using Game.Config.Cards;
 using Game.Domain.Steal;
 using Game.Domain.Time;
+using Game.Infrastructure.CloudFunctions;
 using Game.Infrastructure.Persistence;
 using Game.Runtime.Cards;
 using Game.Runtime.Lifecycle;
 using Game.Runtime.Player;
+using Game.Runtime.Steal;
 using Game.Runtime.UI;
 using MessagePipe;
 using UnityEngine;
@@ -28,10 +30,16 @@ namespace Game.Composition
             builder.RegisterMessageBroker<DrawRequestedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<ReturnRequestedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<VillageUpgradeRequestedSignal>(messagePipeOptions);
+            builder.RegisterMessageBroker<StealCardTriggeredSignal>(messagePipeOptions);
+            builder.RegisterMessageBroker<VoodooSessionStartedSignal>(messagePipeOptions);
+            builder.RegisterMessageBroker<VoodooSessionEndedSignal>(messagePipeOptions);
+            builder.RegisterMessageBroker<VoodooStabRequestedSignal>(messagePipeOptions);
+            builder.RegisterMessageBroker<VoodooStabResolvedSignal>(messagePipeOptions);
+            builder.RegisterMessageBroker<MultiplierChangeRequestedSignal>(messagePipeOptions);
 
             builder.Register<TimeProvider>(Lifetime.Singleton).As<ITimeProvider>();
             builder.Register<UiNavigatorStub>(Lifetime.Singleton).As<IUiNavigator>();
-            builder.RegisterInstance(NullStealCardLauncher.Instance).As<IStealCardLauncher>();
+            builder.Register<VoodooStealCardLauncher>(Lifetime.Singleton).As<IStealCardLauncher>();
 
             // ===== Persistence (Phase 2 split) =====
             if (persistenceSettings == null)
@@ -81,10 +89,29 @@ namespace Game.Composition
             // gameplay presenters live in the Gameplay scene and are registered there instead.
             builder.RegisterComponentInHierarchy<CardDrawHudInputBinder>();
 
+            // Multiplier button is opt-in — only register if a binder exists in the scene
+            // (otherwise startup would throw before the user has time to wire the UI).
+            if (UnityEngine.Object.FindAnyObjectByType<DrawMultiplierBinder>() != null)
+            {
+                builder.RegisterComponentInHierarchy<DrawMultiplierBinder>();
+            }
+
             // HUD widget references live on the Canvas in the Persistent scene. Registering them
             // here lets the Gameplay-scope DrawHudPresenter resolve them through the parent scope
             // and avoids broken cross-scene SerializeField references.
             builder.RegisterComponentInHierarchy<CardDrawHudReferences>();
+
+            // ===== Voodoo steal feature =====
+            // Coordinator owns the session lifecycle. Presenters subscribe to signals.
+            // The CloudFunctions client implementation is registered only once the Firebase
+            // Functions SDK is imported — see TODO at the end of this method.
+            builder.RegisterComponentInHierarchy<VoodooStealCoordinator>();
+            builder.RegisterComponentInHierarchy<VoodooStabInputBinder>();
+            builder.RegisterComponentInHierarchy<VoodooDollPresenter>();
+            builder.RegisterComponentInHierarchy<VictimPedestalPresenter>();
+            builder.RegisterComponentInHierarchy<CenterStageModeController>();
+
+            builder.Register<CloudFunctionsStealClient>(Lifetime.Singleton).As<IVoodooStealClient>();
 
             // Upcoming phases will add here:
             //   - IPlayerRepository (FirestorePlayerRepository) — blocked on Firebase init flow

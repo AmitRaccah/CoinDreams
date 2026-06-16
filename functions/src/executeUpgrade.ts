@@ -5,27 +5,37 @@ import { getFirestore } from "firebase-admin/firestore";
 import {
     AuthoritativeVillageUpgradeRequest,
     AuthoritativeVillageUpgradeResult,
+    BuildingUpgradeResult,
     BuildingUpgradeStatus,
+    PlayerProfileSnapshot,
 } from "./types";
+
+import {
+    loadSnapshot,
+    hasProcessedImpact,
+    stampProcessedImpact,
+    applyEnergyRegen,
+    stampUpdate,
+    nowUtcTicks,
+} from "./internal/playerSnapshotHelpers";
 
 /**
  * executeUpgrade — server-authoritative village building upgrade.
  *
- * TODO: Translate engine logic from
- *       `Assets/Scripts/Domain/Village/AuthoritativeVillageUpgradeEngine.cs`.
- *       Until that port lands, this callable returns HttpsError("unimplemented").
+ * Ported from `Assets/Scripts/Domain/Village/AuthoritativeVillageUpgradeEngine.cs`.
  *
- * Implementation checklist:
- *   1. Validate request shape (upgradeRequestId non-empty, catalog non-empty,
- *      buildingIndex within bounds OR buildingId resolvable).
- *   2. Open a Firestore transaction on `players/{uid}`.
- *   3. Reject duplicate upgradeRequestId via processedImpactIds.
- *   4. Resolve target buildingIndex from buildingId/buildingIndex flags.
- *   5. Look up `upgradeCostsByBuilding[index][currentLevel]`; reject if
- *      MaxLevel or NotEnoughCoins.
- *   6. Subtract coins, increment villageLevels[index], bump revision,
- *      stamp upgradeRequestId, stamp updatedAtUtcTicks.
- *   7. Commit and return AuthoritativeVillageUpgradeResult.FromUpgrade(Success).
+ * Order of operations inside the transaction:
+ *   1. Load /players/{uid} snapshot via loadSnapshot().
+ *   2. Reject duplicate upgradeRequestId via processedImpactIds (return Success
+ *      with current state to mirror C# AlreadyApplied semantics).
+ *   3. Resolve buildingIndex from buildingId or useBuildingIndex.
+ *   4. Pad villageLevels to catalog size (matches C# VillageProgressState.EnsureCapacity).
+ *   5. Look up upgradeCostsByBuilding[index][currentLevel]; reject MaxLevel
+ *      / NotEnoughCoins / InvalidConfiguration.
+ *   6. Apply energy regen (parity with C# CreateSnapshotWithStamp -> ApplyTimeBasedRegen),
+ *      subtract coins, increment villageLevels[index], stamp processedImpactId,
+ *      bump updatedAtUtcTicks.
+ *   7. Commit and return AuthoritativeVillageUpgradeResult.
  */
 export const executeUpgrade = onCall<
     AuthoritativeVillageUpgradeRequest,
@@ -54,6 +64,18 @@ export const executeUpgrade = onCall<
         if (!payload.catalog || !Array.isArray(payload.catalog.buildingIds)) {
             throw new HttpsError("invalid-argument", "catalog is required.");
         }
+        if (!Array.isArray(payload.catalog.upgradeCostsByBuilding)) {
+            throw new HttpsError("invalid-argument", "catalog.upgradeCostsByBuilding is required.");
+        }
+        if (
+            payload.catalog.buildingIds.length !==
+            payload.catalog.upgradeCostsByBuilding.length
+        ) {
+            throw new HttpsError(
+                "invalid-argument",
+                "catalog.buildingIds length must equal catalog.upgradeCostsByBuilding length."
+            );
+        }
 
         logger.info("executeUpgrade invoked", {
             uid: callerUid,
@@ -63,15 +85,66 @@ export const executeUpgrade = onCall<
             buildingIndex: payload.buildingIndex,
         });
 
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const db = getFirestore();
 
         try {
-            // TODO: translate from C# engine — see implementation checklist above.
-            throw new HttpsError(
-                "unimplemented",
-                "Translate engine logic from AuthoritativeVillageUpgradeEngine.cs"
+            const result = await db.runTransaction(
+                async (tx): Promise<AuthoritativeVillageUpgradeResult> => {
+                    // 1. Load snapshot (single read before any write).
+                    const playerData = await loadSnapshot(tx, db, callerUid);
+                    const snapshot = playerData.snapshot;
+
+                    // 2. Idempotency check — duplicate upgradeRequestId.
+                    if (hasProcessedImpact(snapshot, payload.upgradeRequestId)) {
+                        return alreadyProcessedResult(snapshot, payload);
+                    }
+
+                    // 3. Resolve buildingIndex.
+                    const buildingCount = payload.catalog.buildingIds.length;
+                    const buildingIndex = payload.useBuildingIndex
+                        ? payload.buildingIndex
+                        : payload.catalog.buildingIds.indexOf(payload.buildingId);
+                    if (
+                        buildingIndex < 0 ||
+                        buildingIndex >= buildingCount
+                    ) {
+                        return invalidConfigResult(snapshot, buildingIndex);
+                    }
+
+                    // 4. Pad villageLevels to catalog length, then read currentLevel.
+                    ensureVillageCapacity(snapshot, buildingCount);
+                    const currentLevel = snapshot.villageLevels[buildingIndex] ?? 0;
+
+                    const costs = payload.catalog.upgradeCostsByBuilding[buildingIndex] ?? [];
+                    if (currentLevel >= costs.length) {
+                        return maxLevelResult(snapshot, buildingIndex, currentLevel);
+                    }
+
+                    // 5. Cost check.
+                    const cost = costs[currentLevel];
+                    if (typeof cost !== "number" || cost < 0) {
+                        return invalidConfigResult(snapshot, buildingIndex);
+                    }
+                    if (snapshot.coins < cost) {
+                        return notEnoughCoinsResult(snapshot, buildingIndex, currentLevel);
+                    }
+
+                    // 6. Apply mutation: regen parity, spend, level up, stamp.
+                    const now = nowUtcTicks();
+                    applyEnergyRegen(snapshot, now);
+                    snapshot.coins -= cost;
+                    const newLevel = currentLevel + 1;
+                    snapshot.villageLevels[buildingIndex] = newLevel;
+                    stampProcessedImpact(snapshot, payload.upgradeRequestId);
+                    stampUpdate(snapshot, now);
+
+                    // 7. Commit.
+                    tx.set(playerData.ref, snapshot);
+
+                    return successResult(snapshot, buildingIndex, newLevel, cost);
+                }
             );
+            return result;
         } catch (err) {
             if (err instanceof HttpsError) {
                 throw err;
@@ -96,3 +169,153 @@ export const executeUpgrade = onCall<
         }
     }
 );
+
+// ---------------------------------------------------------------------------
+// Helpers (scoped to executeUpgrade.ts — do NOT promote to shared helpers).
+// ---------------------------------------------------------------------------
+
+/**
+ * Pads `snapshot.villageLevels` with zeros up to `count` entries.
+ * Matches the grow-only semantics of C# `VillageProgressState.EnsureCapacity`.
+ */
+function ensureVillageCapacity(snapshot: PlayerProfileSnapshot, count: number): void {
+    if (count <= 0) {
+        return;
+    }
+    if (!Array.isArray(snapshot.villageLevels)) {
+        snapshot.villageLevels = [];
+    }
+    while (snapshot.villageLevels.length < count) {
+        snapshot.villageLevels.push(0);
+    }
+}
+
+function buildUpgradeResult(
+    status: BuildingUpgradeStatus,
+    buildingIndex: number,
+    newLevel: number,
+    coinsSpent: number,
+    message: string
+): BuildingUpgradeResult {
+    return {
+        status,
+        buildingIndex,
+        newLevel,
+        coinsSpent,
+        message,
+    };
+}
+
+function successResult(
+    snapshot: PlayerProfileSnapshot,
+    buildingIndex: number,
+    newLevel: number,
+    cost: number
+): AuthoritativeVillageUpgradeResult {
+    const upgradeResult = buildUpgradeResult(
+        BuildingUpgradeStatus.Success,
+        buildingIndex,
+        newLevel,
+        cost,
+        ""
+    );
+    return {
+        upgradeResult,
+        snapshot,
+        message: "",
+    };
+}
+
+function notEnoughCoinsResult(
+    snapshot: PlayerProfileSnapshot,
+    buildingIndex: number,
+    currentLevel: number
+): AuthoritativeVillageUpgradeResult {
+    const message = "Not enough coins for upgrade.";
+    const upgradeResult = buildUpgradeResult(
+        BuildingUpgradeStatus.NotEnoughCoins,
+        buildingIndex,
+        currentLevel,
+        0,
+        message
+    );
+    return {
+        upgradeResult,
+        snapshot,
+        message,
+    };
+}
+
+function maxLevelResult(
+    snapshot: PlayerProfileSnapshot,
+    buildingIndex: number,
+    currentLevel: number
+): AuthoritativeVillageUpgradeResult {
+    const message = "Building is at maximum level.";
+    const upgradeResult = buildUpgradeResult(
+        BuildingUpgradeStatus.MaxLevel,
+        buildingIndex,
+        currentLevel,
+        0,
+        message
+    );
+    return {
+        upgradeResult,
+        snapshot,
+        message,
+    };
+}
+
+function invalidConfigResult(
+    snapshot: PlayerProfileSnapshot,
+    buildingIndex: number
+): AuthoritativeVillageUpgradeResult {
+    const message = "Invalid upgrade configuration.";
+    const upgradeResult = buildUpgradeResult(
+        BuildingUpgradeStatus.InvalidConfiguration,
+        buildingIndex,
+        -1,
+        0,
+        message
+    );
+    return {
+        upgradeResult,
+        snapshot,
+        message,
+    };
+}
+
+/**
+ * Idempotent replay path. The C# engine returns `BuildingUpgradeResult.AlreadyApplied`
+ * which has no equivalent in the wire-format TS enum, so we collapse it to
+ * Success carrying the *current* persisted state — matching the spec's
+ * "AlreadyApplied semantics" note. We do NOT mutate the snapshot here; the
+ * upgrade was already applied in a previous transaction.
+ */
+function alreadyProcessedResult(
+    snapshot: PlayerProfileSnapshot,
+    payload: AuthoritativeVillageUpgradeRequest
+): AuthoritativeVillageUpgradeResult {
+    const buildingCount = payload.catalog.buildingIds.length;
+    let buildingIndex = payload.useBuildingIndex
+        ? payload.buildingIndex
+        : payload.catalog.buildingIds.indexOf(payload.buildingId);
+    if (buildingIndex < 0 || buildingIndex >= buildingCount) {
+        buildingIndex = -1;
+    }
+    const currentLevel = buildingIndex >= 0
+        ? (snapshot.villageLevels[buildingIndex] ?? 0)
+        : 0;
+    const upgradeResult = buildUpgradeResult(
+        BuildingUpgradeStatus.Success,
+        buildingIndex,
+        currentLevel,
+        0,
+        "Upgrade already processed."
+    );
+    return {
+        upgradeResult,
+        snapshot,
+        message: "Upgrade already processed.",
+    };
+}

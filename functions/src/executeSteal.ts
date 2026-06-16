@@ -7,6 +7,7 @@ import {
     AuthoritativeStealResult,
     AuthoritativeStealStatus,
 } from "./types";
+import { runStealTransaction } from "./internal/stealEngine";
 
 /**
  * executeSteal — server-authoritative coin steal between two players.
@@ -14,25 +15,9 @@ import {
  * Unlike draw/upgrade, this is a TWO-DOCUMENT transaction (thief + victim).
  * The caller is the THIEF; the victimPlayerId is included in the request body.
  *
- * TODO: Translate engine logic from
- *       `Assets/Scripts/Domain/Player/AuthoritativeStealEngine.cs`.
- *       Until that port lands, this callable returns HttpsError("unimplemented").
- *
- * Implementation checklist:
- *   1. Validate request shape (impactId, thief/victim ids, amount > 0).
- *   2. Reject if request.auth.uid !== thiefPlayerId.
- *   3. Reject if thief == victim.
- *   4. Open a Firestore transaction reading BOTH docs:
- *        players/{thiefPlayerId} and players/{victimPlayerId}.
- *      (Reads must precede writes inside the transaction.)
- *   5. Reject duplicate impactId on EITHER side via processedImpactIds.
- *   6. Compute actualAmount = min(requestedAmount, victim.coins).
- *      - If victim.coins == 0 -> VictimEmpty.
- *      - If actualAmount < requestedAmount -> AppliedPartially.
- *   7. victim.coins -= actualAmount; thief.coins += actualAmount.
- *   8. Stamp impactId into BOTH processedImpactIds arrays, bump revisions,
- *      stamp updatedAtUtcTicks on both.
- *   9. Commit and return AuthoritativeStealResult.Success / .Partial / .VictimEmpty.
+ * The engine logic lives in `internal/stealEngine.ts` so it can be reused by
+ * executeVoodooStab. See AuthoritativeStealEngine.cs (lines 8-126) for the
+ * C# parity reference.
  */
 export const executeSteal = onCall<AuthoritativeStealRequest, Promise<AuthoritativeStealResult>>(
     { region: "us-central1" },
@@ -73,16 +58,26 @@ export const executeSteal = onCall<AuthoritativeStealRequest, Promise<Authoritat
             requestedAmount: payload.requestedAmount,
         });
 
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         const db = getFirestore();
 
         try {
-            // TODO: translate from C# engine — see implementation checklist above.
-            throw new HttpsError(
-                "unimplemented",
-                "Translate engine logic from AuthoritativeStealEngine.cs"
-            );
+            const result = await db.runTransaction(async (tx) => {
+                return runStealTransaction(tx, db, payload);
+            });
+            return result;
         } catch (err) {
+            // not-found from loadSnapshot maps to a domain-level Unavailable
+            // result so the Unity client can surface a readable message
+            // without tearing down the callable layer.
+            if (err instanceof HttpsError && err.code === "not-found") {
+                return {
+                    status: AuthoritativeStealStatus.Unavailable,
+                    thiefSnapshot: null,
+                    victimSnapshot: null,
+                    stolenAmount: 0,
+                    message: "Player not found",
+                };
+            }
             if (err instanceof HttpsError) {
                 throw err;
             }

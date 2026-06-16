@@ -8,7 +8,9 @@
     "build": "tsc",
     "lint": "eslint src/",
     "serve": "npm run build && firebase emulators:start --only functions",
-    "deploy": "firebase deploy --only functions"
+    "deploy": "firebase deploy --only functions",
+    "seed": "ts-node scripts/seed.ts",
+    "dev": "npm run build && firebase emulators:start --only functions,firestore,auth"
   },
   "dependencies": {
     "firebase-admin": "^12.0.0",
@@ -17,6 +19,7 @@
   "devDependencies": {
     "@types/node": "^20.0.0",
     "typescript": "^5.4.0",
-    "eslint": "^8.0.0"
+    "eslint": "^8.0.0",
+    "ts-node": "^10.9.0"
   }
 }

@@ -1,8 +1,11 @@
 #nullable enable
+using System;
 using System.Threading.Tasks;
+using Game.Composition.Signals;
 using Game.Config.Cards;
 using Game.Domain.Cards;
 using Game.Runtime.Player;
+using MessagePipe;
 using UnityEngine;
 using VContainer;
 
@@ -17,14 +20,35 @@ namespace Game.Runtime.Cards
         [Inject] private PlayerRuntimeContext? playerRuntimeContext;
         [Inject] private IAuthoritativeDrawService? authoritativeDrawService;
         [Inject] private CardDrawConfigSO? cardDrawConfig;
+        [Inject] private ISubscriber<MultiplierChangeRequestedSignal>? multiplierSubscriber;
 
         private IDrawResultSink? drawResultSink;
         private AuthoritativeDrawRequest? drawRequest;
+        private IDisposable? multiplierSubscription;
         private bool isDrawInFlight;
         private int pendingMultiplier = 1;
         private string? pendingDrawId;
         private readonly AuthoritativeDrawRequestFactory drawRequestFactory =
             new AuthoritativeDrawRequestFactory();
+
+        private void OnEnable()
+        {
+            if (multiplierSubscriber != null && multiplierSubscription == null)
+            {
+                multiplierSubscription = multiplierSubscriber.Subscribe(HandleMultiplierChangeRequested);
+            }
+        }
+
+        private void OnDisable()
+        {
+            multiplierSubscription?.Dispose();
+            multiplierSubscription = null;
+        }
+
+        private void HandleMultiplierChangeRequested(MultiplierChangeRequestedSignal signal)
+        {
+            SetMultiplier(signal.Multiplier);
+        }
 
         public void SetMultiplier(int multiplier)
         {

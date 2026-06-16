@@ -61,6 +61,13 @@ namespace Game.Infrastructure.Persistence
                 // then restore the normal level immediately after the SDK handles are cached.
                 FirebaseApp.LogLevel = verboseLogging ? LogLevel.Info : LogLevel.Error;
 
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+                // Route Firestore at the local emulator during development. The native SDK
+                // reads FIRESTORE_EMULATOR_HOST on first DefaultInstance access — must set
+                // this BEFORE the line below or the SDK will already be bound to production.
+                System.Environment.SetEnvironmentVariable("FIRESTORE_EMULATOR_HOST", "localhost:8080");
+#endif
+
                 app = FirebaseApp.DefaultInstance;
                 auth = FirebaseAuth.DefaultInstance;
                 firestore = FirebaseFirestore.DefaultInstance;
