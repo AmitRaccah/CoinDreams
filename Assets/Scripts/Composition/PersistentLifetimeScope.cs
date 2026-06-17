@@ -97,6 +97,11 @@ namespace Game.Composition
                 builder.RegisterComponentInHierarchy<DrawMultiplierBinder>();
             }
 
+            // DrawModeVisibilityPresenter is registered in GameplayLifetimeScope
+            // because it depends on ICameraViewModeReader (scoped to gameplay).
+            // The presenter's GameObject can still live in 01_Persistent — the
+            // gameplay scope's FindAnyObjectByType search spans loaded scenes.
+
             // HUD widget references live on the Canvas in the Persistent scene. Registering them
             // here lets the Gameplay-scope DrawHudPresenter resolve them through the parent scope
             // and avoids broken cross-scene SerializeField references.

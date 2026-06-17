@@ -16,11 +16,19 @@ namespace Game.Runtime.Cards
         [SerializeField] private TMP_Text? coinsText;
         [SerializeField] private TMP_Text? resultText;
 
+        [Header("Visibility holders (GameObjects toggled by DrawHudPresenter)")]
+        [Tooltip("Shown only while baseEnergy < maxEnergy (still regenerating).")]
+        [SerializeField] private GameObject? energyTimerHolder;
+        [Tooltip("Shown only while baseEnergy >= maxEnergy AND extraEnergy > 0.")]
+        [SerializeField] private GameObject? extraEnergyHolder;
+
         public Slider? EnergySlider => energySlider;
         public TMP_Text? EnergyText => energyText;
         public TMP_Text? EnergyTimerText => energyTimerText;
         public TMP_Text? ExtraEnergyText => extraEnergyText;
         public TMP_Text? CoinsText => coinsText;
         public TMP_Text? ResultText => resultText;
+        public GameObject? EnergyTimerHolder => energyTimerHolder;
+        public GameObject? ExtraEnergyHolder => extraEnergyHolder;
     }
 }

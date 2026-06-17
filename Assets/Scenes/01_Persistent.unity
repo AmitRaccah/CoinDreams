@@ -127,6 +127,14 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 112001628745287628, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+      propertyPath: energyTimerHolder
+      value: 
+      objectReference: {fileID: 220623067}
+    - target: {fileID: 112001628745287628, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+      propertyPath: extraEnergyHolder
+      value: 
+      objectReference: {fileID: 220623062}
     - target: {fileID: 237705246063836476, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
       propertyPath: m_text
       value: X
@@ -375,6 +383,11 @@ PrefabInstance:
       insertIndex: -1
       addedObject: {fileID: 220623066}
   m_SourcePrefab: {fileID: 100100000, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+--- !u!1 &220623062 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5756922860954831535, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+  m_PrefabInstance: {fileID: 220623061}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &220623063 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 237705246063836476, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
@@ -416,6 +429,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Cards.DrawMultiplierBinder
   multiplierButton: {fileID: 220623065}
   multiplierLabel: {fileID: 220623063}
+--- !u!1 &220623067 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 209384791867893097, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+  m_PrefabInstance: {fileID: 220623061}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &245205526
 GameObject:
   m_ObjectHideFlags: 0
@@ -587,6 +605,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &806861824 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2514510719083286573, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+  m_PrefabInstance: {fileID: 220623061}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1398919728
 GameObject:
   m_ObjectHideFlags: 0
@@ -649,6 +672,7 @@ GameObject:
   - component: {fileID: 1791189985}
   - component: {fileID: 1791189984}
   - component: {fileID: 1791189987}
+  - component: {fileID: 1791189988}
   m_Layer: 0
   m_Name: VoodooLogic
   m_TagString: Untagged
@@ -707,6 +731,20 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 62c140cb0fee39342ad7862d4b4ae12a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Steal.VoodooStabHudSync
+--- !u!114 &1791189988
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1791189983}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a8c48bea2ace9649aaff218dae9c502, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Cards.DrawModeVisibilityPresenter
+  drawModeOnlyElements:
+  - {fileID: 806861824}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

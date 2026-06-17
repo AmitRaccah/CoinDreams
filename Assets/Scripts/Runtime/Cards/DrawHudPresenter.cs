@@ -28,6 +28,8 @@ namespace Game.Runtime.Cards
         private TMP_Text? extraEnergyText;
         private TMP_Text? coinsText;
         private TMP_Text? resultText;
+        private GameObject? energyTimerHolder;
+        private GameObject? extraEnergyHolder;
 
         private IReadOnlyEnergyService? energyService;
         private IReadOnlyCurrencyWallet? currencyService;
@@ -69,6 +71,8 @@ namespace Game.Runtime.Cards
             extraEnergyText = hudReferences.ExtraEnergyText;
             coinsText = hudReferences.CoinsText;
             resultText = hudReferences.ResultText;
+            energyTimerHolder = hudReferences.EnergyTimerHolder;
+            extraEnergyHolder = hudReferences.ExtraEnergyHolder;
         }
 
         private void OnEnable()
@@ -143,10 +147,38 @@ namespace Game.Runtime.Cards
                 extraEnergyText.SetText("Extra: +{0:0}", extraEnergy);
             }
 
+            if (energyChanged || extraChanged)
+            {
+                RefreshHolderVisibility(baseEnergy, maxEnergyValue, extraEnergy);
+            }
+
             cachedBaseEnergy = baseEnergy;
             cachedMaxEnergy = maxEnergyValue;
             cachedExtraEnergy = extraEnergy;
             energyUiCacheInitialized = true;
+        }
+
+        // Visibility rules:
+        //  - EnergyTimer holder: shown ONLY while baseEnergy < maxEnergy (still
+        //    regenerating, so the "next in Xs" countdown is meaningful).
+        //  - ExtraEnergy holder: shown ONLY while baseEnergy >= maxEnergy AND
+        //    extraEnergy > 0 (the +X bonus is the only thing left to display
+        //    once the bar is full).
+        // SetActive is idempotent on its own, but we avoid the call when the
+        // visibility hasn't actually flipped to keep the dirty-flag scenes quiet.
+        private void RefreshHolderVisibility(int baseEnergy, int maxEnergyValue, int extraEnergy)
+        {
+            bool timerShouldShow = baseEnergy < maxEnergyValue;
+            if (energyTimerHolder != null && energyTimerHolder.activeSelf != timerShouldShow)
+            {
+                energyTimerHolder.SetActive(timerShouldShow);
+            }
+
+            bool extraShouldShow = baseEnergy >= maxEnergyValue && extraEnergy > 0;
+            if (extraEnergyHolder != null && extraEnergyHolder.activeSelf != extraShouldShow)
+            {
+                extraEnergyHolder.SetActive(extraShouldShow);
+            }
         }
 
         private void RefreshCoinsUi(int coins)
