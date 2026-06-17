@@ -605,7 +605,12 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!1 &806861824 stripped
+--- !u!1 &806927215 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8770523500152381263, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+  m_PrefabInstance: {fileID: 220623061}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &806927216 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2514510719083286573, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
   m_PrefabInstance: {fileID: 220623061}
@@ -743,8 +748,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8a8c48bea2ace9649aaff218dae9c502, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Cards.DrawModeVisibilityPresenter
-  drawModeOnlyElements:
-  - {fileID: 806861824}
+  boardOnlyElements:
+  - {fileID: 806927216}
+  nonStealElements:
+  - {fileID: 806927215}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

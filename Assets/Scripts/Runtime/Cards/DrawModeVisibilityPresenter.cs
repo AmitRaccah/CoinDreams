@@ -10,17 +10,23 @@ using VContainer;
 namespace Game.Runtime.Cards
 {
     /// <summary>
-    /// Toggles a set of "draw-mode-only" UI elements based on both camera
-    /// view mode and voodoo session state. They are visible only while the
-    /// camera is on the Board view (the player is ready to draw a card) AND
-    /// no steal session is running. Any other state — City, Transitioning,
-    /// or active voodoo session — hides them.
+    /// Toggles two independent groups of canvas elements based on camera view
+    /// mode and voodoo session state.
     ///
-    /// SRP: this class only flips visibility on the wired GameObjects. It
-    /// knows nothing about input routing, server calls, or how the draw flow
-    /// itself works.
+    /// Group A — <c>boardOnlyElements</c>: visible only while the camera is on
+    /// the Board view AND no voodoo session is active. Example: ReturnButton —
+    /// only makes sense to "return" when looking at the board.
     ///
-    /// OCP: the array is editor-driven; add a new draw-mode-only element by
+    /// Group B — <c>nonStealElements</c>: visible whenever no voodoo session
+    /// is active, REGARDLESS of camera mode. Example: MultiplierButton — the
+    /// player can pre-set their multiplier from city view, but it must be
+    /// hidden during a steal session so the stab tap doesn't change it.
+    ///
+    /// SRP: this class only flips visibility on the wired GameObjects. The two
+    /// arrays represent two visibility CATEGORIES, not two responsibilities —
+    /// the responsibility is "translate game state into element visibility."
+    ///
+    /// OCP: each array is editor-driven; add a new element to either group by
     /// dragging it into the inspector slot, no code change.
     ///
     /// Lifetime note: this component can live in 01_Persistent but depends on
@@ -32,9 +38,15 @@ namespace Game.Runtime.Cards
     [DisallowMultipleComponent]
     public sealed class DrawModeVisibilityPresenter : MonoBehaviour
     {
+        [Header("Group A — Board view only")]
         [Tooltip("GameObjects shown only when the camera is on the Board view " +
             "AND no voodoo session is active. Example: ReturnButton.")]
-        [SerializeField] private GameObject[] drawModeOnlyElements = Array.Empty<GameObject>();
+        [SerializeField] private GameObject[] boardOnlyElements = Array.Empty<GameObject>();
+
+        [Header("Group B — Hide during steal")]
+        [Tooltip("GameObjects shown whenever no voodoo session is active, " +
+            "regardless of camera mode. Example: MultiplierButton.")]
+        [SerializeField] private GameObject[] nonStealElements = Array.Empty<GameObject>();
 
         [Inject] private ICameraViewModeReader? cameraViewModeReader;
         [Inject] private ISubscriber<VoodooSessionStartedSignal>? sessionStartedSubscriber;
@@ -48,10 +60,10 @@ namespace Game.Runtime.Cards
 
         private void Awake()
         {
-            // Default to hidden until we know the camera is on Board. The user
-            // typically starts in City view, so this matches the expected
-            // initial state. We re-evaluate once injection completes.
-            ApplyVisibility(false);
+            // Default both groups to hidden until injection completes and we
+            // can compute the real state from the camera reader + session flag.
+            ApplyVisibility(boardOnlyElements, false);
+            ApplyVisibility(nonStealElements, false);
         }
 
         private void OnDisable()
@@ -118,24 +130,31 @@ namespace Game.Runtime.Cards
         {
             // Always read the camera reader fresh — avoids holding a stale
             // cached mode if HandleCameraModeChanged ever drops an event.
+            // Until the reader arrives, hide both groups defensively.
             if (cameraViewModeReader == null)
             {
-                ApplyVisibility(false);
+                ApplyVisibility(boardOnlyElements, false);
+                ApplyVisibility(nonStealElements, false);
                 return;
             }
 
-            bool visible = cameraViewModeReader.CurrentMode == CameraViewMode.Board && !inVoodooSession;
-            ApplyVisibility(visible);
+            bool boardOnlyVisible =
+                cameraViewModeReader.CurrentMode == CameraViewMode.Board
+                && !inVoodooSession;
+            bool nonStealVisible = !inVoodooSession;
+
+            ApplyVisibility(boardOnlyElements, boardOnlyVisible);
+            ApplyVisibility(nonStealElements, nonStealVisible);
         }
 
         // SetActive is idempotent; skipping the call when state matches keeps
         // the dirty-flag scenes quiet during long-lived steady states.
-        private void ApplyVisibility(bool visible)
+        private static void ApplyVisibility(GameObject[] elements, bool visible)
         {
-            if (drawModeOnlyElements == null) return;
-            for (int i = 0; i < drawModeOnlyElements.Length; i++)
+            if (elements == null) return;
+            for (int i = 0; i < elements.Length; i++)
             {
-                GameObject element = drawModeOnlyElements[i];
+                GameObject element = elements[i];
                 if (element == null) continue;
                 if (element.activeSelf != visible)
                 {
