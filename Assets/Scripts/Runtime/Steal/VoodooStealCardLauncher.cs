@@ -15,11 +15,14 @@ namespace Game.Runtime.Steal
             this.publisher = publisher ?? throw new System.ArgumentNullException(nameof(publisher));
         }
 
-        public void Launch(string triggerId)
+        public void Launch(string triggerId, int multiplier)
         {
-            // Publish a signal carrying the triggerId. Empty triggerId is allowed — the launcher
-            // doesn't gate on payload; the coordinator decides whether to begin a voodoo session.
-            publisher.Publish(new StealCardTriggeredSignal(triggerId ?? string.Empty));
+            // Publish a signal carrying the triggerId + the draw multiplier in effect.
+            // Empty triggerId is allowed — the launcher doesn't gate on payload; the
+            // coordinator decides whether to begin a voodoo session.
+            publisher.Publish(new StealCardTriggeredSignal(
+                triggerId ?? string.Empty,
+                multiplier));
         }
     }
 }

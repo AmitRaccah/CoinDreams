@@ -33,7 +33,7 @@ namespace Game.Infrastructure.CloudFunctions
             this.auth = auth ?? throw new ArgumentNullException(nameof(auth));
         }
 
-        public async Task<VoodooSessionBeginResponse> BeginVoodooSessionAsync()
+        public async Task<VoodooSessionBeginResponse> BeginVoodooSessionAsync(int thiefMultiplier)
         {
             if (!auth.IsReady)
             {
@@ -43,7 +43,13 @@ namespace Game.Infrastructure.CloudFunctions
             {
                 FirebaseFunctions resolved = ResolveFunctions();
                 HttpsCallableReference callable = resolved.GetHttpsCallable(BeginVoodooSessionName);
-                HttpsCallableResult result = await callable.CallAsync();
+                // The Dictionary is unavoidable — Firebase.Functions' CallAsync takes
+                // object. One allocation per session start (not per stab) is OK.
+                var payload = new Dictionary<string, object>
+                {
+                    { "multiplier", thiefMultiplier > 0 ? thiefMultiplier : 1 },
+                };
+                HttpsCallableResult result = await callable.CallAsync(payload);
                 IDictionary<string, object>? data = result.Data as IDictionary<string, object>;
                 if (data == null)
                 {
@@ -146,14 +152,9 @@ namespace Game.Infrastructure.CloudFunctions
             {
                 functions = FirebaseFunctions.DefaultInstance;
             }
-            if (!emulatorConfigured)
-            {
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                functions.UseFunctionsEmulator(EmulatorOrigin);
-                Debug.Log("[CloudFunctionsStealClient] Using functions emulator at " + EmulatorOrigin);
-#endif
-                emulatorConfigured = true;
-            }
+            // Production-only mode: the rest of the stack (Firestore, Auth)
+            // also runs against production, so the Cloud Functions emulator
+            // would only get half the data and the calls would be confused.
             return functions;
         }
 

@@ -14,7 +14,7 @@ namespace Game.Runtime.Cards
         [SerializeField] private Button? drawButton;
         [SerializeField] private Button? returnButton;
 
-        [Inject] private IPublisher<DrawRequestedSignal>? drawPublisher;
+        [Inject] private IPublisher<DrawButtonClickedSignal>? drawPublisher;
         [Inject] private IPublisher<ReturnRequestedSignal>? returnPublisher;
 
         private bool wired;
@@ -43,7 +43,7 @@ namespace Game.Runtime.Cards
                     this);
                 return;
             }
-            drawPublisher.Publish(default);
+            drawPublisher.Publish(new DrawButtonClickedSignal());
         }
 
         private void HandleReturn()

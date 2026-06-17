@@ -8,6 +8,15 @@ using VContainer;
 
 namespace Game.Runtime.Steal
 {
+    /// <summary>
+    /// Deprecated. Previously bound a dedicated stab button (yellow doll square on the Canvas
+    /// placeholder) to <c>VoodooStabRequestedSignal</c>. The placeholder UI is gone and the
+    /// Draw button now doubles as the stab input via
+    /// <see cref="Game.Runtime.Cards.DrawButtonRouter"/>, so this binder is no longer wired by
+    /// any setup script. The class is kept temporarily to avoid breaking scenes that still
+    /// reference it; remove the component and delete this file in a future cleanup.
+    /// </summary>
+    [System.Obsolete("VoodooStabInputBinder is superseded by Game.Runtime.Cards.DrawButtonRouter. Remove from your scene; this component will be deleted in a future cleanup.")]
     [DisallowMultipleComponent]
     public sealed class VoodooStabInputBinder : MonoBehaviour
     {

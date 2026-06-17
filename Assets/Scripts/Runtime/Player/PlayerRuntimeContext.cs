@@ -202,6 +202,21 @@ namespace Game.Runtime.Player
             return profile!.CreateSnapshot();
         }
 
+        /// <summary>
+        /// Optimistic local-only coin increment. Used by mid-session HUD sync
+        /// (e.g. voodoo stabs) to keep the displayed balance in step with the
+        /// authoritative server state WITHOUT triggering ReplaceProfile/
+        /// ProfileReplaced — which would tear down any in-flight session.
+        /// The next server-side snapshot load corrects any drift.
+        /// </summary>
+        public void AddCoinsImmediately(int amount)
+        {
+            if (amount <= 0) return;
+            EnsureInitialized();
+            profile!.Currency.Add(amount);
+            NotifyStateChanged();
+        }
+
         public void LoadSnapshot(PlayerProfileSnapshot snapshot)
         {
             if (snapshot == null)

@@ -250,7 +250,10 @@ namespace Game.Domain.Cards
                 LastLaunchedTriggerId = string.Empty;
             }
 
-            public void Launch(string triggerId)
+            // Engine-side capture for the result payload. The multiplier reaches
+            // the voodoo session via the live launcher (VoodooStealCardLauncher)
+            // through DI; this in-engine capture only needs the trigger id.
+            public void Launch(string triggerId, int multiplier)
             {
                 LastLaunchedTriggerId = triggerId ?? string.Empty;
             }

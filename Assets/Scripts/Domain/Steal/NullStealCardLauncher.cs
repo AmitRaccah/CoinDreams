@@ -8,7 +8,7 @@ namespace Game.Domain.Steal
         {
         }
 
-        public void Launch(string triggerId)
+        public void Launch(string triggerId, int multiplier)
         {
             // Intentionally empty for current vertical slice.
         }

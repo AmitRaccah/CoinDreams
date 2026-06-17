@@ -31,8 +31,18 @@ import {
 export async function runStealTransaction(
     tx: firestore.Transaction,
     db: firestore.Firestore,
-    request: AuthoritativeStealRequest
+    request: AuthoritativeStealRequest,
+    thiefBonusMultiplier: number = 1
 ): Promise<AuthoritativeStealResult> {
+    // Asymmetric application: the victim loses the rolled `stolen` amount, the
+    // thief receives `stolen * bonusMultiplier`. The "extra" coins are minted
+    // by design — this models the "x2/x4/x8 draw multiplier rewards the thief
+    // without punishing the victim further" rule. Floor and clamp to >= 1 so
+    // a malformed multiplier never zeroes the thief's gain or burns coins.
+    const safeBonusMultiplier =
+        Number.isFinite(thiefBonusMultiplier) && thiefBonusMultiplier >= 1
+            ? Math.floor(thiefBonusMultiplier)
+            : 1;
     const thiefData = await loadSnapshot(tx, db, request.thiefPlayerId);
     const victimData = await loadSnapshot(tx, db, request.victimPlayerId);
 
@@ -78,8 +88,10 @@ export async function runStealTransaction(
         };
     }
 
+    const thiefGain = stolen * safeBonusMultiplier;
+
     victimData.snapshot.coins -= stolen;
-    thiefData.snapshot.coins += stolen;
+    thiefData.snapshot.coins += thiefGain;
 
     stampProcessedImpact(victimData.snapshot, request.impactId);
     stampProcessedImpact(thiefData.snapshot, request.impactId);
@@ -94,11 +106,13 @@ export async function runStealTransaction(
             ? AuthoritativeStealStatus.AppliedPartially
             : AuthoritativeStealStatus.Success;
 
+    // stolenAmount reflects what the THIEF received (multiplied), since the UI
+    // shows the floating "+X" over the doll to celebrate the thief's gain.
     return {
         status,
         thiefSnapshot: thiefData.snapshot,
         victimSnapshot: victimData.snapshot,
-        stolenAmount: stolen,
+        stolenAmount: thiefGain,
         message: "",
     };
 }

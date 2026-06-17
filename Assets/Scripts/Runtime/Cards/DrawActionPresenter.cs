@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Game.Composition.Signals;
 using Game.Config.Cards;
 using Game.Domain.Cards;
+using Game.Domain.Steal;
 using Game.Runtime.Player;
 using MessagePipe;
 using UnityEngine;
@@ -21,6 +22,7 @@ namespace Game.Runtime.Cards
         [Inject] private IAuthoritativeDrawService? authoritativeDrawService;
         [Inject] private CardDrawConfigSO? cardDrawConfig;
         [Inject] private ISubscriber<MultiplierChangeRequestedSignal>? multiplierSubscriber;
+        [Inject] private IStealCardLauncher? stealCardLauncher;
 
         private IDrawResultSink? drawResultSink;
         private AuthoritativeDrawRequest? drawRequest;
@@ -83,6 +85,7 @@ namespace Game.Runtime.Cards
                 }
 
                 PublishResult(result);
+                FireStealLauncherIfNeeded(result);
                 return result;
             }
             catch (System.Exception exception)
@@ -177,6 +180,23 @@ namespace Game.Runtime.Cards
             }
 
             drawResultSink = GetComponent<IDrawResultSink>();
+        }
+
+        // Bridges the engine's StealTriggerId into the live IStealCardLauncher.
+        // The engine itself runs against a no-op CapturingStealCardLauncher so it
+        // can return a pure result; the side effect (publishing the trigger
+        // signal that opens a voodoo session) lives here, on the client side.
+        private void FireStealLauncherIfNeeded(AuthoritativeDrawResult result)
+        {
+            if (result == null || !result.IsSuccess) return;
+            if (string.IsNullOrEmpty(result.StealTriggerId)) return;
+            if (stealCardLauncher == null)
+            {
+                Debug.LogWarning("[DrawActionPresenter] StealCardLauncher is not injected — voodoo session will not start.", this);
+                return;
+            }
+            stealCardLauncher.Launch(result.StealTriggerId, pendingMultiplier);
+            Debug.Log("[DrawActionPresenter] StealCardLauncher fired with trigger '" + result.StealTriggerId + "' and multiplier=" + pendingMultiplier + ".", this);
         }
 
         private void PublishResult(AuthoritativeDrawResult result)

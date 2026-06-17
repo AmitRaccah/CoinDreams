@@ -47,6 +47,14 @@ interface VoodooSessionDoc {
     victimDisplayName: string;
     stabsUsed: number;
     maxStabs: number;
+    /**
+     * Captured at draw-time by the LaunchStealEffect — the draw multiplier
+     * the thief had active when the steal card resolved. Applied to every
+     * stab in this session: victim loses the rolled amount once, the thief
+     * receives that amount × thiefMultiplier. Older sessions written before
+     * this field existed are treated as multiplier=1.
+     */
+    thiefMultiplier?: number;
     createdAtUtcMs: number;
     expiresAtUtcMs: number;
     status: string;
@@ -179,7 +187,17 @@ export const executeVoodooStab = onCall<VoodooStabRequest, Promise<VoodooStabRes
                     createdAtUtcTicks: nowUtcTicks(),
                 };
 
-                const stealResult = await runStealTransaction(tx, db, stealRequest);
+                const thiefMultiplier =
+                    typeof session.thiefMultiplier === "number" && session.thiefMultiplier >= 1
+                        ? Math.floor(session.thiefMultiplier)
+                        : 1;
+
+                const stealResult = await runStealTransaction(
+                    tx,
+                    db,
+                    stealRequest,
+                    thiefMultiplier
+                );
 
                 // -----------------------------------------------------------
                 // 3) Consume the stab regardless of victim-empty outcome (per

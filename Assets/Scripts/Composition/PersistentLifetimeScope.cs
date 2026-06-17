@@ -27,6 +27,7 @@ namespace Game.Composition
         protected override void Configure(IContainerBuilder builder)
         {
             var messagePipeOptions = builder.RegisterMessagePipe();
+            builder.RegisterMessageBroker<DrawButtonClickedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<DrawRequestedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<ReturnRequestedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<VillageUpgradeRequestedSignal>(messagePipeOptions);
@@ -102,14 +103,52 @@ namespace Game.Composition
             builder.RegisterComponentInHierarchy<CardDrawHudReferences>();
 
             // ===== Voodoo steal feature =====
-            // Coordinator owns the session lifecycle. Presenters subscribe to signals.
-            // The CloudFunctions client implementation is registered only once the Firebase
-            // Functions SDK is imported — see TODO at the end of this method.
-            builder.RegisterComponentInHierarchy<VoodooStealCoordinator>();
-            builder.RegisterComponentInHierarchy<VoodooStabInputBinder>();
-            builder.RegisterComponentInHierarchy<VoodooDollPresenter>();
-            builder.RegisterComponentInHierarchy<VictimPedestalPresenter>();
-            builder.RegisterComponentInHierarchy<CenterStageModeController>();
+            // Coordinator + StabInputBinder are required (logic). Presenters and
+            // the CenterStageModeController are optional — scenes like 0.1_Steal
+            // can run without visual feedback (the Coordinator still calls the
+            // server, coins still move in Firestore).
+            builder.RegisterComponentInHierarchy<VoodooStealCoordinator>()
+                .AsImplementedInterfaces()
+                .AsSelf();
+            if (UnityEngine.Object.FindAnyObjectByType<VoodooStabInputBinder>() != null)
+            {
+                builder.RegisterComponentInHierarchy<VoodooStabInputBinder>();
+            }
+
+            if (UnityEngine.Object.FindAnyObjectByType<VoodooDollPresenter>() != null)
+            {
+                builder.RegisterComponentInHierarchy<VoodooDollPresenter>();
+            }
+            if (UnityEngine.Object.FindAnyObjectByType<VictimPedestalPresenter>() != null)
+            {
+                builder.RegisterComponentInHierarchy<VictimPedestalPresenter>();
+            }
+            if (UnityEngine.Object.FindAnyObjectByType<CenterStageModeController>() != null)
+            {
+                builder.RegisterComponentInHierarchy<CenterStageModeController>();
+            }
+            // Voodoo3DDollPresenter is registered in GameplayLifetimeScope — it
+            // lives in the 3D-world scene (02_Gameplay), not in the persistent
+            // HUD scene. Signals from this parent scope still reach it.
+            if (UnityEngine.Object.FindAnyObjectByType<AutoStartVoodooSession>() != null)
+            {
+                builder.RegisterComponentInHierarchy<AutoStartVoodooSession>();
+            }
+            if (UnityEngine.Object.FindAnyObjectByType<VoodooStabHudSync>() != null)
+            {
+                builder.RegisterComponentInHierarchy<VoodooStabHudSync>();
+            }
+            if (UnityEngine.Object.FindAnyObjectByType<VoodooVictimNamePresenter>() != null)
+            {
+                builder.RegisterComponentInHierarchy<VoodooVictimNamePresenter>();
+            }
+
+            // Router is opt-in — scenes without the mediator (legacy/test scenes) still
+            // resolve cleanly because the binder publishes the click signal unconditionally.
+            if (UnityEngine.Object.FindAnyObjectByType<DrawButtonRouter>() != null)
+            {
+                builder.RegisterComponentInHierarchy<DrawButtonRouter>();
+            }
 
             builder.Register<CloudFunctionsStealClient>(Lifetime.Singleton).As<IVoodooStealClient>();
 

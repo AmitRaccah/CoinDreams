@@ -3,6 +3,7 @@
 using System;
 using Game.Composition.Signals;
 using Game.Domain.Player.Voodoo;
+using Game.Domain.Steal;
 using Game.Infrastructure.CloudFunctions;
 using Game.Infrastructure.Persistence;
 using Game.Runtime.Player;
@@ -18,7 +19,7 @@ namespace Game.Runtime.Steal
     // truth for "is a steal session currently active" — everything else is
     // derived from it.
     [DisallowMultipleComponent]
-    public sealed class VoodooStealCoordinator : MonoBehaviour
+    public sealed class VoodooStealCoordinator : MonoBehaviour, IVoodooSessionStateReader
     {
         [Inject] private IVoodooStealClient? client;
         [Inject] private IPlayerSnapshotService? snapshotService;
@@ -98,9 +99,14 @@ namespace Game.Runtime.Steal
 
             beginInFlight = true;
 
+            // The signal carries the draw multiplier captured at the moment the
+            // steal card resolved. We forward it to the server so every stab in
+            // this session amplifies the thief's gain (not the victim's loss).
+            int thiefMultiplier = signal.Multiplier > 0 ? signal.Multiplier : 1;
+
             try
             {
-                VoodooSessionBeginResponse response = await client.BeginVoodooSessionAsync();
+                VoodooSessionBeginResponse response = await client.BeginVoodooSessionAsync(thiefMultiplier);
 
                 if (response.Status == VoodooSessionBeginStatus.Success)
                 {
@@ -153,6 +159,10 @@ namespace Game.Runtime.Steal
             {
                 VoodooStabResponse response = await client.ExecuteVoodooStabAsync(sessionId);
 
+                Debug.Log("[VoodooStealCoordinator] stab response: status=" + response.Status
+                    + " stolen=" + response.StolenAmount + " remaining=" + response.StabsRemaining
+                    + " broken=" + response.IsDollBroken);
+
                 if (response.Status == VoodooStabStatus.Success || response.Status == VoodooStabStatus.VictimEmpty)
                 {
                     // activeSession can't have flipped to null mid-await because
@@ -162,21 +172,39 @@ namespace Game.Runtime.Steal
                     {
                         activeSession.RegisterStab(response.StolenAmount);
 
-                        if (response.ThiefSnapshot != null && snapshotService != null)
-                        {
-                            // Syncs the thief's authoritative balance back into
-                            // local state so HUD updates immediately.
-                            snapshotService.OnAuthoritativeSnapshotApplied(response.ThiefSnapshot);
-                        }
+                        // Snapshot apply is intentionally SKIPPED here. The
+                        // current PlayerRuntimeContext.LoadSnapshot path treats
+                        // every refresh as a profile replacement and fires the
+                        // ProfileReplaced event, which the coordinator listens
+                        // to and uses to end the active session — that closed
+                        // the doll between every stab. Local coin balance will
+                        // catch up on the next routine load/autosave. Re-enable
+                        // this once LoadSnapshot distinguishes data-refresh
+                        // from real profile swaps.
+                        // if (response.ThiefSnapshot != null && snapshotService != null)
+                        // {
+                        //     snapshotService.OnAuthoritativeSnapshotApplied(response.ThiefSnapshot);
+                        // }
 
                         if (stabResolvedPublisher != null)
                         {
-                            stabResolvedPublisher.Publish(new VoodooStabResolvedSignal(
-                                activeSession.SessionId,
-                                (int)response.Status,
-                                response.StolenAmount,
-                                response.StabsRemaining,
-                                response.IsDollBroken));
+                            // Use the cached sessionId — the snapshot-apply above can
+                            // synchronously trigger ProfileReplaced, which calls
+                            // EndActiveSession and nulls out activeSession. The local
+                            // copy from the top of this method survives that race.
+                            try
+                            {
+                                stabResolvedPublisher.Publish(new VoodooStabResolvedSignal(
+                                    sessionId,
+                                    (int)response.Status,
+                                    response.StolenAmount,
+                                    response.StabsRemaining,
+                                    response.IsDollBroken));
+                            }
+                            catch (Exception publishEx)
+                            {
+                                Debug.LogWarning("[VoodooStealCoordinator] publish failed (continuing): " + publishEx);
+                            }
                         }
 
                         if (response.IsDollBroken)

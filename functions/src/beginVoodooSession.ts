@@ -34,6 +34,17 @@ const STEAL_SESSIONS_COLLECTION = "stealSessions";
  */
 const VICTIM_SAMPLE_LIMIT = 50;
 
+/** Whitelist for the draw-multiplier (mirrors AuthoritativeDrawRequest.AllowedMultipliers in C#). */
+const ALLOWED_THIEF_MULTIPLIERS: readonly number[] = [1, 2, 4, 8];
+
+/** Sanitizer — anything not in the allowed set collapses to 1. */
+function sanitizeMultiplier(raw: unknown): number {
+    if (typeof raw !== "number" || !Number.isFinite(raw)) {
+        return 1;
+    }
+    return ALLOWED_THIEF_MULTIPLIERS.includes(raw) ? raw : 1;
+}
+
 export const beginVoodooSession = onCall<unknown, Promise<VoodooSessionBeginResult>>(
     { region: "us-central1" },
     async (request: CallableRequest<unknown>): Promise<VoodooSessionBeginResult> => {
@@ -42,7 +53,14 @@ export const beginVoodooSession = onCall<unknown, Promise<VoodooSessionBeginResu
         }
         const callerUid = request.auth.uid;
 
-        logger.info("beginVoodooSession invoked", { uid: callerUid });
+        // The thief's draw multiplier flows in here from the client. It is
+        // captured at draw-time (LaunchStealEffect) and persisted on the
+        // session so every stab applies the SAME multiplier — even if the
+        // client UI cycles to a different value mid-session.
+        const payload = request.data as { multiplier?: unknown } | undefined;
+        const thiefMultiplier = sanitizeMultiplier(payload?.multiplier);
+
+        logger.info("beginVoodooSession invoked", { uid: callerUid, thiefMultiplier });
 
         const db = getFirestore();
 
@@ -87,6 +105,7 @@ export const beginVoodooSession = onCall<unknown, Promise<VoodooSessionBeginResu
                 victimDisplayName,
                 stabsUsed: 0,
                 maxStabs: MAX_STABS,
+                thiefMultiplier,
                 createdAtUtcMs,
                 expiresAtUtcMs,
                 status: "active",

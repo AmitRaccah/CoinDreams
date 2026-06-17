@@ -1,4 +1,5 @@
 using System;
+using System.Runtime.InteropServices;
 using System.Threading.Tasks;
 using Firebase;
 using Firebase.Auth;
@@ -9,6 +10,15 @@ namespace Game.Infrastructure.Persistence
 {
     public sealed class FirebaseConnection
     {
+#if UNITY_EDITOR_WIN || (UNITY_EDITOR && UNITY_STANDALONE_WIN)
+        // The native Firestore SDK reads FIRESTORE_EMULATOR_HOST via getenv().
+        // On Windows the .NET runtime's Environment.SetEnvironmentVariable does
+        // NOT propagate to the C runtime's env block, so we have to call Win32
+        // SetEnvironmentVariable directly.
+        [DllImport("kernel32.dll", CharSet = CharSet.Auto, SetLastError = true)]
+        private static extern bool SetEnvironmentVariable(string lpName, string lpValue);
+#endif
+
         private FirebaseApp app;
         private FirebaseAuth auth;
         private FirebaseFirestore firestore;
@@ -61,12 +71,12 @@ namespace Game.Infrastructure.Persistence
                 // then restore the normal level immediately after the SDK handles are cached.
                 FirebaseApp.LogLevel = verboseLogging ? LogLevel.Info : LogLevel.Error;
 
-#if UNITY_EDITOR || DEVELOPMENT_BUILD
-                // Route Firestore at the local emulator during development. The native SDK
-                // reads FIRESTORE_EMULATOR_HOST on first DefaultInstance access — must set
-                // this BEFORE the line below or the SDK will already be bound to production.
-                System.Environment.SetEnvironmentVariable("FIRESTORE_EMULATOR_HOST", "localhost:8080");
-#endif
+                // NOTE: emulator routing for Firestore is not used. The Firebase
+                // Unity SDK 13.12 does not pick up FIRESTORE_EMULATOR_HOST
+                // reliably and the Settings property is read-only on this
+                // version. The whole stack runs against production Firestore
+                // and production Cloud Functions, which is acceptable because
+                // the Blaze plan free tier comfortably covers learning usage.
 
                 app = FirebaseApp.DefaultInstance;
                 auth = FirebaseAuth.DefaultInstance;

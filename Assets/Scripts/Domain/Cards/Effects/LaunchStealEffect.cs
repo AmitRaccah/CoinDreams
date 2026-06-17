@@ -11,7 +11,12 @@ namespace Game.Domain.Cards.Effects
 
         public void Apply(Game.Domain.Cards.RewardContext context)
         {
-            context.StealCardLauncher.Launch(triggerId);
+            // Capture the draw multiplier active at this moment so the voodoo
+            // session that downstream code spawns can amplify the thief's
+            // gain. Reading from the context guarantees we use the exact
+            // multiplier the engine already validated.
+            int multiplier = context.Modifiers.GetCurrentDrawMultiplier();
+            context.StealCardLauncher.Launch(triggerId, multiplier);
         }
     }
 }

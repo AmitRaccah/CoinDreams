@@ -3,6 +3,7 @@
 using Game.Runtime.Cards;
 using Game.Runtime.Cameras;
 using Game.Runtime.Scenes;
+using Game.Runtime.Steal;
 using Game.Runtime.Village;
 using UnityEngine;
 using VContainer;
@@ -36,6 +37,9 @@ namespace Game.Composition
             TryRegisterInHierarchy<DrawHudPresenter>(builder);
             TryRegisterInHierarchy<DrawActionPresenter>(builder);
             TryRegisterInHierarchy<VillageUpgradeRuntime>(builder);
+            // 3D doll lives in this scene — subscribes to voodoo signals
+            // brokered in the persistent parent scope.
+            TryRegisterInHierarchy<Voodoo3DDollPresenter>(builder);
         }
 
         private static void TryRegisterInHierarchy<T>(IContainerBuilder builder) where T : Component
