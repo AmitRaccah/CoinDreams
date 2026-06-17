@@ -49,12 +49,8 @@ namespace Game.EditorTools
             GameObject logicGo = new GameObject(LogicGameObjectName);
             Undo.RegisterCreatedObjectUndo(logicGo, "Create " + LogicGameObjectName);
 
-            VoodooStealCoordinator coordinator = Undo.AddComponent<VoodooStealCoordinator>(logicGo);
-            DrawButtonRouter router = Undo.AddComponent<DrawButtonRouter>(logicGo);
-
-            // Unused reference suppression — both are implicitly used by DI.
-            _ = coordinator;
-            _ = router;
+            Undo.AddComponent<VoodooStealCoordinator>(logicGo);
+            Undo.AddComponent<DrawButtonRouter>(logicGo);
 
             EditorSceneManager.MarkSceneDirty(activeScene);
             Selection.activeGameObject = logicGo;

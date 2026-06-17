@@ -103,30 +103,14 @@ namespace Game.Composition
             builder.RegisterComponentInHierarchy<CardDrawHudReferences>();
 
             // ===== Voodoo steal feature =====
-            // Coordinator + StabInputBinder are required (logic). Presenters and
-            // the CenterStageModeController are optional — scenes like 0.1_Steal
-            // can run without visual feedback (the Coordinator still calls the
-            // server, coins still move in Firestore).
+            // Coordinator is required (logic). Presenters live in the Gameplay
+            // scene (Voodoo3DDollPresenter, VoodooVictimNamePresenter) — scenes
+            // like 0.1_Steal can run without them (the Coordinator still calls
+            // the server, coins still move in Firestore).
             builder.RegisterComponentInHierarchy<VoodooStealCoordinator>()
                 .AsImplementedInterfaces()
                 .AsSelf();
-            if (UnityEngine.Object.FindAnyObjectByType<VoodooStabInputBinder>() != null)
-            {
-                builder.RegisterComponentInHierarchy<VoodooStabInputBinder>();
-            }
 
-            if (UnityEngine.Object.FindAnyObjectByType<VoodooDollPresenter>() != null)
-            {
-                builder.RegisterComponentInHierarchy<VoodooDollPresenter>();
-            }
-            if (UnityEngine.Object.FindAnyObjectByType<VictimPedestalPresenter>() != null)
-            {
-                builder.RegisterComponentInHierarchy<VictimPedestalPresenter>();
-            }
-            if (UnityEngine.Object.FindAnyObjectByType<CenterStageModeController>() != null)
-            {
-                builder.RegisterComponentInHierarchy<CenterStageModeController>();
-            }
             // Voodoo3DDollPresenter is registered in GameplayLifetimeScope — it
             // lives in the 3D-world scene (02_Gameplay), not in the persistent
             // HUD scene. Signals from this parent scope still reach it.

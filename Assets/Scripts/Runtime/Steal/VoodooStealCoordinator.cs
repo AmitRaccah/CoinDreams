@@ -144,9 +144,10 @@ namespace Game.Runtime.Steal
 
         private async void HandleStabRequested(VoodooStabRequestedSignal signal)
         {
-            // The signal's SessionId is intentionally empty by design (the input
-            // binder is decoupled from session state) — we use the coordinator's
-            // active session id as the authoritative value.
+            // The signal's SessionId is intentionally empty by design (the
+            // DrawButtonRouter publishes the stab signal without knowing the
+            // session id) — we use the coordinator's active session id as the
+            // authoritative value.
             if (client == null || activeSession == null || activeSession.IsBroken || stabInFlight)
             {
                 return;

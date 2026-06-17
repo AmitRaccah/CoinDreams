@@ -19,14 +19,12 @@ namespace Game.Infrastructure.CloudFunctions
     // are mapped to the matching factory on the response DTOs.
     public sealed class CloudFunctionsStealClient : IVoodooStealClient
     {
-        private const string EmulatorOrigin = "http://localhost:5001";
         private const string BeginVoodooSessionName = "beginVoodooSession";
         private const string ExecuteVoodooStabName = "executeVoodooStab";
         private const int DefaultMaxStabs = 3;
 
         private readonly IFirebaseAuthService auth;
         private FirebaseFunctions? functions;
-        private bool emulatorConfigured;
 
         public CloudFunctionsStealClient(IFirebaseAuthService auth)
         {
