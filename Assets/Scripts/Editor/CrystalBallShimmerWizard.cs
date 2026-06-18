@@ -2,6 +2,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using Game.Runtime.UI.Animations;
 using UnityEditor;
 using UnityEngine;
@@ -45,6 +46,7 @@ namespace Game.EditorTools
             int ambientTouched = 0;
             int skippedDisabled = 0;
             GameObject? outerGlowLayer = null;
+            List<RectTransform> staticAnchors = new List<RectTransform>();
 
             // Recursive search so the wizard works whether the sprite layers
             // are direct children of the Button (flat) or wrapped in a
@@ -76,6 +78,19 @@ namespace Game.EditorTools
                     continue;
                 }
 
+                // Pedestal is the "base" the player conceptually holds —
+                // it stays visually still while the ball above pulses. We
+                // queue it for UiPressScalePunch.excludedFromScale; inverse
+                // scaling cancels the press squish for it each frame.
+                if (spriteName.Contains("pedestal"))
+                {
+                    if (layer.activeSelf)
+                    {
+                        staticAnchors.Add(image.rectTransform);
+                    }
+                    continue;
+                }
+
                 if (!layer.activeSelf)
                 {
                     skippedDisabled++;
@@ -96,12 +111,18 @@ namespace Game.EditorTools
             // bobbers via GetComponentInParent<IUiAnimationSpeedModulator>
             // at their Awake — placing it on the root means EVERY inner
             // layer reacts to taps automatically.
-            AddOrGet<UiPressScalePunch>(selected);
+            UiPressScalePunch punch = AddOrGet<UiPressScalePunch>(selected);
             UiPressGlowBurst burst = AddOrGet<UiPressGlowBurst>(selected);
             AddOrGet<UiShakeIntensityProvider>(selected);
             if (outerGlowLayer != null)
             {
                 SetObjectField(burst, "glowTarget", outerGlowLayer);
+            }
+            if (staticAnchors.Count > 0)
+            {
+                // Appends with dedup — preserves any manual additions the
+                // user dragged in before re-running the wizard.
+                AppendToReferenceArrayField(punch, "excludedFromScale", staticAnchors.ToArray());
             }
 
             EditorUtility.SetDirty(selected);
@@ -110,12 +131,17 @@ namespace Game.EditorTools
                 ? "Wired '" + outerGlowLayer.name + "' as glow burst target (disabled at rest)."
                 : "WARNING: no 'outer_glow' sprite found in descendants — glow burst added but UNWIRED.";
 
+            string anchorLine = staticAnchors.Count > 0
+                ? "Pinned " + staticAnchors.Count + " pedestal layer(s) into 'Excluded From Scale' (stay visually static during press)."
+                : "No pedestal layer detected — nothing pinned to 'Excluded From Scale'.";
+
             EditorUtility.DisplayDialog(
                 "Crystal Ball Shimmer",
                 "Ambient: applied to " + ambientTouched + " layer(s).\n" +
                 "Skipped " + skippedDisabled + " disabled layer(s).\n\n" +
                 "Press feedback: UiPressScalePunch + UiPressGlowBurst + UiShakeIntensityProvider added to '" + selected.name + "'.\n" +
-                glowLine + "\n\n" +
+                glowLine + "\n" +
+                anchorLine + "\n\n" +
                 "Tap rapidly to charge shake intensity — inner layers spin/pulse/bob faster the harder you press.",
                 "OK");
         }
@@ -267,6 +293,42 @@ namespace Game.EditorTools
                 return;
             }
             prop.objectReferenceValue = value;
+            so.ApplyModifiedProperties();
+        }
+
+        // Appends references to an array SerializedProperty with dedup
+        // against the values already present. The wizard uses this so
+        // re-running it doesn't duplicate the auto-pinned pedestal entries,
+        // and any references the user dragged in manually are preserved.
+        private static void AppendToReferenceArrayField(Component target, string fieldName, UnityEngine.Object[] toAppend)
+        {
+            if (toAppend == null || toAppend.Length == 0) return;
+
+            SerializedObject so = new SerializedObject(target);
+            SerializedProperty prop = so.FindProperty(fieldName);
+            if (prop == null || !prop.isArray)
+            {
+                Debug.LogWarning("[CrystalBallShimmerWizard] " + target.GetType().Name + " has no array field '" + fieldName + "'.");
+                return;
+            }
+
+            HashSet<UnityEngine.Object> existing = new HashSet<UnityEngine.Object>();
+            for (int i = 0; i < prop.arraySize; i++)
+            {
+                UnityEngine.Object current = prop.GetArrayElementAtIndex(i).objectReferenceValue;
+                if (current != null) existing.Add(current);
+            }
+
+            foreach (UnityEngine.Object item in toAppend)
+            {
+                if (item == null) continue;
+                if (existing.Contains(item)) continue;
+                int newIndex = prop.arraySize;
+                prop.InsertArrayElementAtIndex(newIndex);
+                prop.GetArrayElementAtIndex(newIndex).objectReferenceValue = item;
+                existing.Add(item);
+            }
+
             so.ApplyModifiedProperties();
         }
     }

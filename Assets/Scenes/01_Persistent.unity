@@ -463,6 +463,10 @@ PrefabInstance:
       propertyPath: m_Color.a
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8094467695952979558, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+      propertyPath: m_Name
+      value: CrystalBall
+      objectReference: {fileID: 0}
     - target: {fileID: 8341998083767747400, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -950,6 +954,8 @@ MonoBehaviour:
   pressDurationSec: 0.05
   releaseDurationSec: 0.22
   overshootStrength: 1.7
+  excludedFromScale:
+  - {fileID: 1716109537}
 --- !u!1 &1398919728
 GameObject:
   m_ObjectHideFlags: 0
@@ -1000,6 +1006,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!224 &1716109537 stripped
+RectTransform:
+  m_CorrespondingSourceObject: {fileID: 1149076571855552776, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+  m_PrefabInstance: {fileID: 220623061}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1791189983
 GameObject:
   m_ObjectHideFlags: 0

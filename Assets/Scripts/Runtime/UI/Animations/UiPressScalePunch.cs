@@ -1,5 +1,6 @@
 #nullable enable
 
+using System;
 using UnityEngine;
 using UnityEngine.EventSystems;
 
@@ -15,6 +16,17 @@ namespace Game.Runtime.UI.Animations
     /// Button.onClick. The feedback is therefore decoupled from any gating
     /// logic downstream (camera transition, energy depleted, etc.) — the
     /// press always feels good even when the underlying request is no-op'd.
+    ///
+    /// Exclusions: any RectTransform dragged into <c>excludedFromScale</c>
+    /// has its localScale and localPosition inverse-corrected each frame so
+    /// it appears visually static while its parent (this transform) pulses.
+    /// Use for objects that conceptually shouldn't move with the press —
+    /// e.g. a crystal-ball pedestal that the player is "holding" while the
+    /// ball above it shakes. The exclusion only cancels scale; it does not
+    /// cancel rotation. Excluded transforms MUST be DIRECT children of this
+    /// transform (the inverse compensates for THIS transform's scale only —
+    /// a deeper descendant would also pick up scaling from intermediate
+    /// ancestors that this component doesn't see).
     ///
     /// SRP: only handles scale punch. Stack with UiPressGlowBurst for layered
     /// feedback. Do NOT stack with UiPulseScaler on the same GameObject —
@@ -34,6 +46,13 @@ namespace Game.Runtime.UI.Animations
         [Tooltip("Standard easeOutBack overshoot constant; 1.7 ≈ default snappy bounce.")]
         [SerializeField, Range(0f, 3f)] private float overshootStrength = 1.7f;
 
+        [Header("Exclusions")]
+        [Tooltip("Descendant RectTransforms that should appear visually static during " +
+            "the press scale. Each frame they get an inverse localScale and " +
+            "inverse localPosition so the parent's scale is cancelled out " +
+            "for them. Typical use: the pedestal of a crystal ball.")]
+        [SerializeField] private RectTransform[] excludedFromScale = Array.Empty<RectTransform>();
+
         private RectTransform? rectTransform;
         private Vector3 baseScale;
         private AnimState state = AnimState.Idle;
@@ -41,10 +60,34 @@ namespace Game.Runtime.UI.Animations
         private float animStartK = 1f;
         private float animEndK = 1f;
 
+        // Captured at Awake so the artist's edit-time values are the "rest"
+        // pose. We use localPosition (not anchoredPosition) because anchored-
+        // Position is an offset from an ANCHOR REFERENCE that itself moves
+        // visually when the parent scales — inverse-scaling anchoredPosition
+        // doesn't compensate for that anchor drift. localPosition is the
+        // actual 3D offset from the parent pivot, so localPosition / S * S
+        // cleanly cancels the parent scale for any anchor setup.
+        // Length is locked at Awake — adding to excludedFromScale at runtime
+        // won't be picked up. That's fine: the array is an editor-time
+        // configuration, not a runtime hot-swap.
+        private Vector3[] excludedBaseScales = Array.Empty<Vector3>();
+        private Vector3[] excludedBaseLocalPositions = Array.Empty<Vector3>();
+
         private void Awake()
         {
             rectTransform = (RectTransform)transform;
             baseScale = rectTransform.localScale;
+
+            int length = excludedFromScale != null ? excludedFromScale.Length : 0;
+            excludedBaseScales = new Vector3[length];
+            excludedBaseLocalPositions = new Vector3[length];
+            for (int i = 0; i < length; i++)
+            {
+                RectTransform? rt = excludedFromScale![i];
+                if (rt == null) continue;
+                excludedBaseScales[i] = rt.localScale;
+                excludedBaseLocalPositions[i] = rt.localPosition;
+            }
         }
 
         public void OnPointerDown(PointerEventData eventData)
@@ -98,12 +141,36 @@ namespace Game.Runtime.UI.Animations
                 k = Mathf.LerpUnclamped(animStartK, animEndK, eased);
             }
 
-            rectTransform.localScale = baseScale * k;
+            ApplyScale(k);
 
             if (t >= 1f)
             {
                 state = AnimState.Idle;
-                rectTransform.localScale = baseScale * animEndK;
+                ApplyScale(animEndK);
+            }
+        }
+
+        // Sets the parent scale and applies the inverse correction to every
+        // excluded child. Skips the inverse when k is at or below epsilon to
+        // avoid a 1/0 explosion if someone configures pressedScale = 0.
+        // We assign localPosition (not anchoredPosition) so the cancellation
+        // works for ANY anchor configuration — corner anchors, stretch
+        // anchors, etc. localPosition / S * S = localPosition cleanly cancels
+        // the parent scale regardless of where the child's anchor sits.
+        private void ApplyScale(float k)
+        {
+            if (rectTransform == null) return;
+            rectTransform.localScale = baseScale * k;
+
+            if (k <= 0.0001f) return;
+            float inverse = 1f / k;
+            int count = Mathf.Min(excludedFromScale.Length, excludedBaseScales.Length);
+            for (int i = 0; i < count; i++)
+            {
+                RectTransform? rt = excludedFromScale[i];
+                if (rt == null) continue;
+                rt.localScale = excludedBaseScales[i] * inverse;
+                rt.localPosition = excludedBaseLocalPositions[i] * inverse;
             }
         }
 
