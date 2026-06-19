@@ -38,6 +38,38 @@ namespace Game.Composition
             builder.RegisterMessageBroker<VoodooStabRequestedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<VoodooStabResolvedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<MultiplierChangeRequestedSignal>(messagePipeOptions);
+            builder.RegisterMessageBroker<PanelOpenRequestedSignal>(messagePipeOptions);
+            builder.RegisterMessageBroker<PanelCloseRequestedSignal>(messagePipeOptions);
+            builder.RegisterMessageBroker<PanelVisibilityChangedSignal>(messagePipeOptions);
+
+            // PanelNavigator is the only opinion on "which panel is current".
+            // AsImplementedInterfaces picks up IInitializable (subscribes to
+            // signals at container build) and IDisposable (drops subs on shutdown).
+            builder.Register<Game.Runtime.UI.Panels.PanelNavigator>(Lifetime.Singleton)
+                .AsImplementedInterfaces()
+                .AsSelf();
+
+            // Panel-system components live across scenes and can have N
+            // instances per type (many side-rail buttons, many close-X
+            // buttons, one BuildingsPanel, one Presenter). VContainer's
+            // RegisterComponentInHierarchy only handles one-per-scope, so
+            // we inject all matching components manually at container build
+            // using FindObjectsByType (walks every loaded scene + disabled
+            // GameObjects). GameplayLifetimeScope re-runs the same callback
+            // for scenes that load after PersistentLifetimeScope.Configure.
+            builder.RegisterBuildCallback(container =>
+            {
+                // Inject ONLY components whose [Inject] dependencies live in
+                // this persistent scope. BuildingsPanelPresenter depends on
+                // VillageUpgradeRuntime which is registered in Gameplay scope
+                // — injecting it here while 02_Gameplay hasn't loaded yet
+                // would throw a VContainerException and tear down bootstrap.
+                // The Presenter is injected from GameplayLifetimeScope instead.
+                InjectAllInScenes<Game.Runtime.UI.Panels.PanelOpenButton>(container);
+                InjectAllInScenes<Game.Runtime.UI.Panels.PanelCloseButton>(container);
+                InjectAllInScenes<Game.Runtime.UI.Panels.PanelBackgroundVisibilityController>(container);
+                InjectAllInScenes<Game.Runtime.UI.Buildings.BuildingsPanel>(container);
+            });
 
             builder.Register<TimeProvider>(Lifetime.Singleton).As<ITimeProvider>();
             builder.Register<UiNavigatorStub>(Lifetime.Singleton).As<IUiNavigator>();
@@ -154,6 +186,24 @@ namespace Game.Composition
             // Upcoming phases will add here:
             //   - IPlayerRepository (FirestorePlayerRepository) — blocked on Firebase init flow
             //   - MessagePipe broker + signals (EnergyChangedSignal, CoinsChangedSignal, ProfileReplacedSignal)
+        }
+
+        // Walks every loaded scene (including disabled GameObjects), finds
+        // every Component of type T, and runs the container's [Inject] pass
+        // on each. Used for "drop-on" components like the panel buttons:
+        // they don't need to be registered as services (nobody injects them
+        // anywhere), they just need their own [Inject] fields filled.
+        // GameplayLifetimeScope shares this helper to re-run injection for
+        // scenes that load after the persistent container is built.
+        internal static void InjectAllInScenes<T>(VContainer.IObjectResolver container) where T : Component
+        {
+            T[] instances = UnityEngine.Object.FindObjectsByType<T>(
+                FindObjectsInactive.Include,
+                FindObjectsSortMode.None);
+            for (int i = 0; i < instances.Length; i++)
+            {
+                container.Inject(instances[i]);
+            }
         }
     }
 }

@@ -4,6 +4,8 @@ using Game.Runtime.Cards;
 using Game.Runtime.Cameras;
 using Game.Runtime.Scenes;
 using Game.Runtime.Steal;
+using Game.Runtime.UI.Buildings;
+using Game.Runtime.UI.Panels;
 using Game.Runtime.Village;
 using UnityEngine;
 using VContainer;
@@ -49,6 +51,22 @@ namespace Game.Composition
             // we use RegisterComponent(instance) — RegisterComponentInHierarchy
             // searches only THIS scope's scene (02_Gameplay) and would throw.
             TryRegisterInstance<DrawModeVisibilityPresenter>(builder);
+
+            // Buildings panel / Presenter / panel buttons are NOT registered
+            // as services — they're "drop-on" MonoBehaviours whose [Inject]
+            // fields just need filling. PersistentLifetimeScope already runs
+            // the same callback; we re-run it here so anything that lives in
+            // 02_Gameplay (only loaded AFTER PersistentLifetimeScope.Configure)
+            // also gets injected. Calling Inject() twice on the same instance
+            // is idempotent — it just re-fills the same fields.
+            builder.RegisterBuildCallback(container =>
+            {
+                PersistentLifetimeScope.InjectAllInScenes<PanelOpenButton>(container);
+                PersistentLifetimeScope.InjectAllInScenes<PanelCloseButton>(container);
+                PersistentLifetimeScope.InjectAllInScenes<PanelBackgroundVisibilityController>(container);
+                PersistentLifetimeScope.InjectAllInScenes<BuildingsPanel>(container);
+                PersistentLifetimeScope.InjectAllInScenes<BuildingsPanelPresenter>(container);
+            });
         }
 
         private static void TryRegisterInHierarchy<T>(IContainerBuilder builder) where T : Component

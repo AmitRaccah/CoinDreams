@@ -10,6 +10,11 @@ namespace Game.Config.Village
         public string DisplayName;
         public string BuildingID;
 
+        // Icon shown in the Buildings panel's UpgradeObject row. Keeps the
+        // UI layer ignorant of the 3D building visuals — the panel only
+        // cares about this 2D sprite.
+        public Sprite uiIcon;
+
         // upgradeSteps[i] is the upgrade from level i to level i + 1.
         public List<BuildingUpgradeStepConfig> upgradeSteps = new List<BuildingUpgradeStepConfig>();
     }

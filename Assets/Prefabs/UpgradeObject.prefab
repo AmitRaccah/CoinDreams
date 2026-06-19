@@ -421,6 +421,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8687470174104350094}
   - component: {fileID: 489746956348275220}
+  - component: {fileID: 1140099426970075678}
   m_Layer: 5
   m_Name: UpgradeObject
   m_TagString: Untagged
@@ -476,6 +477,27 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &1140099426970075678
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8329935201366320815}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8a50eb44c3d440e449bc013476b0993e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.UI.Buildings.UpgradeObjectView
+  buildingImage: {fileID: 8789096139232138637}
+  indicatorContainer: {fileID: 1354486022915781450}
+  indicatorPrefab: {fileID: 0}
+  filledIndicatorSprite: {fileID: 0}
+  emptyIndicatorSprite: {fileID: 0}
+  upgradeButton: {fileID: 2933616683180907863}
+  costText: {fileID: 1287125075530885342}
+  coinIconGroup: {fileID: 0}
+  maxLevelLabel: COMPLETE
 --- !u!1 &8360721975442231206
 GameObject:
   m_ObjectHideFlags: 0
