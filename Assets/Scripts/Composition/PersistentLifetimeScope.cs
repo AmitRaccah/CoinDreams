@@ -11,6 +11,7 @@ using Game.Runtime.Cards;
 using Game.Runtime.Lifecycle;
 using Game.Runtime.Player;
 using Game.Runtime.Steal;
+using Game.Runtime.Steal.Timelines;
 using Game.Runtime.UI;
 using MessagePipe;
 using UnityEngine;
@@ -108,10 +109,19 @@ namespace Game.Composition
             builder.RegisterComponentInHierarchy<CardDrawHudReferences>();
 
             // ===== Voodoo steal feature =====
-            // Coordinator is required (logic). Presenters live in the Gameplay
-            // scene (Voodoo3DDollPresenter, VoodooVictimNamePresenter) — scenes
-            // like 0.1_Steal can run without them (the Coordinator still calls
-            // the server, coins still move in Firestore).
+            // Three timelines own the per-phase sequencing (server calls +
+            // signal publishes today, cinematics tomorrow). The coordinator
+            // is now a thin state holder that dispatches incoming signals to
+            // the right timeline. Timelines are stateless services so they
+            // register as plain Singletons.
+            builder.Register<VoodooEntryTimeline>(Lifetime.Singleton);
+            builder.Register<VoodooActionTimeline>(Lifetime.Singleton);
+            builder.Register<VoodooExitTimeline>(Lifetime.Singleton);
+
+            // Coordinator is required (state + dispatch). Presenters live in
+            // the Gameplay scene (Voodoo3DDollPresenter, VoodooVictimName-
+            // Presenter) — scenes like 0.1_Steal can run without them (the
+            // coordinator still runs the timelines, server still moves coins).
             builder.RegisterComponentInHierarchy<VoodooStealCoordinator>()
                 .AsImplementedInterfaces()
                 .AsSelf();
