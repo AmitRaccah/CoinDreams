@@ -137,10 +137,10 @@ namespace Game.Composition
             {
                 builder.RegisterComponentInHierarchy<VoodooStabHudSync>();
             }
-            if (UnityEngine.Object.FindAnyObjectByType<VoodooVictimNamePresenter>() != null)
-            {
-                builder.RegisterComponentInHierarchy<VoodooVictimNamePresenter>();
-            }
+            // VoodooVictimNamePresenter is registered in GameplayLifetimeScope —
+            // it lives on VoodooDoll3D in 02_Gameplay, so RegisterComponent-
+            // InHierarchy from this persistent scope wouldn't find it
+            // (VContainer scopes only see their own scene).
 
             // Router is opt-in — scenes without the mediator (legacy/test scenes) still
             // resolve cleanly because the binder publishes the click signal unconditionally.

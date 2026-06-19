@@ -40,6 +40,9 @@ namespace Game.Composition
             // 3D doll lives in this scene — subscribes to voodoo signals
             // brokered in the persistent parent scope.
             TryRegisterInHierarchy<Voodoo3DDollPresenter>(builder);
+            // Victim-name presenter shares the doll's GameObject (same scene),
+            // subscribes to the same persistent-scope signals.
+            TryRegisterInHierarchy<VoodooVictimNamePresenter>(builder);
             // Draw-mode visibility gate — depends on ICameraViewModeReader
             // (registered above as Scoped) and voodoo session signals from the
             // parent scope. The GameObject itself can live in 01_Persistent, so
