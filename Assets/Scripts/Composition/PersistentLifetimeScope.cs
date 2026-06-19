@@ -49,6 +49,21 @@ namespace Game.Composition
                 .AsImplementedInterfaces()
                 .AsSelf();
 
+            // Tag-based UI context — single source of truth for "what state is
+            // the UI in" (panel-open, steal-session, camera-board, ...).
+            // Publishers translate domain signals into tags; UiTaggedVisibility
+            // binders translate tags into SetActive. The service itself is a
+            // plain HashSet wrapper; the AsSelf+AsImplementedInterfaces pair
+            // lets publishers inject UiContextService (writes) while binders
+            // depend only on IUiContext (reads).
+            builder.Register<Game.Runtime.UI.Context.UiContextService>(Lifetime.Singleton)
+                .AsImplementedInterfaces()
+                .AsSelf();
+            builder.Register<Game.Runtime.UI.Context.Publishers.PanelTagsPublisher>(Lifetime.Singleton)
+                .AsImplementedInterfaces();
+            builder.Register<Game.Runtime.UI.Context.Publishers.StealSessionTagsPublisher>(Lifetime.Singleton)
+                .AsImplementedInterfaces();
+
             // Panel-system components live across scenes and can have N
             // instances per type (many side-rail buttons, many close-X
             // buttons, one BuildingsPanel, one Presenter). VContainer's
@@ -67,8 +82,8 @@ namespace Game.Composition
                 // The Presenter is injected from GameplayLifetimeScope instead.
                 InjectAllInScenes<Game.Runtime.UI.Panels.PanelOpenButton>(container);
                 InjectAllInScenes<Game.Runtime.UI.Panels.PanelCloseButton>(container);
-                InjectAllInScenes<Game.Runtime.UI.Panels.PanelBackgroundVisibilityController>(container);
                 InjectAllInScenes<Game.Runtime.UI.Buildings.BuildingsPanel>(container);
+                InjectAllInScenes<Game.Runtime.UI.Context.UiTaggedVisibility>(container);
             });
 
             builder.Register<TimeProvider>(Lifetime.Singleton).As<ITimeProvider>();
@@ -129,11 +144,6 @@ namespace Game.Composition
             {
                 builder.RegisterComponentInHierarchy<DrawMultiplierBinder>();
             }
-
-            // DrawModeVisibilityPresenter is registered in GameplayLifetimeScope
-            // because it depends on ICameraViewModeReader (scoped to gameplay).
-            // The presenter's GameObject can still live in 01_Persistent — the
-            // gameplay scope's FindAnyObjectByType search spans loaded scenes.
 
             // HUD widget references live on the Canvas in the Persistent scene. Registering them
             // here lets the Gameplay-scope DrawHudPresenter resolve them through the parent scope

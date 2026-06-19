@@ -31,6 +31,13 @@ namespace Game.Composition
                 .As<ICameraViewModeWriter>()
                 .AsSelf();
 
+            // Camera tags live in this scope because ICameraViewModeReader
+            // does. The UiContextService it writes into is resolved from the
+            // persistent parent scope, so binders and the panel/steal
+            // publishers all see the camera-{mode} flips immediately.
+            builder.Register<Game.Runtime.UI.Context.Publishers.CameraTagsPublisher>(Lifetime.Singleton)
+                .AsImplementedInterfaces();
+
             // Guard each registration: VContainer's RegisterComponentInHierarchy throws if no
             // matching component exists in the scope's scene. Skipping a missing component lets
             // the rest of the container build instead of taking down the whole scope.
@@ -45,13 +52,6 @@ namespace Game.Composition
             // Victim-name presenter shares the doll's GameObject (same scene),
             // subscribes to the same persistent-scope signals.
             TryRegisterInHierarchy<VoodooVictimNamePresenter>(builder);
-            // Draw-mode visibility gate — depends on ICameraViewModeReader
-            // (registered above as Scoped) and voodoo session signals from the
-            // parent scope. The GameObject itself can live in 01_Persistent, so
-            // we use RegisterComponent(instance) — RegisterComponentInHierarchy
-            // searches only THIS scope's scene (02_Gameplay) and would throw.
-            TryRegisterInstance<DrawModeVisibilityPresenter>(builder);
-
             // Buildings panel / Presenter / panel buttons are NOT registered
             // as services — they're "drop-on" MonoBehaviours whose [Inject]
             // fields just need filling. PersistentLifetimeScope already runs
@@ -63,9 +63,9 @@ namespace Game.Composition
             {
                 PersistentLifetimeScope.InjectAllInScenes<PanelOpenButton>(container);
                 PersistentLifetimeScope.InjectAllInScenes<PanelCloseButton>(container);
-                PersistentLifetimeScope.InjectAllInScenes<PanelBackgroundVisibilityController>(container);
                 PersistentLifetimeScope.InjectAllInScenes<BuildingsPanel>(container);
                 PersistentLifetimeScope.InjectAllInScenes<BuildingsPanelPresenter>(container);
+                PersistentLifetimeScope.InjectAllInScenes<Game.Runtime.UI.Context.UiTaggedVisibility>(container);
             });
         }
 

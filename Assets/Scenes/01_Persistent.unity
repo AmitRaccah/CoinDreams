@@ -312,10 +312,114 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedGameObjects:
+    - {fileID: 2593778544857945658, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 4425688743348910674, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 220623068}
+    - targetCorrespondingSourceObject: {fileID: 4308004434806755498, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 220623067}
+    - targetCorrespondingSourceObject: {fileID: 4544398004835018988, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 220623069}
+    - targetCorrespondingSourceObject: {fileID: 8770523500152381263, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 806927217}
+    - targetCorrespondingSourceObject: {fileID: 2514510719083286573, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 806927218}
+    - targetCorrespondingSourceObject: {fileID: 5627066788288842023, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 220623066}
   m_SourcePrefab: {fileID: 100100000, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+--- !u!1 &220623062 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5627066788288842023, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+  m_PrefabInstance: {fileID: 220623061}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &220623063 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4308004434806755498, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+  m_PrefabInstance: {fileID: 220623061}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &220623064 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4425688743348910674, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+  m_PrefabInstance: {fileID: 220623061}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &220623065 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 4544398004835018988, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+  m_PrefabInstance: {fileID: 220623061}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &220623066
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 220623062}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8016a97fa3fd21f499f6ba58220d9129, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.UI.Context.UiTaggedVisibility
+  hideWhenAnyTagActive:
+  - panel-open
+  requireAnyTagActive: []
+  requireAllTagsActive: []
+--- !u!114 &220623067
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 220623063}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8016a97fa3fd21f499f6ba58220d9129, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.UI.Context.UiTaggedVisibility
+  hideWhenAnyTagActive:
+  - camera-board
+  - steal-session
+  requireAnyTagActive: []
+  requireAllTagsActive: []
+--- !u!114 &220623068
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 220623064}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8016a97fa3fd21f499f6ba58220d9129, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.UI.Context.UiTaggedVisibility
+  hideWhenAnyTagActive:
+  - panel-open
+  requireAnyTagActive: []
+  requireAllTagsActive: []
+--- !u!114 &220623069
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 220623065}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8016a97fa3fd21f499f6ba58220d9129, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.UI.Context.UiTaggedVisibility
+  hideWhenAnyTagActive:
+  - panel-open
+  requireAnyTagActive: []
+  requireAllTagsActive: []
 --- !u!1 &245205526
 GameObject:
   m_ObjectHideFlags: 0
@@ -497,6 +601,40 @@ GameObject:
   m_CorrespondingSourceObject: {fileID: 2514510719083286573, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
   m_PrefabInstance: {fileID: 220623061}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &806927217
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 806927215}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8016a97fa3fd21f499f6ba58220d9129, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.UI.Context.UiTaggedVisibility
+  hideWhenAnyTagActive:
+  - steal-session
+  requireAnyTagActive: []
+  requireAllTagsActive: []
+--- !u!114 &806927218
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 806927216}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8016a97fa3fd21f499f6ba58220d9129, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.UI.Context.UiTaggedVisibility
+  hideWhenAnyTagActive:
+  - steal-session
+  - panel-open
+  requireAnyTagActive:
+  - camera-board
+  requireAllTagsActive: []
 --- !u!1 &1398919728
 GameObject:
   m_ObjectHideFlags: 0
