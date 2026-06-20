@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using Game.Domain.Economy;
 using Game.Domain.Energy;
 using Game.Domain.Player;
+using Game.Domain.Shields;
 using Game.Domain.Time;
 using Game.Domain.Village;
 using Game.Infrastructure.Persistence;
@@ -93,6 +94,11 @@ namespace Game.Runtime.Player
         public IReadOnlyEnergyService EnergyView
         {
             get { return Profile.Energy; }
+        }
+
+        public IReadOnlyShieldService ShieldView
+        {
+            get { return Profile.Shields; }
         }
 
         public IReadOnlyVillageProgressState VillageView
@@ -271,12 +277,17 @@ namespace Game.Runtime.Player
                 currency.Add(startingCoins);
             }
 
+            ShieldService shields = new ShieldService(
+                ShieldDefaults.DefaultStartingShields,
+                ShieldDefaults.DefaultMaxShields);
+
             VillageProgressState village = new VillageProgressState(initialVillageBuildingCount);
 
             PlayerProfile initialProfile = new PlayerProfile(
                 playerId,
                 currency,
                 energy,
+                shields,
                 village,
                 0,
                 null);

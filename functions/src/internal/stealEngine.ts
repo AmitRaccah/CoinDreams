@@ -12,6 +12,7 @@ import {
     nowUtcTicks,
     stampProcessedImpact,
     stampUpdate,
+    SHIELD_DEFLECTION_RATIO,
 } from "./playerSnapshotHelpers";
 
 /**
@@ -73,9 +74,9 @@ export async function runStealTransaction(
 
     const victimCoins = victimData.snapshot.coins;
     const requested = request.requestedAmount;
-    const stolen = Math.min(requested, victimCoins);
+    const rawStolen = Math.min(requested, victimCoins);
 
-    if (stolen <= 0) {
+    if (rawStolen <= 0) {
         // C# returns VictimEmpty without writing back — we follow the same
         // pattern and skip the writes. Regen-only state is recomputed on the
         // next interaction.
@@ -88,9 +89,27 @@ export async function runStealTransaction(
         };
     }
 
-    const thiefGain = stolen * safeBonusMultiplier;
+    // Shield-deflection rule: a shielded victim loses NO coins, the thief
+    // still receives a fraction (SHIELD_DEFLECTION_RATIO) of what they would
+    // have, and the victim's shield count decrements by one. The fraction is
+    // applied to the post-multiplier gain so high-multiplier draws still feel
+    // rewarding to the thief, just halved.
+    let coinsLostByVictim: number;
+    let thiefGain: number;
+    // Coalesce once and reuse — referencing `victimData.snapshot.shields` on
+    // line 102 would hit `undefined - 1 = NaN` for legacy docs that pre-date
+    // the shield field, even though the gate on the previous line coalesced.
+    const currentVictimShields = victimData.snapshot.shields ?? 0;
+    if (currentVictimShields > 0) {
+        coinsLostByVictim = 0;
+        thiefGain = Math.floor(rawStolen * safeBonusMultiplier * SHIELD_DEFLECTION_RATIO);
+        victimData.snapshot.shields = currentVictimShields - 1;
+    } else {
+        coinsLostByVictim = rawStolen;
+        thiefGain = rawStolen * safeBonusMultiplier;
+    }
 
-    victimData.snapshot.coins -= stolen;
+    victimData.snapshot.coins -= coinsLostByVictim;
     thiefData.snapshot.coins += thiefGain;
 
     stampProcessedImpact(victimData.snapshot, request.impactId);
@@ -101,13 +120,18 @@ export async function runStealTransaction(
     tx.set(thiefData.ref, thiefData.snapshot);
     tx.set(victimData.ref, victimData.snapshot);
 
+    // Partial = thief got less than requested either because the victim was
+    // too poor OR because a shield absorbed the strike. Both flow through
+    // the same "AppliedPartially" status so the existing client codepath
+    // (toast "you only got X of Y") works without a new status code.
     const status =
-        stolen < requested
+        thiefGain < requested * safeBonusMultiplier
             ? AuthoritativeStealStatus.AppliedPartially
             : AuthoritativeStealStatus.Success;
 
-    // stolenAmount reflects what the THIEF received (multiplied), since the UI
-    // shows the floating "+X" over the doll to celebrate the thief's gain.
+    // stolenAmount reflects what the THIEF received (after multiplier and
+    // any shield deflection). The UI floats "+X" over the doll using this
+    // value to celebrate the thief's actual gain.
     return {
         status,
         thiefSnapshot: thiefData.snapshot,

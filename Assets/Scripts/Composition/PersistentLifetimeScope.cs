@@ -84,6 +84,7 @@ namespace Game.Composition
                 InjectAllInScenes<Game.Runtime.UI.Panels.PanelCloseButton>(container);
                 InjectAllInScenes<Game.Runtime.UI.Buildings.BuildingsPanel>(container);
                 InjectAllInScenes<Game.Runtime.UI.Context.UiTaggedVisibility>(container);
+                InjectAllInScenes<Game.Runtime.UI.Shields.ShieldsHudPresenter>(container);
             });
 
             builder.Register<TimeProvider>(Lifetime.Singleton).As<ITimeProvider>();

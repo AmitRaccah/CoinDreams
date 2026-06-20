@@ -1,5 +1,6 @@
 using System;
 using Game.Domain.Energy;
+using Game.Domain.Shields;
 
 namespace Game.Domain.Player
 {
@@ -16,6 +17,9 @@ namespace Game.Domain.Player
         public int regenIntervalSeconds;
         public long lastRegenUtcTicks;
 
+        public int shields;
+        public int maxShields;
+
         public int[] villageLevels;
         public string[] processedImpactIds;
 
@@ -29,6 +33,9 @@ namespace Game.Domain.Player
             regenMaxEnergy = EnergyDefaults.DefaultMaxEnergy;
             regenIntervalSeconds = EnergyDefaults.DefaultRegenIntervalSeconds;
             lastRegenUtcTicks = 0;
+
+            shields = ShieldDefaults.DefaultStartingShields;
+            maxShields = ShieldDefaults.DefaultMaxShields;
 
             villageLevels = Array.Empty<int>();
             processedImpactIds = Array.Empty<string>();

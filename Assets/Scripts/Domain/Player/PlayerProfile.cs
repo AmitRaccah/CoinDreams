@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using Game.Domain.Economy;
 using Game.Domain.Energy;
+using Game.Domain.Shields;
 using Game.Domain.Time;
 using Game.Domain.Village;
 
@@ -14,6 +15,7 @@ namespace Game.Domain.Player
         private readonly string playerId;
         private readonly CurrencyService currency;
         private readonly EnergyService energy;
+        private readonly ShieldService shields;
         private readonly VillageProgressState village;
         private readonly HashSet<string> processedImpactSet;
         private readonly Queue<string> processedImpactOrder;
@@ -27,6 +29,7 @@ namespace Game.Domain.Player
             string playerId,
             CurrencyService currency,
             EnergyService energy,
+            ShieldService shields,
             VillageProgressState village,
             int revision,
             IEnumerable<string> seedProcessedImpactIds)
@@ -41,6 +44,11 @@ namespace Game.Domain.Player
                 throw new ArgumentNullException("energy");
             }
 
+            if (shields == null)
+            {
+                throw new ArgumentNullException("shields");
+            }
+
             if (village == null)
             {
                 throw new ArgumentNullException("village");
@@ -50,6 +58,7 @@ namespace Game.Domain.Player
             this.playerId = NormalizePlayerId(playerId);
             this.currency = currency;
             this.energy = energy;
+            this.shields = shields;
             this.village = village;
             this.revision = revision < 0 ? 0 : revision;
             processedImpactSet = new HashSet<string>(StringComparer.Ordinal);
@@ -72,6 +81,11 @@ namespace Game.Domain.Player
         public IEnergyService Energy
         {
             get { return energy; }
+        }
+
+        public IShieldService Shields
+        {
+            get { return shields; }
         }
 
         public VillageProgressState Village
@@ -240,6 +254,8 @@ namespace Game.Domain.Player
             snapshot.regenMaxEnergy = energy.GetMax();
             snapshot.regenIntervalSeconds = energy.GetRegenIntervalSeconds();
             snapshot.lastRegenUtcTicks = energy.GetLastRegenTicks();
+            snapshot.shields = shields.GetCurrent();
+            snapshot.maxShields = shields.GetMax();
             snapshot.villageLevels = village.GetLevelsSnapshot();
             snapshot.processedImpactIds = CreateProcessedImpactIdsSnapshot();
             return snapshot;
@@ -273,6 +289,10 @@ namespace Game.Domain.Player
                 snapshot.regenIntervalSeconds,
                 snapshot.lastRegenUtcTicks);
 
+            ShieldService shields = new ShieldService(
+                snapshot.shields,
+                snapshot.maxShields);
+
             VillageProgressState village = new VillageProgressState(0);
             village.SetLevels(snapshot.villageLevels);
 
@@ -280,6 +300,7 @@ namespace Game.Domain.Player
                 snapshot.playerId,
                 currency,
                 energy,
+                shields,
                 village,
                 snapshot.revision,
                 snapshot.processedImpactIds);
@@ -295,6 +316,20 @@ namespace Game.Domain.Player
             if (snapshot.regenIntervalSeconds <= 0)
             {
                 snapshot.regenIntervalSeconds = EnergyDefaults.DefaultRegenIntervalSeconds;
+            }
+
+            if (snapshot.maxShields <= 0)
+            {
+                snapshot.maxShields = ShieldDefaults.DefaultMaxShields;
+            }
+
+            if (snapshot.shields < 0)
+            {
+                snapshot.shields = 0;
+            }
+            else if (snapshot.shields > snapshot.maxShields)
+            {
+                snapshot.shields = snapshot.maxShields;
             }
         }
 
@@ -418,6 +453,7 @@ namespace Game.Domain.Player
         {
             currency.CoinsChanged += HandleCoinsChanged;
             energy.EnergyChanged += HandleEnergyChanged;
+            shields.ShieldsChanged += HandleShieldsChanged;
             village.Changed += HandleVillageChanged;
         }
 
@@ -427,6 +463,11 @@ namespace Game.Domain.Player
         }
 
         private void HandleEnergyChanged(int _, int __, int ___)
+        {
+            MarkChanged();
+        }
+
+        private void HandleShieldsChanged(int _, int __)
         {
             MarkChanged();
         }

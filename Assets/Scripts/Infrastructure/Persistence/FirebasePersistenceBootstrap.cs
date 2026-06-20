@@ -87,6 +87,24 @@ namespace Game.Infrastructure.Persistence
                 settings.ForceFreshAnonymousIdentityOnStart,
                 settings.CreateRemoteDocumentIfMissing,
                 settings.VerboseLogging);
+
+            ActivateLiveSync();
+        }
+
+        // Subscribe to the player's document so cross-player writes (steal
+        // deflections, attacker-initiated coin loss) land in the UI without
+        // waiting for the next local action. The repository writes are
+        // filtered as self-echoes inside the live-sync impl, so this is
+        // remote-only by the time the callback fires.
+        private void ActivateLiveSync()
+        {
+            if (auth == null || snapshotService == null) return;
+            IPlayerLiveSync? sync = auth.LiveSync;
+            if (sync == null) return;
+            string playerId = auth.AuthenticatedPlayerId;
+            if (string.IsNullOrWhiteSpace(playerId)) return;
+
+            sync.Subscribe(playerId, snapshotService.OnAuthoritativeSnapshotApplied);
         }
 
         private void OnApplicationPause(bool pause)
@@ -119,6 +137,15 @@ namespace Game.Infrastructure.Persistence
 
             cache.MarkPending();
             snapshotService.FlushLocalCacheNow(markPending: true);
+            auth?.LiveSync?.Unsubscribe();
+        }
+
+        private void OnDestroy()
+        {
+            // Same teardown for scene-unload / DI scope dispose. Idempotent
+            // with OnApplicationQuit because Unsubscribe is a no-op when no
+            // listener is registered.
+            auth?.LiveSync?.Unsubscribe();
         }
     }
 }

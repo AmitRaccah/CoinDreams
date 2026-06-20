@@ -58,7 +58,6 @@ namespace Game.Runtime.Steal
             }
 
             playerRuntimeContext.AddCoinsImmediately(signal.StolenAmount);
-            Debug.Log("[VoodooStabHudSync] Added " + signal.StolenAmount + " coins to local HUD.");
         }
     }
 }

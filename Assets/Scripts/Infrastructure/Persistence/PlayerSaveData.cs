@@ -1,6 +1,7 @@
 using System;
 using Game.Domain.Energy;
 using Game.Domain.Player;
+using Game.Domain.Shields;
 
 namespace Game.Infrastructure.Persistence
 {
@@ -20,6 +21,10 @@ namespace Game.Infrastructure.Persistence
         public int maxEnergy;
         public int regenIntervalSeconds;
         public long lastRegenUtcTicks;
+
+        // Shields
+        public int shields;
+        public int maxShields;
 
         // Progress
         public int[] villageLevels;
@@ -44,6 +49,9 @@ namespace Game.Infrastructure.Persistence
             maxEnergy = EnergyDefaults.DefaultMaxEnergy;
             regenIntervalSeconds = EnergyDefaults.DefaultRegenIntervalSeconds;
             lastRegenUtcTicks = 0;
+
+            shields = ShieldDefaults.DefaultStartingShields;
+            maxShields = ShieldDefaults.DefaultMaxShields;
 
             villageLevels = Array.Empty<int>();
             processedImpactIds = Array.Empty<string>();

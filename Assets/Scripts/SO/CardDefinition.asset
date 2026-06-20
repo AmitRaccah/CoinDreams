@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: CardDefinition
   m_EditorClassIdentifier: Assembly-CSharp::Game.Config.Cards.CardDefinitionSO
   cardId: Hundred Coins
-  weight: 1
+  weight: 2
   effectConfigs:
   - effectType: 0
     intValue: 100

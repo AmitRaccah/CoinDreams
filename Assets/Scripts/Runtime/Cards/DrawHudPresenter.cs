@@ -186,7 +186,7 @@ namespace Game.Runtime.Cards
             bool coinsChanged = !coinsUiCacheInitialized || cachedCoins != coins;
             if (coinsText != null && coinsChanged)
             {
-                coinsText.SetText("Coins: {0:0}", coins);
+                coinsText.SetText("{0:0}", coins);
             }
 
             cachedCoins = coins;

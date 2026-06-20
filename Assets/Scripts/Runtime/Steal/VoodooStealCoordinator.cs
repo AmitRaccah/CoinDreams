@@ -49,6 +49,13 @@ namespace Game.Runtime.Steal
         private bool actionInFlight;
         private bool isContextSubscribed;
 
+        // Remembered across ProfileReplaced events so we can tell apart a
+        // true account swap (sign-out/in) from a routine snapshot refresh
+        // (LiveSync pushing remote writes back). Without this, the LiveSync
+        // listener fires ProfileReplaced after every stab and the session
+        // ends after the first one.
+        private string lastSeenPlayerId = string.Empty;
+
         public bool HasActiveSession
         {
             get { return activeSession != null && !activeSession.IsBroken; }
@@ -188,11 +195,18 @@ namespace Game.Runtime.Steal
 
         private void HandleProfileReplaced()
         {
-            // Profile swap = the data layer dropped the player we were
-            // stealing on behalf of. Tear down the local mirror so the UI
-            // returns to idle. Fire-and-forget the exit timeline — we don't
-            // have an async context here and the cinematic isn't blocking
-            // anything load-bearing.
+            // ProfileReplaced now fires on every server-driven snapshot push
+            // (LiveSync). We only want to tear down on a TRUE account swap
+            // (sign-out, account switch). Compare playerId — if it matches
+            // the one we saw before, this is a routine refresh and the
+            // voodoo session keeps running.
+            string currentPlayerId = playerRuntimeContext?.Profile?.PlayerId ?? string.Empty;
+            if (currentPlayerId == lastSeenPlayerId)
+            {
+                return;
+            }
+            lastSeenPlayerId = currentPlayerId;
+
             if (activeSession == null || exitTimeline == null) return;
 
             string sessionId = activeSession.SessionId;
