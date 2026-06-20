@@ -315,7 +315,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.UI.Buildings.UpgradeObjectView
   buildingImage: {fileID: 8789096139232138637}
   indicatorContainer: {fileID: 1354486022915781450}
-  indicatorPrefab: {fileID: 0}
+  indicatorPrefab: {fileID: 4823118374623510873, guid: d8e65c12c82cf1741aeeaf44510ffaef, type: 3}
   filledIndicatorSprite: {fileID: 21300000, guid: a5c0ee486dc82694b9e5a4ba73a14014, type: 3}
   emptyIndicatorSprite: {fileID: 21300000, guid: 8d6ecfbe2e15be6449c594632446bca5, type: 3}
   upgradeButton: {fileID: 2933616683180907863}
