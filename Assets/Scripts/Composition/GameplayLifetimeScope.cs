@@ -38,11 +38,32 @@ namespace Game.Composition
             builder.Register<Game.Runtime.UI.Context.Publishers.CameraTagsPublisher>(Lifetime.Singleton)
                 .AsImplementedInterfaces();
 
+            // Draw-workflow tags also live in Gameplay because the controller
+            // that exposes IDrawWorkflowStateReader is in this scene. Fires
+            // the draw-engaged tag on the same frame the workflow leaves
+            // Idle — earlier than camera-board, which only flips after the
+            // transition finishes animating.
+            builder.Register<Game.Runtime.UI.Context.Publishers.DrawWorkflowTagsPublisher>(Lifetime.Singleton)
+                .AsImplementedInterfaces();
+
             // Guard each registration: VContainer's RegisterComponentInHierarchy throws if no
             // matching component exists in the scope's scene. Skipping a missing component lets
             // the rest of the container build instead of taking down the whole scope.
             TryRegisterInHierarchy<MapOrbitCameraController>(builder);
-            TryRegisterInHierarchy<CardDrawWorkflowController>(builder);
+            // Inline registration (instead of TryRegisterInHierarchy) so the
+            // controller is exposed as IDrawWorkflowStateReader too — that's
+            // what DrawWorkflowTagsPublisher injects to listen for state.
+            if (Object.FindAnyObjectByType<CardDrawWorkflowController>() != null)
+            {
+                builder.RegisterComponentInHierarchy<CardDrawWorkflowController>()
+                    .AsImplementedInterfaces()
+                    .AsSelf();
+            }
+            else
+            {
+                Debug.LogWarning(
+                    "[GameplayLifetimeScope] Skipped registration of CardDrawWorkflowController — no instance in any loaded scene.");
+            }
             TryRegisterInHierarchy<DrawHudPresenter>(builder);
             TryRegisterInHierarchy<DrawActionPresenter>(builder);
             TryRegisterInHierarchy<VillageUpgradeRuntime>(builder);

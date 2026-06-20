@@ -19,6 +19,16 @@ namespace Game.Runtime.UI.Context
         /// <summary>VoodooStealCoordinator has an active session.</summary>
         public const string StealSession = "steal-session";
 
+        // ─── Draw flow ───
+        /// <summary>
+        /// The card-draw workflow is in any non-Idle state — moving the
+        /// camera to the board, on the board, drawing, or returning to the
+        /// city. Use this (not <see cref="CameraBoard"/>) when an element
+        /// should hide from the FIRST frame the player clicks Draw, not
+        /// only after the camera transition completes.
+        /// </summary>
+        public const string DrawEngaged = "draw-engaged";
+
         // ─── Camera ───
         /// <summary>Camera mode currently == City.</summary>
         public const string CameraCity = "camera-city";

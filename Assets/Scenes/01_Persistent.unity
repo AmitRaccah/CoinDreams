@@ -243,6 +243,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6973482411617952234, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+      propertyPath: hideWhenAnyTagActive.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6973482411617952234, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+      propertyPath: 'hideWhenAnyTagActive.Array.data[0]'
+      value: draw-engaged
+      objectReference: {fileID: 0}
     - target: {fileID: 7027171845833138963, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0

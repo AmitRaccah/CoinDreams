@@ -1,3 +1,7 @@
+#nullable enable
+
+using System;
+
 namespace Game.Runtime.Cards
 {
     public enum DrawWorkflowAction
@@ -16,8 +20,10 @@ namespace Game.Runtime.Cards
         ReturningToCity = 4
     }
 
-    public sealed class CardDrawWorkflowStateMachine
+    public sealed class CardDrawWorkflowStateMachine : IDrawWorkflowStateReader
     {
+        public event Action<CardDrawWorkflowState>? StateChanged;
+
         public CardDrawWorkflowState CurrentState { get; private set; } = CardDrawWorkflowState.Idle;
 
         public bool IsBusy
@@ -34,13 +40,13 @@ namespace Game.Runtime.Cards
         {
             if (CurrentState == CardDrawWorkflowState.Idle)
             {
-                CurrentState = CardDrawWorkflowState.MovingToBoard;
+                Transition(CardDrawWorkflowState.MovingToBoard);
                 return DrawWorkflowAction.MoveToBoard;
             }
 
             if (CurrentState == CardDrawWorkflowState.DrawMode)
             {
-                CurrentState = CardDrawWorkflowState.Drawing;
+                Transition(CardDrawWorkflowState.Drawing);
                 return DrawWorkflowAction.Draw;
             }
 
@@ -54,7 +60,7 @@ namespace Game.Runtime.Cards
                 return false;
             }
 
-            CurrentState = CardDrawWorkflowState.ReturningToCity;
+            Transition(CardDrawWorkflowState.ReturningToCity);
             return true;
         }
 
@@ -70,16 +76,16 @@ namespace Game.Runtime.Cards
                 return;
             }
 
-            CurrentState = succeeded
+            Transition(succeeded
                 ? CardDrawWorkflowState.DrawMode
-                : CardDrawWorkflowState.Idle;
+                : CardDrawWorkflowState.Idle);
         }
 
         public void CompleteDraw()
         {
             if (CurrentState == CardDrawWorkflowState.Drawing)
             {
-                CurrentState = CardDrawWorkflowState.DrawMode;
+                Transition(CardDrawWorkflowState.DrawMode);
             }
         }
 
@@ -95,7 +101,7 @@ namespace Game.Runtime.Cards
                 return;
             }
 
-            CurrentState = CardDrawWorkflowState.Idle;
+            Transition(CardDrawWorkflowState.Idle);
         }
 
         /// <summary>
@@ -105,7 +111,18 @@ namespace Game.Runtime.Cards
         /// </summary>
         public void ResetToIdle()
         {
-            CurrentState = CardDrawWorkflowState.Idle;
+            Transition(CardDrawWorkflowState.Idle);
+        }
+
+        // Centralizes the "CurrentState = X + fire event" pair so every
+        // state transition flows through one place. The idempotency guard
+        // keeps spurious re-emits off the wire when callers ask for the
+        // same state they already have.
+        private void Transition(CardDrawWorkflowState next)
+        {
+            if (CurrentState == next) return;
+            CurrentState = next;
+            StateChanged?.Invoke(next);
         }
     }
 }

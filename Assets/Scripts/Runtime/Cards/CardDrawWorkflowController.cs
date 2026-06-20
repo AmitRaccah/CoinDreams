@@ -11,8 +11,19 @@ using VContainer;
 namespace Game.Runtime.Cards
 {
     [DisallowMultipleComponent]
-    public sealed class CardDrawWorkflowController : MonoBehaviour
+    public sealed class CardDrawWorkflowController : MonoBehaviour, IDrawWorkflowStateReader
     {
+        // Forwards to the internal state machine so consumers that depend
+        // on IDrawWorkflowStateReader (e.g. DrawWorkflowTagsPublisher) get
+        // notified the moment the workflow advances, without taking a
+        // dependency on this MonoBehaviour or the state-machine type.
+        public CardDrawWorkflowState CurrentState => workflowState.CurrentState;
+        public event Action<CardDrawWorkflowState>? StateChanged
+        {
+            add { workflowState.StateChanged += value; }
+            remove { workflowState.StateChanged -= value; }
+        }
+
         [Header("Dependencies")]
         [SerializeField] private MonoBehaviour? cameraTransitionServiceSource;
 
