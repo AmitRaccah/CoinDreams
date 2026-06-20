@@ -7,6 +7,7 @@ using Game.Domain.Economy;
 using Game.Runtime.Player;
 using Game.Runtime.Village;
 using UnityEngine;
+using UnityEngine.UI;
 using VContainer;
 
 namespace Game.Runtime.UI.Buildings
@@ -63,6 +64,11 @@ namespace Game.Runtime.UI.Buildings
             EnsureViewsBuilt();
             SubscribeToWallet();
             RefreshAll();
+            // Has to run AFTER RefreshAll so the ContentSizeFitter sees the
+            // final sprite/text data when it asks each card for its preferred
+            // width — otherwise the still-empty cards return 0 and Content
+            // stays narrow, leaving anything past the viewport invisible.
+            RebuildLayout();
         }
 
         private void OnDisable()
@@ -104,6 +110,39 @@ namespace Game.Runtime.UI.Buildings
                 views.Add(view);
             }
             viewsBuilt = true;
+        }
+
+        // Called after EnsureViewsBuilt + RefreshAll so the preferred-width
+        // calculation has the final children with their final sprite/text
+        // data. Walks the panel tree top-down because ContentSizeFitter on
+        // Content depends on the inner HorizontalLayoutGroup, which depends
+        // on each card's own VerticalLayoutGroup — a single rebuild on
+        // Content can miss the inner pass and end up with stale widths.
+        private void RebuildLayout()
+        {
+            if (contentRoot == null) return;
+
+            // Force every nested layout group from the leaves upward to
+            // recompute. ForceRebuildLayoutImmediate walks the children, but
+            // we also walk the chain of LayoutGroups so any cached preferred
+            // widths get invalidated. Cheap because the panel is small.
+            RectTransform contentRect = contentRoot as RectTransform;
+            if (contentRect == null) return;
+
+            for (int i = 0; i < views.Count; i++)
+            {
+                if (views[i] == null) continue;
+                RectTransform child = views[i].transform as RectTransform;
+                if (child != null) LayoutRebuilder.ForceRebuildLayoutImmediate(child);
+            }
+            LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
+
+            RectTransform panelHolder = contentRect.parent as RectTransform;
+            if (panelHolder != null) LayoutRebuilder.ForceRebuildLayoutImmediate(panelHolder);
+
+            // Final flush so the canvas mesh sees the new widths immediately,
+            // not on next frame.
+            Canvas.ForceUpdateCanvases();
         }
 
         private void RefreshAll()
