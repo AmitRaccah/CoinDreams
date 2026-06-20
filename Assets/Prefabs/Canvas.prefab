@@ -484,7 +484,6 @@ GameObject:
   - component: {fileID: 3018937081039887853}
   - component: {fileID: 7875383920134242820}
   - component: {fileID: 2833092631926343631}
-  - component: {fileID: 6979611149803173982}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -579,22 +578,6 @@ MonoBehaviour:
   m_BlockingMask:
     serializedVersion: 2
     m_Bits: 4294967295
---- !u!114 &6979611149803173982
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 500629063445001888}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 0c930c74880c2f74198e64fddfa122b8, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.UI.Panels.PanelBackgroundVisibilityController
-  hideWhenAnyPanelOpen:
-  - {fileID: 4425688743348910674}
-  - {fileID: 4544398004835018988}
-  - {fileID: 5627066788288842023}
 --- !u!1 &662322489057674116
 GameObject:
   m_ObjectHideFlags: 0
@@ -1206,9 +1189,9 @@ RectTransform:
   - {fileID: 7121181191004626889}
   m_Father: {fileID: 4122986597107110098}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 160, y: -360}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 200, y: 80}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1413047113155038306
@@ -1242,9 +1225,9 @@ RectTransform:
   - {fileID: 3737339362094434921}
   m_Father: {fileID: 4122986597107110098}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 160, y: -405}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 200, y: 50}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &1507369862076968629
@@ -1507,6 +1490,7 @@ GameObject:
   - component: {fileID: 1352942299181656535}
   - component: {fileID: 2849092726832041058}
   - component: {fileID: 5509983350445994210}
+  - component: {fileID: 1723496983966561701}
   m_Layer: 5
   m_Name: ReturnButton
   m_TagString: Untagged
@@ -1616,41 +1600,24 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls: []
---- !u!1 &2593778544857945658
-GameObject:
+--- !u!114 &1723496983966561701
+MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 3425090052047825485}
-  m_Layer: 5
-  m_Name: ButtonHolder
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 0
---- !u!224 &3425090052047825485
-RectTransform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2593778544857945658}
-  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 2283147946901533402}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 50, y: -419.99988}
-  m_SizeDelta: {x: 100, y: 100}
-  m_Pivot: {x: 0.5, y: 0.5}
+  m_GameObject: {fileID: 2514510719083286573}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8016a97fa3fd21f499f6ba58220d9129, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.UI.Context.UiTaggedVisibility
+  hideWhenAnyTagActive:
+  - steal-session
+  - panel-open
+  requireAnyTagActive:
+  - camera-board
+  requireAllTagsActive: []
 --- !u!1 &3013943143612553274
 GameObject:
   m_ObjectHideFlags: 0
@@ -1987,6 +1954,7 @@ GameObject:
   - component: {fileID: 3579697334534129434}
   - component: {fileID: 6895260982947868497}
   - component: {fileID: 6985777121486565556}
+  - component: {fileID: 6973482411617952234}
   m_Layer: 5
   m_Name: BuildButton
   m_TagString: Untagged
@@ -2009,9 +1977,9 @@ RectTransform:
   - {fileID: 4254326821783880874}
   m_Father: {fileID: 2283147946901533402}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
-  m_AnchorMin: {x: 0, y: 1}
-  m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 62.5, y: -320.49988}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 125, y: 125}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!222 &9208595896095604222
@@ -2109,6 +2077,23 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.UI.Panels.PanelOpenButton
   panelKey: buildings
+--- !u!114 &6973482411617952234
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4308004434806755498}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8016a97fa3fd21f499f6ba58220d9129, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.UI.Context.UiTaggedVisibility
+  hideWhenAnyTagActive:
+  - camera-board
+  - steal-session
+  requireAnyTagActive: []
+  requireAllTagsActive: []
 --- !u!1 &4425688743348910674
 GameObject:
   m_ObjectHideFlags: 0
@@ -2121,13 +2106,14 @@ GameObject:
   - component: {fileID: 7788482149034822597}
   - component: {fileID: 4399074330717925138}
   - component: {fileID: 1514439057110161796}
+  - component: {fileID: 2651867362116272712}
   m_Layer: 5
   m_Name: RightSidePanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &2283147946901533402
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2141,7 +2127,6 @@ RectTransform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 3680595318558696254}
-  - {fileID: 3425090052047825485}
   m_Father: {fileID: 4612503529947298308}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 1, y: 0}
@@ -2213,6 +2198,22 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &2651867362116272712
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4425688743348910674}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8016a97fa3fd21f499f6ba58220d9129, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.UI.Context.UiTaggedVisibility
+  hideWhenAnyTagActive:
+  - panel-open
+  requireAnyTagActive: []
+  requireAllTagsActive: []
 --- !u!1 &4544398004835018988
 GameObject:
   m_ObjectHideFlags: 0
@@ -2227,13 +2228,14 @@ GameObject:
   - component: {fileID: 7942220905482278329}
   - component: {fileID: 5856878264190374597}
   - component: {fileID: 112001628745287628}
+  - component: {fileID: 3023509181247854624}
   m_Layer: 5
   m_Name: ActionPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &5910307204798961126
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2354,6 +2356,22 @@ MonoBehaviour:
   resultText: {fileID: 2879536025610071285}
   energyTimerHolder: {fileID: 209384791867893097}
   extraEnergyHolder: {fileID: 5756922860954831535}
+--- !u!114 &3023509181247854624
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 4544398004835018988}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8016a97fa3fd21f499f6ba58220d9129, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.UI.Context.UiTaggedVisibility
+  hideWhenAnyTagActive:
+  - panel-open
+  requireAnyTagActive: []
+  requireAllTagsActive: []
 --- !u!1 &4648073015354063875
 GameObject:
   m_ObjectHideFlags: 0
@@ -2579,13 +2597,14 @@ GameObject:
   - component: {fileID: 780742987582984338}
   - component: {fileID: 2880682734593559430}
   - component: {fileID: 7381746662151168358}
+  - component: {fileID: 1214508875530025058}
   m_Layer: 5
   m_Name: ResultsPanel
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &780742987582984338
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2644,6 +2663,22 @@ MonoBehaviour:
   m_FillOrigin: 0
   m_UseSpriteMesh: 0
   m_PixelsPerUnitMultiplier: 1
+--- !u!114 &1214508875530025058
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5627066788288842023}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8016a97fa3fd21f499f6ba58220d9129, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.UI.Context.UiTaggedVisibility
+  hideWhenAnyTagActive:
+  - panel-open
+  requireAnyTagActive: []
+  requireAllTagsActive: []
 --- !u!1 &5739144912254046009
 GameObject:
   m_ObjectHideFlags: 0
@@ -3062,7 +3097,7 @@ RectTransform:
   m_Father: {fileID: 5152233103691399180}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}
-  m_AnchorMax: {x: 0, y: 1}
+  m_AnchorMax: {x: 0, y: 0}
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 10, y: 0}
   m_Pivot: {x: 0.5, y: 0.5}
@@ -3981,7 +4016,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 0
+  m_IsActive: 1
 --- !u!224 &7134775993488426275
 RectTransform:
   m_ObjectHideFlags: 0
@@ -4187,6 +4222,7 @@ GameObject:
   m_Component:
   - component: {fileID: 5016444020436183116}
   - component: {fileID: 7028376070053544853}
+  - component: {fileID: 1527623771921753479}
   m_Layer: 5
   m_Name: Side
   m_TagString: Untagged
@@ -4222,7 +4258,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 8770523500152381263}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 30649d3a9faa99c48a7b1166b86bf2a0, type: 3}
   m_Name: 
@@ -4241,3 +4277,19 @@ MonoBehaviour:
   m_ChildScaleWidth: 0
   m_ChildScaleHeight: 0
   m_ReverseArrangement: 0
+--- !u!114 &1527623771921753479
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8770523500152381263}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8016a97fa3fd21f499f6ba58220d9129, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.UI.Context.UiTaggedVisibility
+  hideWhenAnyTagActive:
+  - steal-session
+  requireAnyTagActive: []
+  requireAllTagsActive: []

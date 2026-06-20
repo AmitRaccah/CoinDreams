@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: StealCard
   m_EditorClassIdentifier: Assembly-CSharp::Game.Config.Cards.CardDefinitionSO
   cardId: Steal
-  weight: 100
+  weight: 1
   effectConfigs:
   - effectType: 2
     intValue: 0
