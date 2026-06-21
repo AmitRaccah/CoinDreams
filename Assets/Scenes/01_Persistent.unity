@@ -163,6 +163,22 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 919924376522872250, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919924376522872250, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919924376522872250, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919924376522872250, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 991616119276308797, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -361,6 +377,22 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7027171845833138963, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
       propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8341998083767747400, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8341998083767747400, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8341998083767747400, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8341998083767747400, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
+      propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8478411296060281605, guid: 16b73541b3be13f4baa0e8803bb993e3, type: 3}
