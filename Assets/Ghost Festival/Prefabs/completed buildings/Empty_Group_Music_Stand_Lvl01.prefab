@@ -30,11 +30,74 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children:
   - {fileID: 332645330754974563}
+  - {fileID: 4174361833379178012}
   - {fileID: 2035442351544698155}
   - {fileID: 2283241352381080688}
   - {fileID: 7687741687027942100}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &1188248640394248155
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 5627291074376866203}
+    m_Modifications:
+    - target: {fileID: 2995964879481444807, guid: 3b9909b23260db44f9a7963a2993babc, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0.709
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995964879481444807, guid: 3b9909b23260db44f9a7963a2993babc, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: -0.0010254979
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995964879481444807, guid: 3b9909b23260db44f9a7963a2993babc, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.111
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995964879481444807, guid: 3b9909b23260db44f9a7963a2993babc, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.31115556
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995964879481444807, guid: 3b9909b23260db44f9a7963a2993babc, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995964879481444807, guid: 3b9909b23260db44f9a7963a2993babc, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.95035905
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995964879481444807, guid: 3b9909b23260db44f9a7963a2993babc, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995964879481444807, guid: 3b9909b23260db44f9a7963a2993babc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995964879481444807, guid: 3b9909b23260db44f9a7963a2993babc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 143.742
+      objectReference: {fileID: 0}
+    - target: {fileID: 2995964879481444807, guid: 3b9909b23260db44f9a7963a2993babc, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8818044025562969317, guid: 3b9909b23260db44f9a7963a2993babc, type: 3}
+      propertyPath: m_Name
+      value: Main_Carpet_Music_Stand_Lvl01 (1)
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 3b9909b23260db44f9a7963a2993babc, type: 3}
+--- !u!4 &4174361833379178012 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 2995964879481444807, guid: 3b9909b23260db44f9a7963a2993babc, type: 3}
+  m_PrefabInstance: {fileID: 1188248640394248155}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &1639310459004556123
 PrefabInstance:
   m_ObjectHideFlags: 0
