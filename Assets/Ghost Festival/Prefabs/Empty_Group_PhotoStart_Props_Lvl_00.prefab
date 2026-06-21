@@ -48,6 +48,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 290382771748635980, guid: e53e625d1b00a8b489d9f81d63f1d028, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: b2ed65e68b535974f9a32b9a8d64bb32, type: 2}
     - target: {fileID: 919132149155446097, guid: e53e625d1b00a8b489d9f81d63f1d028, type: 3}
       propertyPath: m_Name
       value: Empty_Group_PhotoStart_Props_Lvl_00
