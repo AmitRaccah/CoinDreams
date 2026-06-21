@@ -143,6 +143,26 @@ export const executeDraw = onCall<AuthoritativeDrawRequest, Promise<Authoritativ
                             stealTriggerId = effect.stringValue ?? "";
                             break;
                         }
+                        case AuthoritativeDrawEffectType.AddShields: {
+                            // Shield rule: drawing at multiplier M wants to
+                            // add M shields. Fill up to the cap, refund the
+                            // overflow as energy (also capped). Without this
+                            // refund the player loses value at high multipliers
+                            // once the cap is reached — the user-facing rule is
+                            // "you never lose a draw outcome to the cap".
+                            const requested = scaleAmount(effect.intValue, multiplier);
+                            const space = snapshot.maxShields - snapshot.shields;
+                            const filled = space > 0 ? Math.min(requested, space) : 0;
+                            const overflow = requested - filled;
+                            if (filled > 0) {
+                                snapshot.shields = clampToInt32(snapshot.shields + filled);
+                            }
+                            if (overflow > 0) {
+                                const next = snapshot.currentEnergy + overflow;
+                                snapshot.currentEnergy = Math.min(snapshot.regenMaxEnergy, next);
+                            }
+                            break;
+                        }
                         default: {
                             // Unknown effect types are silently ignored to
                             // match AuthoritativeEffectRegistry.TryCreate

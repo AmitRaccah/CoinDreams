@@ -33,6 +33,20 @@ namespace Game.Infrastructure.Persistence
         [FirestoreProperty("lastRegenUtcTicks")]
         public long LastRegenUtcTicks { get; set; }
 
+        // Server-side helpers (executeDraw / executeSteal / executeVoodooStab)
+        // read and write these field names directly. Without these properties
+        // the Firestore SDK logs "No writable property for Firestore field …"
+        // every read and silently drops the values, so client-side shields
+        // never reflect server-side state.
+        [FirestoreProperty("regenMaxEnergy")]
+        public int RegenMaxEnergyServer { get; set; }
+
+        [FirestoreProperty("shields")]
+        public int Shields { get; set; }
+
+        [FirestoreProperty("maxShields")]
+        public int MaxShields { get; set; }
+
         [FirestoreProperty("villageLevels")]
         public List<int> VillageLevels { get; set; } = new List<int>(0);
 
@@ -57,6 +71,11 @@ namespace Game.Infrastructure.Persistence
                 Coins = saveData.coins,
                 CurrentEnergy = saveData.currentEnergy,
                 MaxEnergy = saveData.maxEnergy,
+                // Mirror to the server's field name so legacy doc writers
+                // (this class) and the server agree on the value.
+                RegenMaxEnergyServer = saveData.maxEnergy,
+                Shields = saveData.shields,
+                MaxShields = saveData.maxShields,
                 RegenIntervalSeconds = saveData.regenIntervalSeconds,
                 LastRegenUtcTicks = saveData.lastRegenUtcTicks,
                 VillageLevels = ToIntList(saveData.villageLevels),
@@ -73,9 +92,14 @@ namespace Game.Infrastructure.Persistence
             saveData.schemaVersion = SchemaVersion;
             saveData.coins = Coins;
             saveData.currentEnergy = CurrentEnergy;
-            saveData.maxEnergy = MaxEnergy;
+            // Prefer the server-written regenMaxEnergy if present; fall back
+            // to the legacy maxEnergy field for documents written before the
+            // schema migration.
+            saveData.maxEnergy = RegenMaxEnergyServer > 0 ? RegenMaxEnergyServer : MaxEnergy;
             saveData.regenIntervalSeconds = RegenIntervalSeconds;
             saveData.lastRegenUtcTicks = LastRegenUtcTicks;
+            saveData.shields = Shields;
+            saveData.maxShields = MaxShields;
             saveData.villageLevels = ToIntArray(VillageLevels);
             saveData.processedImpactIds = ToStringArray(ProcessedImpactIds);
             return saveData;

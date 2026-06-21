@@ -101,16 +101,29 @@ namespace Game.Runtime.Steal
                 return;
             }
 
+            // Every stab — including the final one that breaks the doll —
+            // gets a flash. The previous version returned early on broken
+            // and the player saw only two flashes (or one, when stabs land
+            // within the flash window) instead of three.
+            ApplyColor(stabFlashColor);
+            CancelInvoke(nameof(RestoreBaseColor));
+
             if (signal.IsDollBroken)
             {
                 isBroken = true;
-                ApplyColor(brokenColor);
-                return;
+                // After the flash settles, switch to the permanent broken
+                // tint instead of restoring the base color.
+                Invoke(nameof(SettleBrokenColor), StabFlashSeconds);
             }
+            else
+            {
+                Invoke(nameof(RestoreBaseColor), StabFlashSeconds);
+            }
+        }
 
-            ApplyColor(stabFlashColor);
-            CancelInvoke(nameof(RestoreBaseColor));
-            Invoke(nameof(RestoreBaseColor), StabFlashSeconds);
+        private void SettleBrokenColor()
+        {
+            ApplyColor(brokenColor);
         }
 
         private void HandleSessionEnded(VoodooSessionEndedSignal signal)

@@ -40,26 +40,16 @@ namespace Game.Runtime.Cards
         private void HandleClick(DrawButtonClickedSignal signal)
         {
             bool hasSession = sessionStateReader?.HasActiveSession == true;
-            Debug.Log("[DrawButtonRouter] click received — hasSession=" + hasSession
-                + " readerNull=" + (sessionStateReader == null));
 
             if (hasSession)
             {
                 // SessionId is intentionally empty — the coordinator resolves the
                 // authoritative active session id from its own state.
-                if (stabPublisher != null)
-                {
-                    stabPublisher.Publish(new VoodooStabRequestedSignal(string.Empty));
-                    Debug.Log("[DrawButtonRouter] routed to STAB.");
-                }
+                stabPublisher?.Publish(new VoodooStabRequestedSignal(string.Empty));
                 return;
             }
 
-            if (drawPublisher != null)
-            {
-                drawPublisher.Publish(default);
-                Debug.Log("[DrawButtonRouter] routed to DRAW.");
-            }
+            drawPublisher?.Publish(default);
         }
     }
 }

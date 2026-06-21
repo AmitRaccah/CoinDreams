@@ -10,6 +10,7 @@ namespace Game.Infrastructure.Persistence
         bool IsReady { get; }
         string AuthenticatedPlayerId { get; }
         IPlayerRepository? Repository { get; }
+        IPlayerLiveSync? LiveSync { get; }
 
         Task<bool> InitializeAsync(
             bool forceFreshAnonymousIdentity,

@@ -36,6 +36,12 @@ export interface PlayerProfileSnapshot {
     regenIntervalSeconds: number;
     lastRegenUtcTicks: number;
 
+    // Shield count + cap. Server is authoritative for both. maxShields lets
+    // the client UI render the correct number of shield slots dynamically;
+    // changing this server-side propagates to clients on the next snapshot.
+    shields: number;
+    maxShields: number;
+
     villageLevels: number[];
     processedImpactIds: string[];
 
@@ -52,6 +58,7 @@ export enum AuthoritativeDrawEffectType {
     AddCoins = 0,
     AddEnergy = 1,
     LaunchSteal = 2,
+    AddShields = 3,
 }
 
 export interface AuthoritativeDrawEffectDefinition {

@@ -89,6 +89,7 @@ namespace Game.Domain.Cards
             RewardContext rewardContext = new RewardContext(
                 profile.Energy,
                 profile.Currency,
+                profile.Shields,
                 modifiers,
                 stealCardLauncher);
 

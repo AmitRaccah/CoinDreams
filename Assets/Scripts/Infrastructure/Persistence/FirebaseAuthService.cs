@@ -12,6 +12,7 @@ namespace Game.Infrastructure.Persistence
         private readonly FirebaseConnection connection = new FirebaseConnection();
         private readonly ITimeProvider timeProvider;
         private IPlayerRepository? repository;
+        private IPlayerLiveSync? liveSync;
 
         public FirebaseAuthService(ITimeProvider timeProvider)
         {
@@ -23,6 +24,8 @@ namespace Game.Infrastructure.Persistence
         public string AuthenticatedPlayerId => connection.AuthenticatedPlayerId;
 
         public IPlayerRepository? Repository => repository;
+
+        public IPlayerLiveSync? LiveSync => liveSync;
 
         public async Task<bool> InitializeAsync(
             bool forceFreshAnonymousIdentity,
@@ -43,6 +46,12 @@ namespace Game.Infrastructure.Persistence
                 connection.Firestore,
                 playersCollectionName,
                 timeProvider);
+            // LiveSync shares the same Firestore connection and collection.
+            // Created here so callers (PlayerLiveSyncRunner) can subscribe
+            // the instant auth flips to ready.
+            liveSync = new FirestorePlayerLiveSync(
+                connection.Firestore,
+                playersCollectionName);
             return true;
         }
     }

@@ -117,6 +117,12 @@ namespace Game.Domain.Energy
             ApplyRegenInternal();
 
             long nextEnergy = (long)currentEnergy + amount;
+            // Intentionally NOT capped at regenMaxEnergy — over-cap state
+            // is part of the UX (the "+X" overflow indicator). Regen will
+            // not refill above max, but rewards (AddEnergy / Shield refund)
+            // can. The Shield refund path now adds the full overflow even
+            // when current >= max, so the player never loses the cost they
+            // paid to draw a Shield at full shields.
             if (nextEnergy > int.MaxValue)
             {
                 currentEnergy = int.MaxValue;

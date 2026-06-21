@@ -8,7 +8,8 @@ namespace Game.Domain.Cards
     {
         AddCoins = 0,
         AddEnergy = 1,
-        LaunchSteal = 2
+        LaunchSteal = 2,
+        AddShields = 3
     }
 
     public sealed class AuthoritativeDrawEffectDefinition

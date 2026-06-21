@@ -6,6 +6,7 @@ using Game.Runtime.Scenes;
 using Game.Runtime.Steal;
 using Game.Runtime.UI.Buildings;
 using Game.Runtime.UI.Panels;
+using Game.Runtime.UI.Shields;
 using Game.Runtime.Village;
 using UnityEngine;
 using VContainer;
@@ -87,6 +88,7 @@ namespace Game.Composition
                 PersistentLifetimeScope.InjectAllInScenes<BuildingsPanel>(container);
                 PersistentLifetimeScope.InjectAllInScenes<BuildingsPanelPresenter>(container);
                 PersistentLifetimeScope.InjectAllInScenes<Game.Runtime.UI.Context.UiTaggedVisibility>(container);
+                PersistentLifetimeScope.InjectAllInScenes<ShieldsHudPresenter>(container);
             });
         }
 

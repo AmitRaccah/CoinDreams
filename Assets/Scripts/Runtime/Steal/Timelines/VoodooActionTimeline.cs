@@ -53,10 +53,6 @@ namespace Game.Runtime.Steal.Timelines
                 VoodooStabResponse response = await client.ExecuteVoodooStabAsync(sessionId);
                 ct.ThrowIfCancellationRequested();
 
-                Debug.Log("[VoodooActionTimeline] stab response: status=" + response.Status
-                    + " stolen=" + response.StolenAmount + " remaining=" + response.StabsRemaining
-                    + " broken=" + response.IsDollBroken);
-
                 if (response.Status == VoodooStabStatus.Success
                     || response.Status == VoodooStabStatus.VictimEmpty)
                 {

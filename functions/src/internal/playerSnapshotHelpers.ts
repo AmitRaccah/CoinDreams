@@ -20,6 +20,23 @@ export const PLAYERS_COLLECTION = "players";
 /** Mirrors PlayerProfile.MaxProcessedImpactIds (C#). */
 export const MAX_PROCESSED_IMPACT_IDS = 10000;
 
+/**
+ * Default shield cap for brand-new players + fallback when an older doc is
+ * missing the `maxShields` field. Mirrors C#
+ * Game.Domain.Shields.ShieldDefaults.DefaultMaxShields. Changing this value
+ * applies on the next snapshot load for every player whose doc has the
+ * pre-shield-system default of 0.
+ */
+export const DEFAULT_MAX_SHIELDS = 3;
+
+/**
+ * Multiplier the thief receives when the victim has a shield active.
+ * 0.5 = "the thief still gets half of what they would have stolen, but the
+ * victim loses nothing". Future game balance can move this to a Firestore
+ * config doc; for now a single constant is the simplest source of truth.
+ */
+export const SHIELD_DEFLECTION_RATIO = 0.5;
+
 /** Number of .NET ticks per millisecond — used for tick<->ms conversion. */
 export const TICKS_PER_MILLISECOND = 10000;
 
@@ -69,7 +86,8 @@ export async function loadSnapshot(
     }
 
     // Defensive normalization — older docs may pre-date a field; keep parity
-    // with the C# PlayerProfileSnapshot constructor defaults.
+    // with the C# PlayerProfileSnapshot constructor defaults. Shield-system
+    // defaults mirror Game.Domain.Shields.ShieldDefaults (0 / 3).
     const snapshot: PlayerProfileSnapshot = {
         playerId: data.playerId ?? playerId,
         revision: data.revision ?? 0,
@@ -78,6 +96,8 @@ export async function loadSnapshot(
         regenMaxEnergy: data.regenMaxEnergy ?? 0,
         regenIntervalSeconds: data.regenIntervalSeconds ?? 0,
         lastRegenUtcTicks: data.lastRegenUtcTicks ?? 0,
+        shields: data.shields ?? 0,
+        maxShields: data.maxShields && data.maxShields > 0 ? data.maxShields : DEFAULT_MAX_SHIELDS,
         villageLevels: Array.isArray(data.villageLevels) ? [...data.villageLevels] : [],
         processedImpactIds: Array.isArray(data.processedImpactIds) ? [...data.processedImpactIds] : [],
         updatedAtUtcTicks: data.updatedAtUtcTicks ?? 0,

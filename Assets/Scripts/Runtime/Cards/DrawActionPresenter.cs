@@ -196,7 +196,6 @@ namespace Game.Runtime.Cards
                 return;
             }
             stealCardLauncher.Launch(result.StealTriggerId, pendingMultiplier);
-            Debug.Log("[DrawActionPresenter] StealCardLauncher fired with trigger '" + result.StealTriggerId + "' and multiplier=" + pendingMultiplier + ".", this);
         }
 
         private void PublishResult(AuthoritativeDrawResult result)

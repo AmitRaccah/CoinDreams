@@ -13,7 +13,7 @@ MonoBehaviour:
   m_Name: CardDefinition 1
   m_EditorClassIdentifier: Assembly-CSharp::Game.Config.Cards.CardDefinitionSO
   cardId: Ten Energy
-  weight: 1
+  weight: 2
   effectConfigs:
   - effectType: 1
     intValue: 10
