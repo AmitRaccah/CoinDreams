@@ -8,7 +8,7 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: Shop_Stand_Lvl02
-    second: {fileID: 2100000, guid: 4cbc7ed002d026f4bad8153b956f71a2, type: 2}
+    second: {fileID: 2100000, guid: cca42ed2bd9680d46a4bd6d76346dfc4, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
