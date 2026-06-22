@@ -143,6 +143,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6370196284417613215, guid: 19e28498819bf884a855c0d053ea87a9, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 7a65aa5bed024eb4daf2df5d7ce6b292, type: 2}
     - target: {fileID: 6917626855863080518, guid: 19e28498819bf884a855c0d053ea87a9, type: 3}
       propertyPath: m_Name
       value: Sign__Shop_Stand_Lvl00

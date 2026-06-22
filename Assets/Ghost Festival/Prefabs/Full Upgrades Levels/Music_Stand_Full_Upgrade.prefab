@@ -91,6 +91,7 @@ Transform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
+  - {fileID: 4449620652229726025}
   - {fileID: 6639128726582073931}
   - {fileID: 2646106194622389495}
   - {fileID: 2272836880326661727}
@@ -106,7 +107,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 1680968446318324157, guid: ed650ffe89d95db409673441194d15ca, type: 3}
       propertyPath: m_Name
-      value: Empty_Group_Music_Stand_Lvl01
+      value: Empty_Group_Music_Stand_Lvl_01
       objectReference: {fileID: 0}
     - target: {fileID: 5627291074376866203, guid: ed650ffe89d95db409673441194d15ca, type: 3}
       propertyPath: m_LocalPosition.x
@@ -211,7 +212,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8549693386608074968, guid: 4fb6e22e458723045871b27a7c360245, type: 3}
       propertyPath: m_Name
-      value: Empty_Group_Music_Stand_Lvl02
+      value: Empty_Group_Music_Stand_Lvl_02
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -233,7 +234,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 5353125100539879645, guid: 217f6bb2ea05f4d4b8365937fb2a112e, type: 3}
       propertyPath: m_Name
-      value: Empty_Group_Music_Stand_Lvl03
+      value: Empty_Group_Music_Stand_Lvl_03
       objectReference: {fileID: 0}
     - target: {fileID: 6036537978287901010, guid: 217f6bb2ea05f4d4b8365937fb2a112e, type: 3}
       propertyPath: m_LocalPosition.x
@@ -287,4 +288,66 @@ PrefabInstance:
 Transform:
   m_CorrespondingSourceObject: {fileID: 6036537978287901010, guid: 217f6bb2ea05f4d4b8365937fb2a112e, type: 3}
   m_PrefabInstance: {fileID: 5497956536443887373}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &7293220933497161726
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 4849206184280965785}
+    m_Modifications:
+    - target: {fileID: 5160158426457794442, guid: 3f962f6fecfe2534f901106a394bb010, type: 3}
+      propertyPath: m_Name
+      value: Empty_Group_Music_Stand_Lvl_00
+      objectReference: {fileID: 0}
+    - target: {fileID: 6410455860961577143, guid: 3f962f6fecfe2534f901106a394bb010, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6410455860961577143, guid: 3f962f6fecfe2534f901106a394bb010, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6410455860961577143, guid: 3f962f6fecfe2534f901106a394bb010, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6410455860961577143, guid: 3f962f6fecfe2534f901106a394bb010, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6410455860961577143, guid: 3f962f6fecfe2534f901106a394bb010, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6410455860961577143, guid: 3f962f6fecfe2534f901106a394bb010, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6410455860961577143, guid: 3f962f6fecfe2534f901106a394bb010, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6410455860961577143, guid: 3f962f6fecfe2534f901106a394bb010, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6410455860961577143, guid: 3f962f6fecfe2534f901106a394bb010, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6410455860961577143, guid: 3f962f6fecfe2534f901106a394bb010, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents: []
+  m_SourcePrefab: {fileID: 100100000, guid: 3f962f6fecfe2534f901106a394bb010, type: 3}
+--- !u!4 &4449620652229726025 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 6410455860961577143, guid: 3f962f6fecfe2534f901106a394bb010, type: 3}
+  m_PrefabInstance: {fileID: 7293220933497161726}
   m_PrefabAsset: {fileID: 0}

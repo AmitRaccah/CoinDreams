@@ -86,6 +86,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Sign_Music_Stand_Lvl00
       objectReference: {fileID: 0}
+    - target: {fileID: 5192241394426297233, guid: e36fdbd1fb1c64747bcd1a0396510e30, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: 7a65aa5bed024eb4daf2df5d7ce6b292, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

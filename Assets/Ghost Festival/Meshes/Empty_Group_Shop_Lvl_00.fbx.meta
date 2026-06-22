@@ -8,12 +8,12 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: Crate_Props
-    second: {fileID: 2100000, guid: a0969ee70ea4d9a4c80185aa361e39f8, type: 2}
+    second: {fileID: 2100000, guid: b2ed65e68b535974f9a32b9a8d64bb32, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: Signs_lvl_00
-    second: {fileID: 2100000, guid: c5ef778cdf0f8af48a5a7ebc7349f99a, type: 2}
+    second: {fileID: 2100000, guid: 7a65aa5bed024eb4daf2df5d7ce6b292, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0

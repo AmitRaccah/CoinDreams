@@ -18,12 +18,12 @@ ModelImporter:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: Alter_Stone_Top_Honed.002
-    second: {fileID: 2100000, guid: 110a32b4f0516a943ac8fbb447e4c311, type: 2}
+    second: {fileID: 2100000, guid: 3e6d2a745845fef409073754290c1ab8, type: 2}
   - first:
       type: UnityEngine:Material
       assembly: UnityEngine.CoreModule
       name: Alter_Wax_Dark_Ivory.002
-    second: {fileID: 2100000, guid: 05822eabbad574144ba7ee5aab1c8e65, type: 2}
+    second: {fileID: 2100000, guid: 3e6d2a745845fef409073754290c1ab8, type: 2}
   materials:
     materialImportMode: 2
     materialName: 0
