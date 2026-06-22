@@ -213,7 +213,8 @@ PrefabInstance:
       propertyPath: m_Name
       value: BuildingsPanel
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 5071236051897568461, guid: 5aee2c3af428c064bb66aebc39cb1b5c, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -328,7 +329,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3412627275923740620, guid: ad2c2a34ade939b488862a3e315f48af, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -28
       objectReference: {fileID: 0}
     - target: {fileID: 3412627275923740620, guid: ad2c2a34ade939b488862a3e315f48af, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -378,7 +379,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 7988223342793550328, guid: ad2c2a34ade939b488862a3e315f48af, type: 3}
+    - {fileID: 3348403370715471425, guid: ad2c2a34ade939b488862a3e315f48af, type: 3}
+    - {fileID: 1028454315205183267, guid: ad2c2a34ade939b488862a3e315f48af, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -478,7 +482,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7247895968678616171, guid: a42e25621a26b7a4a8e77c2837e7317e, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 10
+      value: -10
       objectReference: {fileID: 0}
     - target: {fileID: 7247895968678616171, guid: a42e25621a26b7a4a8e77c2837e7317e, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -492,7 +496,9 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 2567938368620784650, guid: a42e25621a26b7a4a8e77c2837e7317e, type: 3}
+    - {fileID: 2412527029923806248, guid: a42e25621a26b7a4a8e77c2837e7317e, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -515,6 +521,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 4612503529947298308}
     m_Modifications:
+    - target: {fileID: 4999484468565478284, guid: b05e7048b34e04246951d75cad37e3e9, type: 3}
+      propertyPath: m_Name
+      value: ButtonPlaceHolder
+      objectReference: {fileID: 0}
     - target: {fileID: 5453041018058138449, guid: b05e7048b34e04246951d75cad37e3e9, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -613,7 +623,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 6186635268888622425, guid: b05e7048b34e04246951d75cad37e3e9, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -28
       objectReference: {fileID: 0}
     - target: {fileID: 6186635268888622425, guid: b05e7048b34e04246951d75cad37e3e9, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -647,7 +657,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 5072409927097793673, guid: b05e7048b34e04246951d75cad37e3e9, type: 3}
+    - {fileID: 5455938886718814075, guid: b05e7048b34e04246951d75cad37e3e9, type: 3}
+    - {fileID: 8343506773279774683, guid: b05e7048b34e04246951d75cad37e3e9, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []
@@ -763,7 +776,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 710051481831085386, guid: 1ff2c5f88df3f72408933b542e3c5476, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: -55
+      value: -83
       objectReference: {fileID: 0}
     - target: {fileID: 710051481831085386, guid: 1ff2c5f88df3f72408933b542e3c5476, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -982,7 +995,8 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
+    m_RemovedComponents:
+    - {fileID: 4788577123548215347, guid: fb34a4ee7660ec34d9caff3b5ff244c1, type: 3}
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
     m_AddedComponents: []

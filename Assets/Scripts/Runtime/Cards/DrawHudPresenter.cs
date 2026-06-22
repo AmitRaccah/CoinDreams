@@ -139,7 +139,7 @@ namespace Game.Runtime.Cards
 
             if (energyText != null && energyChanged)
             {
-                energyText.SetText("Energy: {0:0}/{1:0}", baseEnergy, maxEnergyValue);
+                energyText.SetText("{0:0}/{1:0}", baseEnergy, maxEnergyValue);
             }
 
             if (extraEnergyText != null && extraChanged)
