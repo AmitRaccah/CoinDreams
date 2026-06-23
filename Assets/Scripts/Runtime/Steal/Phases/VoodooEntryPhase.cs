@@ -10,26 +10,25 @@ using MessagePipe;
 using UnityEngine;
 using VContainer;
 
-namespace Game.Runtime.Steal.Timelines
+namespace Game.Runtime.Steal.Phases
 {
     /// <summary>
-    /// Entry timeline for the voodoo-steal mini-game. The sequence today is
-    /// minimal — call the server, on success publish the session-started
-    /// signal (which kicks off presenter cinematics) and return the new
-    /// session to the coordinator that owns its lifetime. Future steps
-    /// (animator.Play("DollAppear"), audio cues, VFX bursts) slot inside
-    /// RunAsync without touching the coordinator or presenters.
+    /// Entry phase of the voodoo-steal mini-game. Calls the server to begin
+    /// a session, on success publishes the session-started signal (which
+    /// kicks off presenter cinematics) and returns the new session to the
+    /// coordinator that owns its lifetime. Future steps (doll appear,
+    /// audio, VFX) slot inside RunAsync without touching callers.
     ///
     /// SRP: only this one sequence. State ownership is the coordinator's;
     /// visual reaction is the presenters' (driven by the published signal).
     /// </summary>
-    public sealed class VoodooEntryTimeline
+    public sealed class VoodooEntryPhase
     {
         private readonly IVoodooStealClient client;
         private readonly IPublisher<VoodooSessionStartedSignal> sessionStartedPublisher;
 
         [Inject]
-        public VoodooEntryTimeline(
+        public VoodooEntryPhase(
             IVoodooStealClient client,
             IPublisher<VoodooSessionStartedSignal> sessionStartedPublisher)
         {
@@ -51,23 +50,22 @@ namespace Game.Runtime.Steal.Timelines
 
             try
             {
+                Debug.Log("[VoodooEntryPhase T=" + Time.time.ToString("F3") + "] BeginVoodooSession CALLING multiplier=" + multiplier);
                 VoodooSessionBeginResponse response = await client.BeginVoodooSessionAsync(multiplier);
+                Debug.Log("[VoodooEntryPhase T=" + Time.time.ToString("F3") + "] BeginVoodooSession RESPONSE status=" + response.Status + " sessionId=" + response.SessionId);
                 ct.ThrowIfCancellationRequested();
 
                 if (response.Status != VoodooSessionBeginStatus.Success)
                 {
-                    Debug.LogWarning("[VoodooEntryTimeline] BeginVoodooSession failed: "
+                    Debug.LogWarning("[VoodooEntryPhase] BeginVoodooSession failed: "
                         + response.Status + " — " + response.Message);
                     return null;
                 }
 
-                // Publish first: presenters (Voodoo3DDollPresenter,
-                // VoodooVictimNamePresenter) react to this and play their
+                // Publish first: presenters react to this and play their
                 // cinematics. The coordinator stores the returned session
                 // immediately after we return, so any subsequent button
-                // press will see HasActiveSession=true. None of the current
-                // subscribers query HasActiveSession synchronously inside
-                // their handler, so the order here is safe.
+                // press will see HasActiveSession=true.
                 sessionStartedPublisher.Publish(new VoodooSessionStartedSignal(
                     response.SessionId,
                     response.VictimPlayerId,
@@ -88,7 +86,7 @@ namespace Game.Runtime.Steal.Timelines
             }
             catch (Exception ex)
             {
-                Debug.LogError("[VoodooEntryTimeline] BeginVoodooSession threw: " + ex);
+                Debug.LogError("[VoodooEntryPhase] BeginVoodooSession threw: " + ex);
                 return null;
             }
         }

@@ -10,33 +10,32 @@ using VContainer;
 namespace Game.Runtime.Steal
 {
     /// <summary>
-    /// Mid-session HUD bridge — listens to per-stab server responses and adds
-    /// the stolen amount directly into the local CurrencyService so the coin
-    /// counter ticks up immediately. The full snapshot apply is intentionally
-    /// skipped in the coordinator (it would fire ProfileReplaced and tear the
-    /// session down between stabs); this sink handles the optimistic update
-    /// for the only field that visibly changes per stab. The next routine
-    /// snapshot load reconciles any drift with the server.
+    /// Mid-session HUD bridge — adds the stolen coin amount into the local
+    /// CurrencyService AFTER the doll's Feel animation finishes, so the coin
+    /// counter ticks up in sync with the visual rather than the instant the
+    /// server replies. The full snapshot apply is intentionally skipped in
+    /// the coordinator (it would fire ProfileReplaced and tear the session
+    /// down between stabs); this sink handles the optimistic update for the
+    /// only field that visibly changes per stab. The next routine snapshot
+    /// load reconciles any drift with the server.
     ///
-    /// SRP: this class does ONE thing — translate stab signals into a coin
-    /// delta on PlayerRuntimeContext. It knows nothing about UI bindings; it
-    /// trusts NotifyStateChanged inside PlayerRuntimeContext to wake them up.
+    /// SRP: this class does ONE thing — translate the animation-complete
+    /// signal into a coin delta on PlayerRuntimeContext. It knows nothing
+    /// about UI bindings; PlayerRuntimeContext.NotifyStateChanged wakes them.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class VoodooStabHudSync : MonoBehaviour
     {
-        private const int StatusSuccess = 0;
-
-        [Inject] private ISubscriber<VoodooStabResolvedSignal>? stabResolvedSubscriber;
+        [Inject] private ISubscriber<VoodooStabAnimationCompletedSignal>? animationCompletedSubscriber;
         [Inject] private PlayerRuntimeContext? playerRuntimeContext;
 
         private IDisposable? subscription;
 
         private void OnEnable()
         {
-            if (stabResolvedSubscriber != null && subscription == null)
+            if (animationCompletedSubscriber != null && subscription == null)
             {
-                subscription = stabResolvedSubscriber.Subscribe(HandleStabResolved);
+                subscription = animationCompletedSubscriber.Subscribe(HandleAnimationCompleted);
             }
         }
 
@@ -46,10 +45,8 @@ namespace Game.Runtime.Steal
             subscription = null;
         }
 
-        private void HandleStabResolved(VoodooStabResolvedSignal signal)
+        private void HandleAnimationCompleted(VoodooStabAnimationCompletedSignal signal)
         {
-            // VictimEmpty stabs (status 4) have stolen=0, no point dispatching.
-            if (signal.Status != StatusSuccess) return;
             if (signal.StolenAmount <= 0) return;
             if (playerRuntimeContext == null)
             {

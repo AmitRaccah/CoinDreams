@@ -9,25 +9,25 @@ using MessagePipe;
 using UnityEngine;
 using VContainer;
 
-namespace Game.Runtime.Steal.Timelines
+namespace Game.Runtime.Steal.Phases
 {
     /// <summary>
-    /// Per-stab timeline. Calls the server, on a useful response publishes
-    /// the stab-resolved signal (which kicks off the doll flash + HUD coin
-    /// bump in their respective presenters), and returns an outcome so the
-    /// coordinator can mutate the session state and decide whether the next
-    /// step is the exit timeline.
+    /// Per-stab phase. Calls the server, on a useful response publishes the
+    /// stab-resolved signal (which kicks off the doll Feel chain in the
+    /// presenter and ultimately the HUD coin bump after the animation
+    /// settles), and returns an outcome so the coordinator can mutate
+    /// the session state and decide whether the next step is the exit phase.
     ///
     /// SRP: only the per-stab sequence. Session mutation (RegisterStab),
     /// teardown decision, and exit invocation live in the coordinator.
     /// </summary>
-    public sealed class VoodooActionTimeline
+    public sealed class VoodooActionPhase
     {
         private readonly IVoodooStealClient client;
         private readonly IPublisher<VoodooStabResolvedSignal> stabResolvedPublisher;
 
         [Inject]
-        public VoodooActionTimeline(
+        public VoodooActionPhase(
             IVoodooStealClient client,
             IPublisher<VoodooStabResolvedSignal> stabResolvedPublisher)
         {
@@ -50,29 +50,24 @@ namespace Game.Runtime.Steal.Timelines
 
             try
             {
+                Debug.Log("[VoodooActionPhase T=" + Time.time.ToString("F3") + "] ExecuteVoodooStab CALLING sessionId=" + sessionId);
                 VoodooStabResponse response = await client.ExecuteVoodooStabAsync(sessionId);
+                Debug.Log("[VoodooActionPhase T=" + Time.time.ToString("F3") + "] ExecuteVoodooStab RESPONSE status=" + response.Status + " stolen=" + response.StolenAmount + " broken=" + response.IsDollBroken);
                 ct.ThrowIfCancellationRequested();
 
                 if (response.Status == VoodooStabStatus.Success
                     || response.Status == VoodooStabStatus.VictimEmpty)
                 {
-                    // Snapshot apply is intentionally SKIPPED here (same as
-                    // the legacy coordinator). PlayerRuntimeContext.LoadSnapshot
-                    // treats every refresh as a profile replacement and fires
-                    // ProfileReplaced, which the coordinator listens to and
-                    // ends the active session — that closed the doll between
-                    // every stab. The optimistic HUD update via VoodooStabHudSync
-                    // covers the player-facing coin balance until the next
-                    // routine load/autosave. Re-enable once LoadSnapshot can
-                    // distinguish data-refresh from real profile swaps.
-                    //   if (response.ThiefSnapshot != null && snapshotService != null)
-                    //   { snapshotService.OnAuthoritativeSnapshotApplied(response.ThiefSnapshot); }
+                    // Snapshot apply is intentionally SKIPPED here.
+                    // PlayerRuntimeContext.LoadSnapshot treats every refresh as
+                    // a profile replacement and fires ProfileReplaced, which
+                    // the coordinator listens to and ends the active session
+                    // — that closed the doll between every stab. The optimistic
+                    // HUD update via VoodooStabHudSync covers the player-facing
+                    // coin balance until the next routine load/autosave.
 
-                    // Publish defensively — the legacy coordinator wraps this
-                    // because a sync subscriber that triggers ProfileReplaced
-                    // would null the session field mid-publish. We don't read
-                    // activeSession here at all, but a broken subscriber
-                    // shouldn't take down the whole stab outcome.
+                    // Publish defensively — a sync subscriber that triggers
+                    // ProfileReplaced would null the session field mid-publish.
                     try
                     {
                         stabResolvedPublisher.Publish(new VoodooStabResolvedSignal(
@@ -84,7 +79,7 @@ namespace Game.Runtime.Steal.Timelines
                     }
                     catch (Exception publishEx)
                     {
-                        Debug.LogWarning("[VoodooActionTimeline] publish failed (continuing): " + publishEx);
+                        Debug.LogWarning("[VoodooActionPhase] publish failed (continuing): " + publishEx);
                     }
 
                     return VoodooActionOutcome.Stab(
@@ -93,11 +88,11 @@ namespace Game.Runtime.Steal.Timelines
                         response.IsDollBroken);
                 }
 
-                Debug.LogWarning("[VoodooActionTimeline] ExecuteVoodooStab failed: "
+                Debug.LogWarning("[VoodooActionPhase] ExecuteVoodooStab failed: "
                     + response.Status + " — " + response.Message);
 
                 // Session is gone or unusable on the server side — tell the
-                // coordinator to tear down its mirror via the exit timeline.
+                // coordinator to tear down its mirror via the exit phase.
                 if (response.Status == VoodooStabStatus.SessionNotFound
                     || response.Status == VoodooStabStatus.SessionExhausted
                     || response.Status == VoodooStabStatus.SessionExpired)
@@ -113,7 +108,7 @@ namespace Game.Runtime.Steal.Timelines
             }
             catch (Exception ex)
             {
-                Debug.LogError("[VoodooActionTimeline] ExecuteVoodooStab threw: " + ex);
+                Debug.LogError("[VoodooActionPhase] ExecuteVoodooStab threw: " + ex);
                 return VoodooActionOutcome.NoOp();
             }
         }

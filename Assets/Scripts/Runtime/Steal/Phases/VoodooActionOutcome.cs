@@ -1,13 +1,13 @@
 #nullable enable
 
-namespace Game.Runtime.Steal.Timelines
+namespace Game.Runtime.Steal.Phases
 {
     /// <summary>
-    /// Result of running <see cref="VoodooActionTimeline"/>. The timeline owns
+    /// Result of running <see cref="VoodooActionPhase"/>. The phase owns
     /// the server call + signal publish; this struct is the data the
     /// coordinator needs to update its own state (mutate the active session,
-    /// decide whether to run the exit timeline). Keeping this as a readonly
-    /// struct: zero GC and immutable communication across the timeline /
+    /// decide whether to run the exit phase). Keeping this as a readonly
+    /// struct: zero GC and immutable communication across the phase /
     /// coordinator boundary.
     /// </summary>
     public readonly struct VoodooActionOutcome
@@ -23,14 +23,14 @@ namespace Game.Runtime.Steal.Timelines
 
         /// <summary>
         /// True when the doll just broke this stab — coordinator should run
-        /// the exit timeline with dollBroken=true.
+        /// the exit phase with dollBroken=true.
         /// </summary>
         public readonly bool DollBroken;
 
         /// <summary>
         /// True when the server reported the session is no longer usable
         /// (NotFound, Exhausted, Expired). Coordinator should run the exit
-        /// timeline with dollBroken=false to clean up the UI mirror.
+        /// phase with dollBroken=false to clean up the UI mirror.
         /// </summary>
         public readonly bool SessionExpired;
 

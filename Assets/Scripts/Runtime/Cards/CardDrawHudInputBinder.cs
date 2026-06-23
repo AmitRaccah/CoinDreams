@@ -34,8 +34,13 @@ namespace Game.Runtime.Cards
             wired = false;
         }
 
+        private int drawClickCounter;
+
         private void HandleDraw()
         {
+            drawClickCounter++;
+            Debug.Log("[CardDrawHudInputBinder T=" + Time.time.ToString("F3") + "] DRAW button clicked #" + drawClickCounter, this);
+
             if (drawPublisher == null)
             {
                 Debug.LogWarning(

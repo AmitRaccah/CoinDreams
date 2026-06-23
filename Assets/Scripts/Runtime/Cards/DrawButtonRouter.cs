@@ -13,6 +13,11 @@ namespace Game.Runtime.Cards
     // of two downstream intents depending on voodoo-steal session state. Keeps
     // the UI binder ignorant of game state and keeps draw/voodoo subsystems
     // ignorant of input — both sides only know about their own signals.
+    //
+    // SRP: the router asks the coordinator "are you transitioning?" and routes
+    // accordingly. Whatever the coordinator considers "transitioning" — entry
+    // phase, action phase, post-stab settle window — is the coordinator's call,
+    // not the router's. The router does not know what spam is.
     [DisallowMultipleComponent]
     public sealed class DrawButtonRouter : MonoBehaviour
     {
@@ -39,12 +44,17 @@ namespace Game.Runtime.Cards
 
         private void HandleClick(DrawButtonClickedSignal signal)
         {
-            bool hasSession = sessionStateReader?.HasActiveSession == true;
+            IVoodooSessionStateReader? reader = sessionStateReader;
+            bool transitioning = reader != null && reader.IsTransitioning;
+            bool hasSession = reader != null && reader.HasActiveSession;
+            Debug.Log("[DrawButtonRouter T=" + Time.time.ToString("F3")
+                + "] click transitioning=" + transitioning
+                + " hasSession=" + hasSession);
+
+            if (transitioning) return;
 
             if (hasSession)
             {
-                // SessionId is intentionally empty — the coordinator resolves the
-                // authoritative active session id from its own state.
                 stabPublisher?.Publish(new VoodooStabRequestedSignal(string.Empty));
                 return;
             }

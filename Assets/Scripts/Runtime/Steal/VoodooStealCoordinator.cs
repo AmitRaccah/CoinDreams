@@ -6,7 +6,7 @@ using Game.Composition.Signals;
 using Game.Domain.Player.Voodoo;
 using Game.Domain.Steal;
 using Game.Runtime.Player;
-using Game.Runtime.Steal.Timelines;
+using Game.Runtime.Steal.Phases;
 using MessagePipe;
 using UnityEngine;
 using VContainer;
@@ -18,36 +18,63 @@ namespace Game.Runtime.Steal
     /// mini-game. Owns <see cref="activeSession"/> (the single source of
     /// truth for "is a steal session currently active"), but delegates the
     /// actual sequencing — server calls, signal publishes, future cinematics
-    /// — to the three timelines in <see cref="Timelines"/>.
+    /// — to the three phases in <see cref="Phases"/>.
     ///
     /// Subscribes to two signals: <see cref="StealCardTriggeredSignal"/>
-    /// fires the entry timeline; <see cref="VoodooStabRequestedSignal"/>
-    /// fires the action timeline and, if the action returns a session-ending
-    /// outcome, chains to the exit timeline.
+    /// fires the entry phase; <see cref="VoodooStabRequestedSignal"/>
+    /// fires the action phase and, if the action returns a session-ending
+    /// outcome, chains to the exit phase.
     ///
     /// SRP — this class only:
     ///   1. holds activeSession
     ///   2. provides IVoodooSessionStateReader for DrawButtonRouter
-    ///   3. routes incoming signals to the right timeline
-    ///   4. enforces single-flight per timeline
-    /// All visual / network / signal-publish work moved into the timelines.
+    ///   3. routes incoming signals to the right phase
+    ///   4. enforces single-flight per phase
+    /// All visual / network / signal-publish work moved into the phases.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class VoodooStealCoordinator : MonoBehaviour, IVoodooSessionStateReader
     {
-        [Inject] private VoodooEntryTimeline? entryTimeline;
-        [Inject] private VoodooActionTimeline? actionTimeline;
-        [Inject] private VoodooExitTimeline? exitTimeline;
+        [Inject] private VoodooEntryPhase? entryPhase;
+        [Inject] private VoodooActionPhase? actionPhase;
+        [Inject] private VoodooExitPhase? exitPhase;
         [Inject] private PlayerRuntimeContext? playerRuntimeContext;
         [Inject] private ISubscriber<StealCardTriggeredSignal>? cardTriggeredSubscriber;
         [Inject] private ISubscriber<VoodooStabRequestedSignal>? stabRequestedSubscriber;
+        [Inject] private ISubscriber<VoodooStabAnimationCompletedSignal>? animationCompletedSubscriber;
 
         private IDisposable? cardTriggeredSubscription;
         private IDisposable? stabRequestedSubscription;
+        private IDisposable? animationCompletedSubscription;
         private VoodooSession? activeSession;
         private bool entryInFlight;
         private bool actionInFlight;
+        private bool lastTransitioning;
         private bool isContextSubscribed;
+
+        public event Action<bool>? IsTransitioningChanged;
+
+        // Filled fresh each time HandleStabRequested starts a stab; the
+        // animation-completed subscription resolves it when the doll's Feel
+        // chain finishes. Lets the coordinator hold actionInFlight from click
+        // through server response through the visual settling — taps during
+        // the animation get dropped by the in-flight guard.
+        private UniTaskCompletionSource? pendingAnimationDone;
+        private const float AnimationFallbackTimeoutSeconds = 5f;
+
+        [Header("Action settle")]
+        [Tooltip("After the stab animation completes, keep the action gate " +
+            "closed for this long before releasing. Absorbs the trailing edge " +
+            "of a player's tap burst — without this, the first tap that lands " +
+            "the frame after the animation ends squeezes through as a fresh " +
+            "stab (or, post-broken, as a DRAW). Conceptually part of the " +
+            "action's lifecycle (the stab isn't fully \"done\" until input " +
+            "has settled), so it lives here, not in DrawButtonRouter. " +
+            "Designed to be paired with DrawButtonInteractabilityBinder, " +
+            "which uses IsTransitioning to drop the Button at the EventSystem " +
+            "layer during this window. Set 0 to disable; default 0.5s ≈ 3 " +
+            "intervals at typical spam cadence (~160ms).")]
+        [SerializeField] private float postActionSettleSeconds = 0.5f;
 
         // Remembered across ProfileReplaced events so we can tell apart a
         // true account swap (sign-out/in) from a routine snapshot refresh
@@ -59,6 +86,35 @@ namespace Game.Runtime.Steal
         public bool HasActiveSession
         {
             get { return activeSession != null && !activeSession.IsBroken; }
+        }
+
+        // Any phase in flight = transitioning. Three windows the router must
+        // drop clicks during:
+        //   1. Entry — entryInFlight is true, activeSession not yet stored.
+        //   2. Stab — actionInFlight true, activeSession alive but the
+        //      animation is still playing. If the server returned a session-
+        //      ending stab (broken / exhausted) the session's IsBroken flag
+        //      flips immediately, flipping HasActiveSession to false WHILE
+        //      the animation is still on screen. Without this catch the
+        //      router routed those mid-animation clicks to DRAW.
+        //   3. Exit — actionInFlight true, activeSession already nulled by
+        //      EndActiveSessionAsync but the exit phase hasn't returned.
+        public bool IsTransitioning
+        {
+            get { return entryInFlight || actionInFlight; }
+        }
+
+        // Fire IsTransitioningChanged when the derived boolean flips. Called
+        // after every entryInFlight/actionInFlight write so subscribers (the
+        // UI gate) react at the exact frame of the transition — no per-frame
+        // polling needed. Compares against lastTransitioning so back-to-back
+        // writes that don't change the derived value stay silent.
+        private void NotifyTransitioningChanged()
+        {
+            bool current = entryInFlight || actionInFlight;
+            if (current == lastTransitioning) return;
+            lastTransitioning = current;
+            IsTransitioningChanged?.Invoke(current);
         }
 
         private void OnEnable()
@@ -74,6 +130,11 @@ namespace Game.Runtime.Steal
             {
                 stabRequestedSubscription = stabRequestedSubscriber.Subscribe(HandleStabRequested);
             }
+
+            if (animationCompletedSubscriber != null && animationCompletedSubscription == null)
+            {
+                animationCompletedSubscription = animationCompletedSubscriber.Subscribe(HandleAnimationCompleted);
+            }
         }
 
         private void OnDisable()
@@ -85,6 +146,9 @@ namespace Game.Runtime.Steal
 
             stabRequestedSubscription?.Dispose();
             stabRequestedSubscription = null;
+
+            animationCompletedSubscription?.Dispose();
+            animationCompletedSubscription = null;
         }
 
         private void OnDestroy()
@@ -97,6 +161,9 @@ namespace Game.Runtime.Steal
             stabRequestedSubscription?.Dispose();
             stabRequestedSubscription = null;
 
+            animationCompletedSubscription?.Dispose();
+            animationCompletedSubscription = null;
+
             UnsubscribeFromRuntimeContextEvents();
         }
 
@@ -105,73 +172,135 @@ namespace Game.Runtime.Steal
         // catches its own exceptions; the outer try/catch is a safety net.
         private async void HandleCardTriggered(StealCardTriggeredSignal signal)
         {
-            if (entryTimeline == null) return;
+            Log("CardTriggered RECEIVED multiplier=" + signal.Multiplier);
+            if (entryPhase == null) return;
 
             // Re-entrancy guard: ignore card triggers while a Begin call is
-            // in flight or a session is already active. The launcher should
-            // also gate this, but the coordinator is the authoritative gate.
-            if (entryInFlight || HasActiveSession) return;
+            // in flight or a session is already active.
+            if (entryInFlight || HasActiveSession)
+            {
+                Log("CardTriggered DROPPED entryInFlight=" + entryInFlight + " hasActive=" + HasActiveSession);
+                return;
+            }
 
             entryInFlight = true;
+            NotifyTransitioningChanged();
+            Log("Entry BEGIN (entryInFlight=true, IsTransitioning=true)");
             try
             {
-                VoodooSession? session = await entryTimeline.RunAsync(
+                VoodooSession? session = await entryPhase.RunAsync(
                     signal.Multiplier,
                     this.GetCancellationTokenOnDestroy());
 
-                // Store under the in-flight flag so concurrent stab clicks
-                // (unlikely but possible) can't observe the session before
-                // the entry sequence finishes.
                 if (session != null)
                 {
                     activeSession = session;
+                    Log("Entry END session=" + session.SessionId);
+                }
+                else
+                {
+                    Log("Entry END no session returned");
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogError("[VoodooStealCoordinator] Entry timeline threw: " + ex);
+                Debug.LogError("[VoodooStealCoordinator] Entry phase threw: " + ex);
             }
             finally
             {
                 entryInFlight = false;
+                NotifyTransitioningChanged();
+                Log("Entry FINALLY (entryInFlight=false)");
             }
         }
 
         private async void HandleStabRequested(VoodooStabRequestedSignal signal)
         {
-            if (actionTimeline == null || exitTimeline == null) return;
-            if (activeSession == null || activeSession.IsBroken || actionInFlight) return;
+            Log("StabRequested RECEIVED");
+            if (actionPhase == null || exitPhase == null) return;
+            if (activeSession == null || activeSession.IsBroken || actionInFlight)
+            {
+                Log("StabRequested DROPPED activeSessionNull=" + (activeSession == null)
+                    + " broken=" + (activeSession?.IsBroken ?? false)
+                    + " inFlight=" + actionInFlight);
+                return;
+            }
 
-            // Cache the sessionId before the await — activeSession can flip
-            // to null mid-await via ProfileReplaced and the coordinator must
-            // still know which session the response refers to.
             string sessionId = activeSession.SessionId;
 
             actionInFlight = true;
+            NotifyTransitioningChanged();
+            pendingAnimationDone = new UniTaskCompletionSource();
+            Log("Stab BEGIN sessionId=" + sessionId + " (actionInFlight=true)");
             try
             {
-                VoodooActionOutcome outcome = await actionTimeline.RunAsync(
+                VoodooActionOutcome outcome = await actionPhase.RunAsync(
                     sessionId,
                     this.GetCancellationTokenOnDestroy());
+
+                Log("Stab server response resolved=" + outcome.Resolved
+                    + " stolen=" + outcome.StolenAmount
+                    + " sessionShouldEnd=" + outcome.SessionShouldEnd
+                    + " broken=" + outcome.DollBroken);
 
                 if (outcome.Resolved && activeSession != null)
                 {
                     activeSession.RegisterStab(outcome.StolenAmount);
                 }
 
+                Log("Stab AWAIT animation-completed signal (5s safety timeout)");
+                bool timedOut = await WaitForAnimationOrTimeoutAsync(pendingAnimationDone.Task);
+                Log("Stab animation-completed RELEASED timedOut=" + timedOut);
+
+                // Hold the gate (and therefore IsTransitioning) for the
+                // settle window. A tap that arrives during this period is
+                // part of the same spam burst as the dropped taps a frame
+                // earlier — letting it through would feel like one press =
+                // two stabs. Keeping actionInFlight=true makes the router's
+                // existing transitioning check absorb it; no router changes.
+                if (postActionSettleSeconds > 0f)
+                {
+                    Log("Stab post-action settle " + postActionSettleSeconds.ToString("F3") + "s");
+                    await UniTask.Delay(
+                        TimeSpan.FromSeconds(postActionSettleSeconds),
+                        cancellationToken: this.GetCancellationTokenOnDestroy());
+                }
+
                 if (outcome.SessionShouldEnd)
                 {
+                    Log("Stab session should end → running exit phase");
                     await EndActiveSessionAsync(outcome.DollBroken);
                 }
             }
             catch (Exception ex)
             {
-                Debug.LogError("[VoodooStealCoordinator] Action timeline threw: " + ex);
+                Debug.LogError("[VoodooStealCoordinator] Action phase threw: " + ex);
             }
             finally
             {
+                pendingAnimationDone = null;
                 actionInFlight = false;
+                NotifyTransitioningChanged();
+                Log("Stab FINALLY (actionInFlight=false)");
             }
+        }
+
+        private void HandleAnimationCompleted(VoodooStabAnimationCompletedSignal signal)
+        {
+            Log("AnimationCompleted RECEIVED sessionId=" + signal.SessionId + " stolen=" + signal.StolenAmount);
+            pendingAnimationDone?.TrySetResult();
+        }
+
+        // Returns true if the timeout fired before the animation completion
+        // signal — useful to surface a "presenter never reported done" bug
+        // in logs instead of silently masking it.
+        private async UniTask<bool> WaitForAnimationOrTimeoutAsync(UniTask animationDoneTask)
+        {
+            UniTask timeout = UniTask.Delay(
+                TimeSpan.FromSeconds(AnimationFallbackTimeoutSeconds),
+                cancellationToken: this.GetCancellationTokenOnDestroy());
+            int winnerIndex = await UniTask.WhenAny(animationDoneTask, timeout);
+            return winnerIndex == 1;
         }
 
         // Detaches the session from the coordinator BEFORE awaiting the exit
@@ -180,13 +309,13 @@ namespace Game.Runtime.Steal
         // matching the legacy ordering (activeSession = null; publish(...)).
         private async UniTask EndActiveSessionAsync(bool dollBroken)
         {
-            if (activeSession == null || exitTimeline == null) return;
+            if (activeSession == null || exitPhase == null) return;
 
             string sessionId = activeSession.SessionId;
             int totalStolen = activeSession.TotalStolen;
             activeSession = null;
 
-            await exitTimeline.RunAsync(
+            await exitPhase.RunAsync(
                 sessionId,
                 totalStolen,
                 dollBroken,
@@ -207,17 +336,22 @@ namespace Game.Runtime.Steal
             }
             lastSeenPlayerId = currentPlayerId;
 
-            if (activeSession == null || exitTimeline == null) return;
+            if (activeSession == null || exitPhase == null) return;
 
             string sessionId = activeSession.SessionId;
             int totalStolen = activeSession.TotalStolen;
             activeSession = null;
 
-            exitTimeline.RunAsync(
+            exitPhase.RunAsync(
                 sessionId,
                 totalStolen,
                 dollBroken: false,
                 this.GetCancellationTokenOnDestroy()).Forget();
+        }
+
+        private void Log(string message)
+        {
+            Debug.Log("[VoodooStealCoordinator T=" + Time.time.ToString("F3") + "] " + message, this);
         }
 
         private void SubscribeToRuntimeContextEvents()

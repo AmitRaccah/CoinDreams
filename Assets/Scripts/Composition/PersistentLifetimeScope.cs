@@ -11,7 +11,7 @@ using Game.Runtime.Cards;
 using Game.Runtime.Lifecycle;
 using Game.Runtime.Player;
 using Game.Runtime.Steal;
-using Game.Runtime.Steal.Timelines;
+using Game.Runtime.Steal.Phases;
 using Game.Runtime.UI;
 using MessagePipe;
 using UnityEngine;
@@ -37,6 +37,7 @@ namespace Game.Composition
             builder.RegisterMessageBroker<VoodooSessionEndedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<VoodooStabRequestedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<VoodooStabResolvedSignal>(messagePipeOptions);
+            builder.RegisterMessageBroker<VoodooStabAnimationCompletedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<MultiplierChangeRequestedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<PanelOpenRequestedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<PanelCloseRequestedSignal>(messagePipeOptions);
@@ -139,11 +140,11 @@ namespace Game.Composition
             // Three timelines own the per-phase sequencing (server calls +
             // signal publishes today, cinematics tomorrow). The coordinator
             // is now a thin state holder that dispatches incoming signals to
-            // the right timeline. Timelines are stateless services so they
+            // the right phase. Phases are stateless services so they
             // register as plain Singletons.
-            builder.Register<VoodooEntryTimeline>(Lifetime.Singleton);
-            builder.Register<VoodooActionTimeline>(Lifetime.Singleton);
-            builder.Register<VoodooExitTimeline>(Lifetime.Singleton);
+            builder.Register<VoodooEntryPhase>(Lifetime.Singleton);
+            builder.Register<VoodooActionPhase>(Lifetime.Singleton);
+            builder.Register<VoodooExitPhase>(Lifetime.Singleton);
 
             // Coordinator is required (state + dispatch). Presenters live in
             // the Gameplay scene (Voodoo3DDollPresenter, VoodooVictimName-
@@ -174,6 +175,14 @@ namespace Game.Composition
             if (UnityEngine.Object.FindAnyObjectByType<DrawButtonRouter>() != null)
             {
                 builder.RegisterComponentInHierarchy<DrawButtonRouter>();
+            }
+
+            // Interactability binder mirrors IsTransitioning onto Button.interactable so
+            // clicks are dropped at Unity's EventSystem layer (not just at the router).
+            // Same opt-in pattern as the router — scenes that don't wire it still work.
+            if (UnityEngine.Object.FindAnyObjectByType<DrawButtonInteractabilityBinder>() != null)
+            {
+                builder.RegisterComponentInHierarchy<DrawButtonInteractabilityBinder>();
             }
 
             builder.Register<CloudFunctionsStealClient>(Lifetime.Singleton).As<IVoodooStealClient>();
