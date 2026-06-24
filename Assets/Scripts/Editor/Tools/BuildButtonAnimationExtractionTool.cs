@@ -71,6 +71,378 @@ namespace Game.Editor.Tools
         [MenuItem(MenuRoot + "Hunt DrawButton/ReturnButton OnClick (remove)", priority = 151)]
         public static void HuntDrawButtonOnClickRemove() => HuntCodeDrivenButtonOnClick(applyChanges: true);
 
+        // ------------------------------------------------------------------
+        // Read-only diagnostic. Dumps the complete content of every Feel chain
+        // and every state binding the runtime uses — so we can SEE what's
+        // really wired without guessing or reading YAML by hand. Run this
+        // whenever a "Return / ActionPanel / BuildButton fires when it
+        // shouldn't" bug shows up and the obvious hunts come back empty.
+        // ------------------------------------------------------------------
+        [MenuItem(MenuRoot + "Dump Feel Chains + Trigger Bindings", priority = 160)]
+        public static void DumpFeelGraph() => DumpFeel();
+
+        // Fix for the "BuildButton appears mid-steal" bug. DrawButton_Enable
+        // currently bridges to BuildButton_SlideIn — so every voodoo phase
+        // exit (Entry END, Stab END, etc.) flips the transition gate off,
+        // fires DrawButton_Enable, and via the bridge plays SlideIn. Result:
+        // BuildButton pops in during the steal mini-game, while ActionPanel
+        // is still hidden by ActionButtons_Hide.
+        //
+        // The bridge belongs to a single moment: arriving back at the city.
+        // Move it from the chain to a trigger binding (ReturningToCity.OnExit
+        // — fires exactly once on the ReturningToCity → Idle transition).
+        // ------------------------------------------------------------------
+        // Removes the visual-gating feedbacks from DrawWorkflowFeelTrigger
+        // and VoodooFeelTrigger. The state machine + router already drop
+        // spam-clicks at the code layer (HandleDrawClicked returns None
+        // outside Idle/DrawMode; DrawButtonRouter polls IsTransitioning),
+        // so the visual dim/hide was redundant — and the ActionButtons_Hide
+        // on session enter wrongly removed the player's UI during steal.
+        //
+        // Bindings stripped:
+        //   DrawWorkflowFeelTrigger.bindings:
+        //     MovingToBoard.OnEnter  (DrawButton_Disable → null)
+        //     Drawing.OnEnter        (DrawButton_Disable → null)
+        //     ReturningToCity.OnEnter(DrawButton_Disable → null)
+        //     Idle.OnEnter           (DrawButton_Enable  → null)
+        //   VoodooFeelTrigger fields:
+        //     onTransitionEnter (DrawButton_Disable → null)
+        //     onTransitionExit  (DrawButton_Enable  → null)
+        //     onSessionEnter    (ActionButtons_Hide → null)
+        //     onSessionExit     (ActionButtons_Show → null)
+        //
+        // Preserved: DrawMode's Return chains, Idle.OnExit BuildButton_SlideOut,
+        // ReturningToCity.OnExit BuildButton_SlideIn.
+        //
+        // Resets DrawButton's + ActionPanel's CanvasGroups to alpha=1,
+        // blocksRaycasts=true so any stuck state from prior play sessions
+        // doesn't leak through.
+        // ------------------------------------------------------------------
+        [MenuItem(MenuRoot + "Remove Visual Gating (DrawButton + ActionPanel)", priority = 180)]
+        public static void RemoveVisualGating()
+        {
+            int undoGroup = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName("Remove visual gating");
+
+            StringBuilder report = new StringBuilder(2048);
+            report.AppendLine("=== Remove Visual Gating ===");
+
+            List<GameObject> roots = CollectRoots(report);
+            if (roots.Count == 0) return;
+
+            MMF_Player? mmfDrawDisable = FindMmfByExactName(roots, MmfDrawDisable, report);
+            MMF_Player? mmfDrawEnable = FindMmfByExactName(roots, MmfDrawEnable, report);
+            MMF_Player? mmfActionHide = FindMmfByExactName(roots, "ActionButtons_Hide", report);
+            MMF_Player? mmfActionShow = FindMmfByExactName(roots, "ActionButtons_Show", report);
+
+            DrawWorkflowFeelTrigger? drawTrigger = FindComponent<DrawWorkflowFeelTrigger>(roots, report);
+            Game.Runtime.Steal.VoodooFeelTrigger? voodooTrigger =
+                FindComponent<Game.Runtime.Steal.VoodooFeelTrigger>(roots, report);
+
+            report.AppendLine();
+            report.AppendLine("--- Clear DrawWorkflowFeelTrigger.bindings (OnEnter only — OnExit preserved) ---");
+            if (drawTrigger != null)
+            {
+                ClearBindingOnEnterIfMatches(drawTrigger, CardDrawWorkflowState.MovingToBoard, mmfDrawDisable, report);
+                ClearBindingOnEnterIfMatches(drawTrigger, CardDrawWorkflowState.Drawing, mmfDrawDisable, report);
+                ClearBindingOnEnterIfMatches(drawTrigger, CardDrawWorkflowState.ReturningToCity, mmfDrawDisable, report);
+                ClearBindingOnEnterIfMatches(drawTrigger, CardDrawWorkflowState.Idle, mmfDrawEnable, report);
+            }
+
+            report.AppendLine();
+            report.AppendLine("--- Clear VoodooFeelTrigger fields ---");
+            if (voodooTrigger != null)
+            {
+                ClearVoodooFieldIfMatches(voodooTrigger, "onTransitionEnter", mmfDrawDisable, report);
+                ClearVoodooFieldIfMatches(voodooTrigger, "onTransitionExit", mmfDrawEnable, report);
+                ClearVoodooFieldIfMatches(voodooTrigger, "onSessionEnter", mmfActionHide, report);
+                ClearVoodooFieldIfMatches(voodooTrigger, "onSessionExit", mmfActionShow, report);
+            }
+
+            report.AppendLine();
+            report.AppendLine("--- Reset CanvasGroups (safety — clear stuck states) ---");
+            GameObject? drawButtonGo = FindButtonGameObject(roots, new[] { "DrawButton", "Draw_Button" }, "DrawButton", report);
+            GameObject? actionPanel = FindGameObject(roots, new[] { "ActionPanel", "Action_Panel" }, "ActionPanel", report);
+            if (drawButtonGo != null) ResetCanvasGroup(drawButtonGo, report);
+            if (actionPanel != null) ResetCanvasGroup(actionPanel, report);
+
+            MarkAllDirty(roots);
+            Undo.CollapseUndoOperations(undoGroup);
+
+            report.AppendLine();
+            report.AppendLine("--- Orphan chains (now safe to delete in Inspector if you want full SOLID) ---");
+            report.AppendLine("  • DrawButton_Disable");
+            report.AppendLine("  • DrawButton_Enable");
+            report.AppendLine("  • ActionButtons_Hide");
+            report.AppendLine("  • ActionButtons_Show");
+
+            Debug.Log(report.ToString());
+        }
+
+        private static void ClearBindingOnEnterIfMatches(
+            DrawWorkflowFeelTrigger trigger,
+            CardDrawWorkflowState state,
+            MMF_Player? expected,
+            StringBuilder report)
+        {
+            SerializedObject so = new SerializedObject(trigger);
+            SerializedProperty bindings = so.FindProperty("bindings");
+            if (bindings == null) return;
+
+            for (int i = 0; i < bindings.arraySize; i++)
+            {
+                SerializedProperty entry = bindings.GetArrayElementAtIndex(i);
+                if (entry.FindPropertyRelative("State").enumValueIndex != (int)state) continue;
+
+                SerializedProperty onEnter = entry.FindPropertyRelative("OnEnter");
+                UnityEngine.Object current = onEnter.objectReferenceValue;
+                if (current == null)
+                {
+                    report.Append("    ✓ ").Append(state).AppendLine(".OnEnter already null");
+                }
+                else if (current == expected)
+                {
+                    onEnter.objectReferenceValue = null;
+                    so.ApplyModifiedProperties();
+                    EditorUtility.SetDirty(trigger);
+                    report.Append("    - cleared ").Append(state).Append(".OnEnter (was ")
+                        .Append(current.name).AppendLine(")");
+                }
+                else
+                {
+                    report.Append("    ⊘ ").Append(state).Append(".OnEnter is ")
+                        .Append(current.name).AppendLine(" — not the gating chain, preserved");
+                }
+                return;
+            }
+            report.Append("    ℹ️  no binding for ").AppendLine(state.ToString());
+        }
+
+        private static void ClearVoodooFieldIfMatches(
+            Component trigger,
+            string fieldName,
+            MMF_Player? expected,
+            StringBuilder report)
+        {
+            SerializedObject so = new SerializedObject(trigger);
+            SerializedProperty prop = so.FindProperty(fieldName);
+            if (prop == null)
+            {
+                report.Append("    ⚠️  field ").Append(fieldName).AppendLine(" not found");
+                return;
+            }
+            UnityEngine.Object current = prop.objectReferenceValue;
+            if (current == null)
+            {
+                report.Append("    ✓ ").Append(fieldName).AppendLine(" already null");
+            }
+            else if (current == expected)
+            {
+                prop.objectReferenceValue = null;
+                so.ApplyModifiedProperties();
+                EditorUtility.SetDirty(trigger);
+                report.Append("    - cleared ").Append(fieldName).Append(" (was ")
+                    .Append(current.name).AppendLine(")");
+            }
+            else
+            {
+                report.Append("    ⊘ ").Append(fieldName).Append(" is ")
+                    .Append(current.name).AppendLine(" — not the gating chain, preserved");
+            }
+        }
+
+        private static void ResetCanvasGroup(GameObject go, StringBuilder report)
+        {
+            CanvasGroup cg = go.GetComponent<CanvasGroup>();
+            if (cg == null)
+            {
+                report.Append("    ✓ ").Append(go.name).AppendLine(" has no CanvasGroup — nothing to reset");
+                return;
+            }
+            bool needs = !Mathf.Approximately(cg.alpha, 1f) || !cg.blocksRaycasts || !cg.interactable;
+            if (!needs)
+            {
+                report.Append("    ✓ ").Append(go.name).AppendLine(" CG already alpha=1, blocks=true, interactable=true");
+                return;
+            }
+            Undo.RecordObject(cg, "Reset CanvasGroup");
+            cg.alpha = 1f;
+            cg.blocksRaycasts = true;
+            cg.interactable = true;
+            EditorUtility.SetDirty(cg);
+            report.Append("    + reset ").Append(go.name).AppendLine(" CG → alpha=1, blocks=true, interactable=true");
+        }
+
+        [MenuItem(MenuRoot + "Fix BuildButton SlideIn timing", priority = 170)]
+        public static void FixBuildButtonSlideInTiming()
+        {
+            int undoGroup = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName("Fix BuildButton SlideIn timing");
+
+            StringBuilder report = new StringBuilder(1024);
+            report.AppendLine("=== Fix BuildButton SlideIn timing ===");
+
+            List<GameObject> roots = CollectRoots(report);
+            if (roots.Count == 0) return;
+
+            MMF_Player? mmfDrawEnable = FindMmfByExactName(roots, MmfDrawEnable, report);
+            MMF_Player? mmfSlideIn = FindMmfByExactName(roots, SlideInGoName, report);
+            DrawWorkflowFeelTrigger? drawTrigger = FindComponent<DrawWorkflowFeelTrigger>(roots, report);
+
+            if (mmfDrawEnable == null || mmfSlideIn == null || drawTrigger == null)
+            {
+                report.AppendLine("🚨 Missing prerequisite — aborting.");
+                Debug.LogError(report.ToString());
+                return;
+            }
+
+            report.AppendLine();
+            report.AppendLine("--- Unwire DrawButton_Enable → BuildButton_SlideIn ---");
+            UnwireBridgeIfPresent(mmfDrawEnable, mmfSlideIn, report);
+
+            report.AppendLine();
+            report.AppendLine("--- Wire ReturningToCity.OnExit → BuildButton_SlideIn ---");
+            SetBindingOnExit(drawTrigger, CardDrawWorkflowState.ReturningToCity, mmfSlideIn, report);
+
+            MarkAllDirty(roots);
+            Undo.CollapseUndoOperations(undoGroup);
+
+            report.AppendLine();
+            report.AppendLine("--- Audit ---");
+            AuditBridgeAbsent(mmfDrawEnable, mmfSlideIn,
+                "DrawButton_Enable ⊘ BuildButton_SlideIn (moved to ReturningToCity.OnExit)", report);
+            AuditBindingOnExit(drawTrigger, CardDrawWorkflowState.ReturningToCity, mmfSlideIn,
+                "ReturningToCity.OnExit → BuildButton_SlideIn", report);
+
+            Debug.Log(report.ToString());
+        }
+
+        private static readonly string[] ChainsToDump =
+        {
+            "DrawButton_Disable", "DrawButton_Enable",
+            "ActionButtons_Hide", "ActionButtons_Show",
+            "ReturnButtonAppear", "ReturnButtonDisAppear",
+            "BuildButton_SlideOut", "BuildButton_SlideIn",
+            "BuildPanelOpenFeedbacks", "BuildPanelCloseFeedbacks",
+        };
+
+        private static void DumpFeel()
+        {
+            StringBuilder report = new StringBuilder(4096);
+            report.AppendLine("=== Feel Graph Dump ===");
+
+            List<GameObject> roots = CollectRoots(report);
+            if (roots.Count == 0) return;
+
+            // 1) Per-chain feedback dump.
+            for (int n = 0; n < ChainsToDump.Length; n++)
+            {
+                string name = ChainsToDump[n];
+                MMF_Player? mmf = FindMmfByExactName(roots, name, report);
+                report.AppendLine();
+                report.Append("--- ").Append(name).AppendLine(" ---");
+                if (mmf == null) { report.AppendLine("  (chain not present)"); continue; }
+                DumpFeedbacks(mmf, report);
+            }
+
+            // 2) DrawWorkflowFeelTrigger bindings.
+            report.AppendLine();
+            report.AppendLine("--- DrawWorkflowFeelTrigger.bindings ---");
+            DrawWorkflowFeelTrigger? drawTrigger = FindComponent<DrawWorkflowFeelTrigger>(roots, report);
+            if (drawTrigger != null) DumpDrawBindings(drawTrigger, report);
+
+            // 3) VoodooFeelTrigger fields.
+            report.AppendLine();
+            report.AppendLine("--- VoodooFeelTrigger fields ---");
+            DumpVoodooFields(roots, report);
+
+            Debug.Log(report.ToString());
+        }
+
+        private static void DumpFeedbacks(MMF_Player mmf, StringBuilder report)
+        {
+            if (mmf.FeedbacksList == null || mmf.FeedbacksList.Count == 0)
+            {
+                report.AppendLine("  (no feedbacks)");
+                return;
+            }
+            for (int i = 0; i < mmf.FeedbacksList.Count; i++)
+            {
+                MMF_Feedback fb = mmf.FeedbacksList[i];
+                if (fb == null) { report.Append("  [").Append(i).AppendLine("] <null>"); continue; }
+                report.Append("  [").Append(i).Append("] ").Append(fb.GetType().Name);
+                if (!string.IsNullOrEmpty(fb.Label)) report.Append(" \"").Append(fb.Label).Append('"');
+
+                // Type-specific target / value details.
+                if (fb is MMF_CanvasGroup cg)
+                {
+                    string target = cg.TargetCanvasGroup != null ? cg.TargetCanvasGroup.gameObject.name : "<null>";
+                    report.Append("  → ").Append(target)
+                        .Append("  Mode=").Append(cg.Mode)
+                        .Append("  InstantAlpha=").Append(cg.InstantAlpha);
+                }
+                else if (fb is MMF_CanvasGroupBlocksRaycasts cgb)
+                {
+                    string target = cgb.TargetCanvasGroup != null ? cgb.TargetCanvasGroup.gameObject.name : "<null>";
+                    report.Append("  → ").Append(target).Append("  Block=").Append(cgb.ShouldBlockRaycasts);
+                }
+                else if (fb is MMF_Position pos)
+                {
+                    string target = pos.AnimatePositionTarget != null ? pos.AnimatePositionTarget.name : "<null>";
+                    report.Append("  → ").Append(target);
+                }
+                else if (fb is MMF_Feedbacks bridge)
+                {
+                    string target = bridge.TargetFeedbacks != null ? bridge.TargetFeedbacks.name : "<null>";
+                    report.Append("  → ").Append(target).Append("  Mode=").Append(bridge.Mode);
+                }
+                report.AppendLine();
+            }
+        }
+
+        private static void DumpDrawBindings(DrawWorkflowFeelTrigger trigger, StringBuilder report)
+        {
+            SerializedObject so = new SerializedObject(trigger);
+            SerializedProperty bindings = so.FindProperty("bindings");
+            if (bindings == null) { report.AppendLine("  (bindings field not found)"); return; }
+            if (bindings.arraySize == 0) { report.AppendLine("  (no bindings)"); return; }
+
+            for (int i = 0; i < bindings.arraySize; i++)
+            {
+                SerializedProperty entry = bindings.GetArrayElementAtIndex(i);
+                CardDrawWorkflowState state = (CardDrawWorkflowState)entry.FindPropertyRelative("State").enumValueIndex;
+                UnityEngine.Object onEnter = entry.FindPropertyRelative("OnEnter").objectReferenceValue;
+                UnityEngine.Object onExit = entry.FindPropertyRelative("OnExit").objectReferenceValue;
+
+                report.Append("  [").Append(i).Append("] ").Append(state)
+                    .Append("  OnEnter=").Append(onEnter != null ? onEnter.name : "<null>")
+                    .Append("  OnExit=").Append(onExit != null ? onExit.name : "<null>")
+                    .AppendLine();
+            }
+        }
+
+        private static void DumpVoodooFields(List<GameObject> roots, StringBuilder report)
+        {
+            foreach (GameObject root in roots)
+            {
+                Game.Runtime.Steal.VoodooFeelTrigger trigger = root.GetComponentInChildren<Game.Runtime.Steal.VoodooFeelTrigger>(true);
+                if (trigger == null) continue;
+                SerializedObject so = new SerializedObject(trigger);
+                string[] fields = { "onTransitionEnter", "onTransitionExit", "onSessionEnter", "onSessionExit" };
+                foreach (string name in fields)
+                {
+                    SerializedProperty prop = so.FindProperty(name);
+                    if (prop == null) continue;
+                    UnityEngine.Object val = prop.objectReferenceValue;
+                    report.Append("  ").Append(name).Append(" = ")
+                        .AppendLine(val != null ? val.name : "<null>");
+                }
+                return;
+            }
+            report.AppendLine("  (VoodooFeelTrigger not found)");
+        }
+
+
         private static readonly string[] CodeDrivenButtonNames =
         {
             "DrawButton", "Draw_Button", "ReturnButton", "Return_Button",
