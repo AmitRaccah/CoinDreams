@@ -56,6 +56,111 @@ namespace Game.Editor.Tools
         [MenuItem(MenuRoot + "Hunt Spurious Return Triggers (remove)", priority = 141)]
         public static void HuntReturnTriggersRemove() => HuntReturnTriggers(applyChanges: true);
 
+        // ------------------------------------------------------------------
+        // Hunt-and-fix for DrawButton & ReturnButton UnityEvent OnClick. These
+        // buttons are CODE-DRIVEN (DrawButtonRouter / DrawHudInputBinder publish
+        // signals from script; the workflow trigger plays feedbacks). Any
+        // PlayFeedbacks UnityEvent on these buttons is leftover scene wiring
+        // and breaks the steal-mode flow (ActionPanel hides + BuildButton
+        // animates when stabbing). Designed to run AFTER a teammate finishes
+        // scene edits, to scrub residual hand-wired listeners.
+        // ------------------------------------------------------------------
+        [MenuItem(MenuRoot + "Hunt DrawButton/ReturnButton OnClick (audit)", priority = 150)]
+        public static void HuntDrawButtonOnClickAudit() => HuntCodeDrivenButtonOnClick(applyChanges: false);
+
+        [MenuItem(MenuRoot + "Hunt DrawButton/ReturnButton OnClick (remove)", priority = 151)]
+        public static void HuntDrawButtonOnClickRemove() => HuntCodeDrivenButtonOnClick(applyChanges: true);
+
+        private static readonly string[] CodeDrivenButtonNames =
+        {
+            "DrawButton", "Draw_Button", "ReturnButton", "Return_Button",
+        };
+
+        private static void HuntCodeDrivenButtonOnClick(bool applyChanges)
+        {
+            int undoGroup = Undo.GetCurrentGroup();
+            Undo.SetCurrentGroupName(applyChanges
+                ? "Remove code-driven button OnClick PlayFeedbacks"
+                : "Audit code-driven button OnClick");
+
+            StringBuilder report = new StringBuilder(1024);
+            report.Append("=== Hunt DrawButton/ReturnButton OnClick — ");
+            report.Append(applyChanges ? "REMOVE" : "AUDIT");
+            report.AppendLine(" ===");
+
+            List<GameObject> roots = CollectRoots(report);
+            if (roots.Count == 0) return;
+
+            int removed = 0;
+            int found = 0;
+            foreach (GameObject root in roots)
+            {
+                Button[] all = root.GetComponentsInChildren<Button>(true);
+                for (int b = 0; b < all.Length; b++)
+                {
+                    Button button = all[b];
+                    string name = button.gameObject.name;
+                    bool nameMatches = false;
+                    for (int n = 0; n < CodeDrivenButtonNames.Length; n++)
+                    {
+                        if (string.Equals(name, CodeDrivenButtonNames[n], StringComparison.OrdinalIgnoreCase))
+                        {
+                            nameMatches = true;
+                            break;
+                        }
+                    }
+                    if (!nameMatches) continue;
+
+                    int count = button.onClick.GetPersistentEventCount();
+                    for (int i = count - 1; i >= 0; i--)
+                    {
+                        string m = button.onClick.GetPersistentMethodName(i);
+                        if (m != "PlayFeedbacks") continue;
+                        UnityEngine.Object t = button.onClick.GetPersistentTarget(i);
+                        string targetName = t != null ? t.name : "<null>";
+
+                        string label = name + ".onClick[" + i + "] → " + targetName + ".PlayFeedbacks()";
+                        if (applyChanges)
+                        {
+                            Undo.RecordObject(button, "Remove OnClick PlayFeedbacks");
+                            UnityEditor.Events.UnityEventTools.RemovePersistentListener(button.onClick, i);
+                            EditorUtility.SetDirty(button);
+                            report.Append("    - removed ").AppendLine(label);
+                            removed++;
+                        }
+                        else
+                        {
+                            report.Append("    🚨 found ").AppendLine(label);
+                            found++;
+                        }
+                    }
+                }
+            }
+
+            if (applyChanges)
+            {
+                MarkAllDirty(roots);
+                Undo.CollapseUndoOperations(undoGroup);
+            }
+
+            report.AppendLine();
+            int total = applyChanges ? removed : found;
+            if (total == 0)
+            {
+                report.AppendLine("✓ No PlayFeedbacks listeners on DrawButton/ReturnButton.");
+                report.AppendLine("  These buttons are code-driven (signals via DrawButtonRouter +");
+                report.AppendLine("  DrawWorkflowFeelTrigger), so an empty UnityEvent OnClick is correct.");
+            }
+            else
+            {
+                report.Append(applyChanges ? "Removed " : "Found ").Append(total)
+                    .AppendLine(" stray PlayFeedbacks wiring(s).");
+            }
+
+            Debug.Log(report.ToString());
+        }
+
+
         private static void HuntReturnTriggers(bool applyChanges)
         {
             int undoGroup = Undo.GetCurrentGroup();

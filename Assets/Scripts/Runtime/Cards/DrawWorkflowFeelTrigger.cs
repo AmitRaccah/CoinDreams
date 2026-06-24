@@ -64,8 +64,32 @@ namespace Game.Runtime.Cards
 
         private void HandleStateChanged(CardDrawWorkflowState next)
         {
-            FindChain(lastState, enter: false)?.PlayFeedbacks();
-            FindChain(next, enter: true)?.PlayFeedbacks();
+            // DrawMode ↔ Drawing is a sub-flow: drawing a card is conceptually
+            // "still in DrawMode, mid-action". Firing DrawMode's enter/exit
+            // chains on these transitions makes the ReturnButtonAppear/Disappear
+            // chain flicker on every card draw — Return blinks down-up each
+            // time. Suppress DrawMode's enter/exit on the sub-flow edges so
+            // its visuals stay stable; the inner Drawing state still fires
+            // its own enter/exit chains for per-flight gating (DrawButton lock).
+            bool toDrawingSub = lastState == CardDrawWorkflowState.DrawMode
+                && next == CardDrawWorkflowState.Drawing;
+            bool fromDrawingSub = lastState == CardDrawWorkflowState.Drawing
+                && next == CardDrawWorkflowState.DrawMode;
+
+            if (toDrawingSub)
+            {
+                FindChain(next, enter: true)?.PlayFeedbacks();
+            }
+            else if (fromDrawingSub)
+            {
+                FindChain(lastState, enter: false)?.PlayFeedbacks();
+            }
+            else
+            {
+                FindChain(lastState, enter: false)?.PlayFeedbacks();
+                FindChain(next, enter: true)?.PlayFeedbacks();
+            }
+
             lastState = next;
         }
 
