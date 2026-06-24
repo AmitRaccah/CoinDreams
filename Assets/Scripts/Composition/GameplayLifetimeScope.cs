@@ -73,6 +73,13 @@ namespace Game.Composition
                 // registered in THIS gameplay scope. Injecting from here
                 // hands it this scope's container so the resolve succeeds.
                 PersistentLifetimeScope.InjectAllInScenes<DrawWorkflowFeelTrigger>(container);
+                // VoodooFeelTrigger instances that live in 02_Gameplay
+                // (next to Alter_Draw_Game / the doll) miss PersistentLifetimeScope's
+                // sweep because their scene isn't loaded yet at that time.
+                // Re-running here picks them up. IVoodooSessionStateReader is
+                // a persistent-scope service; VContainer resolves parent-scope
+                // dependencies transparently.
+                PersistentLifetimeScope.InjectAllInScenes<Game.Runtime.Steal.VoodooFeelTrigger>(container);
             });
         }
 
