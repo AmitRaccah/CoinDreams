@@ -71,8 +71,9 @@ namespace Game.Composition
                 InjectAllInScenes<Game.Runtime.UI.Buildings.BuildingsPanel>(container);
                 InjectAllInScenes<Game.Runtime.UI.Shields.ShieldsHudPresenter>(container);
                 // VoodooFeelTrigger subscribes to IVoodooSessionStateReader,
-                // which is the VoodooStealCoordinator registered in this same
-                // scope — resolves cleanly without crossing scope boundaries.
+                // which is the VoodooSessionState service registered in this
+                // same scope — resolves cleanly without crossing scope
+                // boundaries.
                 InjectAllInScenes<Game.Runtime.Steal.VoodooFeelTrigger>(container);
             });
 
@@ -155,13 +156,21 @@ namespace Game.Composition
             builder.Register<VoodooActionPhase>(Lifetime.Singleton);
             builder.Register<VoodooExitPhase>(Lifetime.Singleton);
 
-            // Coordinator is required (state + dispatch). Presenters live in
-            // the Gameplay scene (Voodoo3DDollPresenter, VoodooVictimName-
-            // Presenter) — scenes like 0.1_Steal can run without them (the
-            // coordinator still runs the timelines, server still moves coins).
-            builder.RegisterComponentInHierarchy<VoodooStealCoordinator>()
-                .AsImplementedInterfaces()
+            // Session state lives in a plain service — the coordinator (sole
+            // mutator) injects the concrete type; UI/router consumers depend
+            // on IVoodooSessionStateReader. Lifetime.Singleton so the same
+            // object survives across scope rebuilds, matching the previous
+            // coordinator-owned state's lifecycle.
+            builder.Register<Game.Runtime.Steal.VoodooSessionState>(Lifetime.Singleton)
+                .As<Game.Domain.Steal.IVoodooSessionStateReader>()
                 .AsSelf();
+
+            // Coordinator is required (signal dispatch + phase orchestration).
+            // No longer implements IVoodooSessionStateReader — state is the
+            // separate service above. Presenters live in the Gameplay scene
+            // (Voodoo3DDollPresenter, VoodooVictimNamePresenter); scenes
+            // like 0.1_Steal can run without them.
+            builder.RegisterComponentInHierarchy<VoodooStealCoordinator>();
 
             // Voodoo3DDollPresenter is registered in GameplayLifetimeScope — it
             // lives in the 3D-world scene (02_Gameplay), not in the persistent

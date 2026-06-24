@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using MoreMountains.Feedbacks;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -50,6 +51,14 @@ namespace Game.Runtime.UI.Buildings
 
         private readonly List<Image> indicators = new List<Image>();
         private bool isMaxLevel;
+
+        // -1 sentinel = "first SetLevel call" (initial paint after panel opens).
+        // We skip the entry-feedback play on the first call so existing already-
+        // filled indicators don't all animate at once when the panel opens.
+        // On every subsequent call, indicators in the (previousLevel, currentLevel]
+        // range fire their entry MMF — that's the one(s) that just transitioned
+        // from empty → filled because the player upgraded.
+        private int previousLevel = -1;
 
         private void Awake()
         {
@@ -130,6 +139,22 @@ namespace Game.Runtime.UI.Buildings
             {
                 indicators[i].sprite = i < clamped ? filledIndicatorSprite : emptyIndicatorSprite;
             }
+
+            // Fire each newly-filled indicator's entry MMF chain. The first
+            // SetLevel after construction skips this — that's the initial
+            // paint and we don't want every already-filled indicator to
+            // animate just because the panel opened.
+            if (previousLevel >= 0 && clamped > previousLevel)
+            {
+                int firstNew = Mathf.Max(previousLevel, 0);
+                int lastNew = Mathf.Min(clamped, indicators.Count);
+                for (int i = firstNew; i < lastNew; i++)
+                {
+                    MMF_Player feedbacks = indicators[i].GetComponent<MMF_Player>();
+                    if (feedbacks != null) feedbacks.PlayFeedbacks();
+                }
+            }
+            previousLevel = clamped;
         }
 
         /// <summary>
