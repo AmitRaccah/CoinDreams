@@ -7,6 +7,7 @@ using Game.Composition.Signals;
 using MessagePipe;
 using MoreMountains.Feedbacks;
 using UnityEngine;
+using UnityEngine.Serialization;
 using VContainer;
 
 namespace Game.Runtime.Steal
@@ -24,12 +25,19 @@ namespace Game.Runtime.Steal
     /// <see cref="HandleStabResolved"/> and feeds the pending TCS so
     /// AnimationCompleted at the end carries truthful data.
     ///
-    /// Timing source: the doll/needle <see cref="Animator"/>s and the MMF
-    /// <c>TotalDuration</c>, whichever is longer. MMF's Animation Parameter
-    /// feedback is fire-and-forget by default — flipping IsPlaying false the
-    /// frame it sets the trigger — but the designer can override that by
-    /// setting a Declared Duration on the feedback. Taking the max covers
-    /// both setups.
+    /// Timing source: the <see cref="stabAnimator"/>'s active clip length OR
+    /// the MMF <c>TotalDuration</c>, whichever is longer. MMF's Animation
+    /// Parameter feedback is fire-and-forget by default — flipping IsPlaying
+    /// false the frame it sets the trigger — but the designer can override
+    /// that by setting a Declared Duration on the feedback. Taking the max
+    /// covers both setups (animator-only, MMF-only, or both wired in
+    /// parallel).
+    ///
+    /// Single-rig assumption: the doll prefab owns the needle as a child
+    /// and exposes ONE Animator that plays a unified stab clip (doll hit
+    /// reaction + needle thrust in one timeline). If a future rig splits
+    /// them, add a second SerializeField pair and union them in
+    /// <see cref="WaitForStabAsync"/>.
     ///
     /// Doll show/hide is intentionally NOT this class's job — the entry /
     /// exit Feel cinematics (planned) will handle visibility through motion.
@@ -37,21 +45,27 @@ namespace Game.Runtime.Steal
     [DisallowMultipleComponent]
     public sealed class Voodoo3DDollPresenter : MonoBehaviour
     {
-        [Header("Stab animators (timing source)")]
-        [Tooltip("Animator that plays the needle's stab clip. The presenter " +
-            "reads GetCurrentAnimatorStateInfo(0).length on this to know how " +
-            "long the input gate stays closed. Leave null if there is no " +
-            "needle animation (the doll Animator alone will drive timing).")]
-        [SerializeField] private Animator? needleAnimator;
-        [Tooltip("Animator that plays the doll's hit reaction.")]
-        [SerializeField] private Animator? dollAnimator;
+        [Header("Stab animation (timing source)")]
+        [Tooltip("Animator on the doll rig that plays the stab clip (doll + " +
+            "integrated needle as one timeline). The presenter reads " +
+            "GetCurrentAnimatorStateInfo(0).length on this to know how long " +
+            "to hold the gate before publishing AnimationCompleted. Leave " +
+            "null if MMF TotalDuration alone drives the timing.")]
+        [FormerlySerializedAs("dollAnimator")]
+        [SerializeField] private Animator? stabAnimator;
 
-        [Header("Stab feedbacks (polish + trigger firing)")]
-        [Tooltip("MMF chain that fires the needle Animator's trigger and any " +
-            "sound / particle / shake feedbacks. NOT used for timing.")]
-        [SerializeField] private MMF_Player? needleFeedbacks;
-        [Tooltip("MMF chain alongside the doll Animator (trigger + polish).")]
-        [SerializeField] private MMF_Player? dollFeedbacks;
+        [Tooltip("Animator Trigger parameter name. Leave EMPTY if the " +
+            "controller has a single state and you want Play(0,0,0f) to " +
+            "restart it from frame 0 each stab. Set this when your " +
+            "controller has an Idle→Stab transition gated by a Trigger.")]
+        [SerializeField] private string stabTriggerName = "";
+
+        [Header("Stab polish (optional)")]
+        [Tooltip("Optional MMF chain for polish ONLY (sound, particles, " +
+            "screen shake). The Animator is triggered directly by code now, " +
+            "so you do NOT need an Animation Parameter feedback in here.")]
+        [FormerlySerializedAs("dollFeedbacks")]
+        [SerializeField] private MMF_Player? stabFeedbacks;
 
         [Header("Debug")]
         [Tooltip("Print step-by-step timing logs to the Console. Use to " +
@@ -138,8 +152,8 @@ namespace Game.Runtime.Steal
 
             try
             {
-                needleFeedbacks?.PlayFeedbacks();
-                dollFeedbacks?.PlayFeedbacks();
+                TriggerStabAnimator();
+                stabFeedbacks?.PlayFeedbacks();
 
                 await WaitForStabAsync();
 
@@ -196,18 +210,12 @@ namespace Game.Runtime.Steal
             Log("WaitForStab: awaiting 2 frames for MMF/Animator handoff");
             await UniTask.DelayFrame(2, cancellationToken: ct);
 
-            float needleAnim = GetActiveClipLength(needleAnimator);
-            float dollAnim = GetActiveClipLength(dollAnimator);
-            float needleMmf = needleFeedbacks != null ? needleFeedbacks.TotalDuration : 0f;
-            float dollMmf = dollFeedbacks != null ? dollFeedbacks.TotalDuration : 0f;
-            float length = Mathf.Max(
-                Mathf.Max(needleAnim, dollAnim),
-                Mathf.Max(needleMmf, dollMmf));
+            float animLen = GetActiveClipLength(stabAnimator);
+            float mmfLen = stabFeedbacks != null ? stabFeedbacks.TotalDuration : 0f;
+            float length = Mathf.Max(animLen, mmfLen);
 
-            Log("WaitForStab: needleAnim=" + needleAnim.ToString("F3")
-                + " dollAnim=" + dollAnim.ToString("F3")
-                + " needleMmf=" + needleMmf.ToString("F3")
-                + " dollMmf=" + dollMmf.ToString("F3")
+            Log("WaitForStab: animLen=" + animLen.ToString("F3")
+                + " mmfLen=" + mmfLen.ToString("F3")
                 + " → wait=" + length.ToString("F3") + "s");
 
             if (length <= 0f)
@@ -231,7 +239,7 @@ namespace Game.Runtime.Steal
         //
         // Skips the read entirely when the Animator has no controller wired —
         // calling state-info APIs in that case spams a Unity warning every
-        // time, which the log shows happens on dollAnimator today.
+        // frame.
         private static float GetActiveClipLength(Animator? animator)
         {
             if (animator == null) return 0f;
@@ -240,6 +248,29 @@ namespace Game.Runtime.Steal
                 ? animator.GetNextAnimatorStateInfo(0)
                 : animator.GetCurrentAnimatorStateInfo(0);
             return info.length;
+        }
+
+        // Without this, an Animator whose default state has a single one-shot
+        // clip plays once at scene load and freezes on the final frame; every
+        // subsequent stab request finds the state already finished and shows
+        // nothing. SetTrigger is the right tool when the controller has an
+        // Idle→Stab Trigger gate; otherwise force-restart the active state
+        // by re-Playing it via its short-name hash. Passing literal 0 to
+        // Play() is a no-op — it asks for "the state whose hash is 0",
+        // which almost never exists.
+        private void TriggerStabAnimator()
+        {
+            if (stabAnimator == null) return;
+            if (stabAnimator.runtimeAnimatorController == null) return;
+
+            if (!string.IsNullOrEmpty(stabTriggerName))
+            {
+                stabAnimator.SetTrigger(stabTriggerName);
+                return;
+            }
+
+            int currentHash = stabAnimator.GetCurrentAnimatorStateInfo(0).shortNameHash;
+            stabAnimator.Play(currentHash, 0, 0f);
         }
 
         // [Conditional] strips every Log() call site in player builds —

@@ -79,9 +79,19 @@ namespace Game.Runtime.Cameras
                 return;
             }
 
-            currentSize = Mathf.Clamp(camera.orthographicSize, minOrthographicSize, maxOrthographicSize);
+            float rawSize = camera.orthographicSize;
+            currentSize = Mathf.Clamp(rawSize, minOrthographicSize, maxOrthographicSize);
             targetSize = currentSize;
             camera.orthographicSize = currentSize;
+
+            if (!Mathf.Approximately(rawSize, currentSize))
+            {
+                Debug.LogWarning(
+                    $"[OrthographicCameraZoomRig] Scene camera size {rawSize} is outside the allowed range " +
+                    $"[{minOrthographicSize}, {maxOrthographicSize}] and was clamped to {currentSize}. " +
+                    "Raise maxOrthographicSize on this component if you want a wider city view.",
+                    this);
+            }
         }
 
         private float GetDampedT(float deltaTime)
