@@ -36,6 +36,14 @@ namespace Game.Composition
             // matching component exists in the scope's scene. Skipping a missing component lets
             // the rest of the container build instead of taking down the whole scope.
             TryRegisterInHierarchy<MapOrbitCameraController>(builder);
+            // Workflow state lives in a plain service (not on the controller
+            // MonoBehaviour). Registered AsSelf so the controller mutates it
+            // and As<IDrawWorkflowStateReader> so UI bridges (the Feel
+            // trigger) subscribe to state-change events without depending on
+            // the concrete state machine.
+            builder.Register<CardDrawWorkflowStateMachine>(Lifetime.Scoped)
+                .As<IDrawWorkflowStateReader>()
+                .AsSelf();
             TryRegisterInHierarchy<CardDrawWorkflowController>(builder);
             TryRegisterInHierarchy<DrawHudPresenter>(builder);
             TryRegisterInHierarchy<DrawActionPresenter>(builder);
@@ -60,6 +68,11 @@ namespace Game.Composition
                 PersistentLifetimeScope.InjectAllInScenes<BuildingsPanel>(container);
                 PersistentLifetimeScope.InjectAllInScenes<BuildingsPanelPresenter>(container);
                 PersistentLifetimeScope.InjectAllInScenes<ShieldsHudPresenter>(container);
+                // DrawWorkflowFeelTrigger may live in 01_Persistent (alongside
+                // the Canvas) but needs IDrawWorkflowStateReader, which is
+                // registered in THIS gameplay scope. Injecting from here
+                // hands it this scope's container so the resolve succeeds.
+                PersistentLifetimeScope.InjectAllInScenes<DrawWorkflowFeelTrigger>(container);
             });
         }
 

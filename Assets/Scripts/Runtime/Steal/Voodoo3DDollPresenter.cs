@@ -242,6 +242,10 @@ namespace Game.Runtime.Steal
             return info.length;
         }
 
+        // [Conditional] strips every Log() call site in player builds —
+        // no string concat, no Debug.Log overhead. In editor, the
+        // verboseLogging toggle still gates console spam at runtime.
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private void Log(string message)
         {
             if (!verboseLogging) return;

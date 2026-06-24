@@ -54,13 +54,43 @@ namespace Game.Runtime.Player
         public event Action? ProfileReplaced;
         public event Action? StateChanged;
 
+        // Profile getter — public access goes through here so we centralize
+        // the "is the context usable yet?" check. EnsureInitialized normally
+        // builds the initial profile, but the build can no-op during scene
+        // teardown (ReplaceProfile early-returns on destroyed gameObject).
+        // Throwing a clear exception beats letting `profile!` propagate a
+        // NullReferenceException with no context.
         public PlayerProfile Profile
         {
             get
             {
                 EnsureInitialized();
-                return profile!;
+                if (profile == null)
+                {
+                    throw new InvalidOperationException(
+                        "[PlayerRuntimeContext] Profile accessed before initialization completed " +
+                        "(likely during scene teardown or before Awake). Use TryGetProfile from " +
+                        "code paths that can run while the context is in flux.");
+                }
+                return profile;
             }
+        }
+
+        // Soft accessor for code paths that may run while the context is
+        // mid-teardown or pre-initialized (editor focus events, OnDisable,
+        // signal handlers fired during scene unload). Returns false instead
+        // of throwing — callers branch on the result instead of wrapping in
+        // try/catch.
+        public bool TryGetProfile(out PlayerProfile result)
+        {
+            EnsureInitialized();
+            if (profile == null)
+            {
+                result = null!;
+                return false;
+            }
+            result = profile;
+            return true;
         }
 
         // Concrete service getters below are intended for Domain-side engine consumers
@@ -96,9 +126,13 @@ namespace Game.Runtime.Player
             get { return Profile.Energy; }
         }
 
-        public IReadOnlyShieldService ShieldView
+        // ShieldView/VillageView/EnergyView are accessed from UI presenters
+        // during OnEnable, which can fire on a freshly-instantiated GameObject
+        // before LifetimeScope finishes injection — return null silently so
+        // the presenter's null-guard takes over instead of an NRE escalating.
+        public IReadOnlyShieldService? ShieldView
         {
-            get { return Profile.Shields; }
+            get { return TryGetProfile(out PlayerProfile p) ? p.Shields : null; }
         }
 
         public IReadOnlyVillageProgressState VillageView
@@ -106,10 +140,15 @@ namespace Game.Runtime.Player
             get { return Profile.Village; }
         }
 
+        // Called from DrawHudPresenter.OnApplicationFocus — runs even when
+        // the context is in a torn-down state because Unity dispatches focus
+        // events to every alive MonoBehaviour. Bail silently in that case.
         public void RefreshRegen()
         {
+            if (this == null || gameObject == null) return;
             EnsureInitialized();
-            profile!.ApplyTimeBasedRegen();
+            if (profile == null) return;
+            profile.ApplyTimeBasedRegen();
         }
 
         public string PlayerId

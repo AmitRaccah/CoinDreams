@@ -50,9 +50,11 @@ namespace Game.Runtime.Steal
         private bool entryInFlight;
         private bool actionInFlight;
         private bool lastTransitioning;
+        private bool lastHasActiveSession;
         private bool isContextSubscribed;
 
         public event Action<bool>? IsTransitioningChanged;
+        public event Action<bool>? HasActiveSessionChanged;
 
         // Filled fresh each time HandleStabRequested starts a stab; the
         // animation-completed subscription resolves it when the doll's Feel
@@ -67,13 +69,11 @@ namespace Game.Runtime.Steal
             "closed for this long before releasing. Absorbs the trailing edge " +
             "of a player's tap burst — without this, the first tap that lands " +
             "the frame after the animation ends squeezes through as a fresh " +
-            "stab (or, post-broken, as a DRAW). Conceptually part of the " +
-            "action's lifecycle (the stab isn't fully \"done\" until input " +
-            "has settled), so it lives here, not in DrawButtonRouter. " +
-            "Designed to be paired with DrawButtonInteractabilityBinder, " +
-            "which uses IsTransitioning to drop the Button at the EventSystem " +
-            "layer during this window. Set 0 to disable; default 0.5s ≈ 3 " +
-            "intervals at typical spam cadence (~160ms).")]
+            "stab (or, post-broken, as a DRAW). DrawButtonRouter polls " +
+            "IsTransitioning on every click, so extending the window here " +
+            "keeps the router dropping spam taps for an extra moment. Set 0 " +
+            "to disable; default 0.5s ≈ 3 intervals at typical spam cadence " +
+            "(~160ms).")]
         [SerializeField] private float postActionSettleSeconds = 0.5f;
 
         // Remembered across ProfileReplaced events so we can tell apart a
@@ -104,17 +104,30 @@ namespace Game.Runtime.Steal
             get { return entryInFlight || actionInFlight; }
         }
 
-        // Fire IsTransitioningChanged when the derived boolean flips. Called
-        // after every entryInFlight/actionInFlight write so subscribers (the
-        // UI gate) react at the exact frame of the transition — no per-frame
-        // polling needed. Compares against lastTransitioning so back-to-back
-        // writes that don't change the derived value stay silent.
+        // Fires IsTransitioningChanged when the derived boolean flips.
+        // Called after every entryInFlight/actionInFlight write so
+        // subscribers (VoodooFeelTrigger → Feel chain → Button.interactable)
+        // react at the exact frame of the transition. Compares against
+        // lastTransitioning so writes that don't change the derived value
+        // stay silent on the wire.
         private void NotifyTransitioningChanged()
         {
             bool current = entryInFlight || actionInFlight;
             if (current == lastTransitioning) return;
             lastTransitioning = current;
             IsTransitioningChanged?.Invoke(current);
+        }
+
+        // Same pattern for the session-level gate. Fired after every
+        // activeSession assignment/clear so subscribers can flip UI for
+        // the entire duration of a voodoo session (vs the per-phase
+        // granularity of IsTransitioningChanged).
+        private void NotifyHasActiveSessionChanged()
+        {
+            bool current = activeSession != null;
+            if (current == lastHasActiveSession) return;
+            lastHasActiveSession = current;
+            HasActiveSessionChanged?.Invoke(current);
         }
 
         private void OnEnable()
@@ -195,6 +208,7 @@ namespace Game.Runtime.Steal
                 if (session != null)
                 {
                     activeSession = session;
+                    NotifyHasActiveSessionChanged();
                     Log("Entry END session=" + session.SessionId);
                 }
                 else
@@ -314,6 +328,7 @@ namespace Game.Runtime.Steal
             string sessionId = activeSession.SessionId;
             int totalStolen = activeSession.TotalStolen;
             activeSession = null;
+            NotifyHasActiveSessionChanged();
 
             await exitPhase.RunAsync(
                 sessionId,
@@ -341,6 +356,7 @@ namespace Game.Runtime.Steal
             string sessionId = activeSession.SessionId;
             int totalStolen = activeSession.TotalStolen;
             activeSession = null;
+            NotifyHasActiveSessionChanged();
 
             exitPhase.RunAsync(
                 sessionId,
@@ -349,6 +365,10 @@ namespace Game.Runtime.Steal
                 this.GetCancellationTokenOnDestroy()).Forget();
         }
 
+        // [Conditional] strips every Log() call site at compile time when
+        // UNITY_EDITOR isn't defined — the string concat in the argument
+        // never runs, zero GC in player builds. Editor still sees full logs.
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
         private void Log(string message)
         {
             Debug.Log("[VoodooStealCoordinator T=" + Time.time.ToString("F3") + "] " + message, this);

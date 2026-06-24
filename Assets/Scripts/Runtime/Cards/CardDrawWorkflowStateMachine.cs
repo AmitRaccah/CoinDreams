@@ -115,9 +115,8 @@ namespace Game.Runtime.Cards
         }
 
         // Centralizes the "CurrentState = X + fire event" pair so every
-        // state transition flows through one place. The idempotency guard
-        // keeps spurious re-emits off the wire when callers ask for the
-        // same state they already have.
+        // state transition flows through one place. Idempotency guard
+        // keeps spurious self-transitions silent on the wire.
         private void Transition(CardDrawWorkflowState next)
         {
             if (CurrentState == next) return;

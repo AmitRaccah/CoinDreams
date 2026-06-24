@@ -19,12 +19,20 @@ namespace Game.Domain.Steal
         bool IsTransitioning { get; }
 
         /// <summary>
-        /// Fires whenever <see cref="IsTransitioning"/> flips. The bool arg
-        /// is the new value. Lets UI projectors (e.g. the button gate) react
-        /// at the exact moment the gate opens or closes instead of polling
-        /// per frame. Subscribers should not assume any particular firing
-        /// thread — implementations may fire from async continuations.
+        /// Fires the moment <see cref="IsTransitioning"/> flips. The bool
+        /// arg is the new value. Lets UI projectors react at the exact
+        /// frame of the transition instead of polling per frame.
+        /// Idempotent: back-to-back writes that don't change the derived
+        /// value stay silent on the wire.
         /// </summary>
         event Action<bool>? IsTransitioningChanged;
+
+        /// <summary>
+        /// Fires the moment <see cref="HasActiveSession"/> flips. The bool
+        /// arg is the new value. UI projectors use this to hide/show panels
+        /// for the entire duration of a voodoo session (vs the per-phase
+        /// granularity of <see cref="IsTransitioningChanged"/>). Idempotent.
+        /// </summary>
+        event Action<bool>? HasActiveSessionChanged;
     }
 }

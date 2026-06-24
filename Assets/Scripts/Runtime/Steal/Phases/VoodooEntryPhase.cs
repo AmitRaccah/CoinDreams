@@ -50,9 +50,9 @@ namespace Game.Runtime.Steal.Phases
 
             try
             {
-                Debug.Log("[VoodooEntryPhase T=" + Time.time.ToString("F3") + "] BeginVoodooSession CALLING multiplier=" + multiplier);
+                Log("BeginVoodooSession CALLING multiplier=" + multiplier);
                 VoodooSessionBeginResponse response = await client.BeginVoodooSessionAsync(multiplier);
-                Debug.Log("[VoodooEntryPhase T=" + Time.time.ToString("F3") + "] BeginVoodooSession RESPONSE status=" + response.Status + " sessionId=" + response.SessionId);
+                Log("BeginVoodooSession RESPONSE status=" + response.Status + " sessionId=" + response.SessionId);
                 ct.ThrowIfCancellationRequested();
 
                 if (response.Status != VoodooSessionBeginStatus.Success)
@@ -89,6 +89,16 @@ namespace Game.Runtime.Steal.Phases
                 Debug.LogError("[VoodooEntryPhase] BeginVoodooSession threw: " + ex);
                 return null;
             }
+        }
+
+        // [Conditional] strips Log() call sites in player builds — zero GC
+        // from string concat in the argument expression. LogWarning/LogError
+        // above stay unconditional because errors should surface in shipped
+        // builds too.
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        private static void Log(string message)
+        {
+            Debug.Log("[VoodooEntryPhase T=" + Time.time.ToString("F3") + "] " + message);
         }
     }
 }

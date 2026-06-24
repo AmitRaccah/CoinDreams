@@ -70,7 +70,16 @@ namespace Game.Composition
                 InjectAllInScenes<Game.Runtime.UI.Panels.PanelCloseButton>(container);
                 InjectAllInScenes<Game.Runtime.UI.Buildings.BuildingsPanel>(container);
                 InjectAllInScenes<Game.Runtime.UI.Shields.ShieldsHudPresenter>(container);
+                // VoodooFeelTrigger subscribes to IVoodooSessionStateReader,
+                // which is the VoodooStealCoordinator registered in this same
+                // scope — resolves cleanly without crossing scope boundaries.
+                InjectAllInScenes<Game.Runtime.Steal.VoodooFeelTrigger>(container);
             });
+
+            // Button-click feedbacks are wired directly via UnityEvent →
+            // MMF_Player.PlayFeedbacks() in the Inspector. State-driven
+            // feedbacks (transitions, gating) go through the two Feel triggers
+            // — DrawWorkflowFeelTrigger + VoodooFeelTrigger — registered above.
 
             builder.Register<TimeProvider>(Lifetime.Singleton).As<ITimeProvider>();
             builder.Register<UiNavigatorStub>(Lifetime.Singleton).As<IUiNavigator>();
@@ -175,14 +184,6 @@ namespace Game.Composition
             if (UnityEngine.Object.FindAnyObjectByType<DrawButtonRouter>() != null)
             {
                 builder.RegisterComponentInHierarchy<DrawButtonRouter>();
-            }
-
-            // Interactability binder mirrors IsTransitioning onto Button.interactable so
-            // clicks are dropped at Unity's EventSystem layer (not just at the router).
-            // Same opt-in pattern as the router — scenes that don't wire it still work.
-            if (UnityEngine.Object.FindAnyObjectByType<DrawButtonInteractabilityBinder>() != null)
-            {
-                builder.RegisterComponentInHierarchy<DrawButtonInteractabilityBinder>();
             }
 
             builder.Register<CloudFunctionsStealClient>(Lifetime.Singleton).As<IVoodooStealClient>();

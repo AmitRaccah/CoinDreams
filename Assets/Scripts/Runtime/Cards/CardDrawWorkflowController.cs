@@ -10,20 +10,20 @@ using VContainer;
 
 namespace Game.Runtime.Cards
 {
+    // Thin controller — owns scene-side config (anchors + same-GameObject
+    // services) and routes click signals to the workflow. The state itself
+    // lives in CardDrawWorkflowStateMachine, registered as a separate
+    // service in GameplayLifetimeScope and exposed as IDrawWorkflowStateReader
+    // so UI bridges (DrawWorkflowFeelTrigger) subscribe to transitions
+    // without depending on this MonoBehaviour or on the concrete state
+    // machine.
+    //
+    // SRP: routing input → workflow + holding scene anchors. State ownership
+    // and event publishing live in the state machine, visual reaction lives
+    // in the Feel trigger — each layer one responsibility.
     [DisallowMultipleComponent]
-    public sealed class CardDrawWorkflowController : MonoBehaviour, IDrawWorkflowStateReader
+    public sealed class CardDrawWorkflowController : MonoBehaviour
     {
-        // Forwards to the internal state machine so consumers that depend
-        // on IDrawWorkflowStateReader (e.g. DrawWorkflowTagsPublisher) get
-        // notified the moment the workflow advances, without taking a
-        // dependency on this MonoBehaviour or the state-machine type.
-        public CardDrawWorkflowState CurrentState => workflowState.CurrentState;
-        public event Action<CardDrawWorkflowState>? StateChanged
-        {
-            add { workflowState.StateChanged += value; }
-            remove { workflowState.StateChanged -= value; }
-        }
-
         [Header("Dependencies")]
         [SerializeField] private MonoBehaviour? cameraTransitionServiceSource;
 
@@ -34,14 +34,13 @@ namespace Game.Runtime.Cards
         private IDrawGameActions? drawGameActions;
         private ICameraTransitionService? cameraTransitionService;
 
+        [Inject] private CardDrawWorkflowStateMachine? workflowState;
         [Inject] private ISubscriber<DrawRequestedSignal>? drawSubscriber;
         [Inject] private ISubscriber<ReturnRequestedSignal>? returnSubscriber;
         [Inject] private ICameraViewModeWriter? cameraViewModeWriter;
 
         private IDisposable? drawSubscription;
         private IDisposable? returnSubscription;
-
-        private readonly CardDrawWorkflowStateMachine workflowState = new CardDrawWorkflowStateMachine();
 
         private DrawWorkflowExecutor? executor;
 
@@ -60,14 +59,17 @@ namespace Game.Runtime.Cards
         {
             this.ResolveDependencies();
             this.ValidateDependencies();
-            this.executor = new DrawWorkflowExecutor(
-                this.cameraTransitionService,
-                this.drawGameActions,
-                this.workflowState,
-                this.cardBoardAnchor,
-                this.cityViewAnchor,
-                this.cameraViewModeWriter,
-                this);
+            if (this.workflowState != null)
+            {
+                this.executor = new DrawWorkflowExecutor(
+                    this.cameraTransitionService,
+                    this.drawGameActions,
+                    this.workflowState,
+                    this.cardBoardAnchor,
+                    this.cityViewAnchor,
+                    this.cameraViewModeWriter,
+                    this);
+            }
 
             if (drawSubscriber != null)
             {
@@ -99,16 +101,10 @@ namespace Game.Runtime.Cards
 
         private async UniTask HandleDrawClickedAsync()
         {
-            DrawWorkflowAction action = this.workflowState.HandleDrawClicked();
-            if (action == DrawWorkflowAction.None)
-            {
-                return;
-            }
+            if (this.workflowState == null || this.executor == null) return;
 
-            if (this.executor == null)
-            {
-                return;
-            }
+            DrawWorkflowAction action = this.workflowState.HandleDrawClicked();
+            if (action == DrawWorkflowAction.None) return;
 
             if (action == DrawWorkflowAction.MoveToBoard)
             {
@@ -124,16 +120,8 @@ namespace Game.Runtime.Cards
 
         private async UniTask HandleReturnClickedAsync()
         {
-            if (!this.workflowState.TryBeginReturn())
-            {
-                return;
-            }
-
-            if (this.executor == null)
-            {
-                return;
-            }
-
+            if (this.workflowState == null || this.executor == null) return;
+            if (!this.workflowState.TryBeginReturn()) return;
             await this.executor.ReturnToCityAsync();
         }
 

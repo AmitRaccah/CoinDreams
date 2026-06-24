@@ -50,9 +50,9 @@ namespace Game.Runtime.Steal.Phases
 
             try
             {
-                Debug.Log("[VoodooActionPhase T=" + Time.time.ToString("F3") + "] ExecuteVoodooStab CALLING sessionId=" + sessionId);
+                Log("ExecuteVoodooStab CALLING sessionId=" + sessionId);
                 VoodooStabResponse response = await client.ExecuteVoodooStabAsync(sessionId);
-                Debug.Log("[VoodooActionPhase T=" + Time.time.ToString("F3") + "] ExecuteVoodooStab RESPONSE status=" + response.Status + " stolen=" + response.StolenAmount + " broken=" + response.IsDollBroken);
+                Log("ExecuteVoodooStab RESPONSE status=" + response.Status + " stolen=" + response.StolenAmount + " broken=" + response.IsDollBroken);
                 ct.ThrowIfCancellationRequested();
 
                 if (response.Status == VoodooStabStatus.Success
@@ -111,6 +111,15 @@ namespace Game.Runtime.Steal.Phases
                 Debug.LogError("[VoodooActionPhase] ExecuteVoodooStab threw: " + ex);
                 return VoodooActionOutcome.NoOp();
             }
+        }
+
+        // [Conditional] strips Log() call sites in player builds — the
+        // string concat in the call argument never runs in shipped game.
+        // Warnings/errors above stay unconditional (always surfaced).
+        [System.Diagnostics.Conditional("UNITY_EDITOR")]
+        private static void Log(string message)
+        {
+            Debug.Log("[VoodooActionPhase T=" + Time.time.ToString("F3") + "] " + message);
         }
     }
 }

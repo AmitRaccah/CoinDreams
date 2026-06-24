@@ -5,6 +5,7 @@ using MessagePipe;
 using UnityEngine;
 using UnityEngine.UI;
 using VContainer;
+using VContainer.Unity;
 
 namespace Game.Runtime.UI.Panels
 {
@@ -15,6 +16,11 @@ namespace Game.Runtime.UI.Panels
     ///
     /// SRP: input adapter only. Drop this on any X / Back button inside a
     /// panel; works the same way no matter which panel hosts it.
+    ///
+    /// Resilient injection: same late-inject fallback as
+    /// <see cref="PanelOpenButton"/>. Walks loaded LifetimeScopes at Start
+    /// and rebinds if the primary InjectAllInScenes pass missed this
+    /// instance (e.g. nested-prefab scope timing race).
     /// </summary>
     [DisallowMultipleComponent]
     [RequireComponent(typeof(Button))]
@@ -27,6 +33,11 @@ namespace Game.Runtime.UI.Panels
         private void Awake()
         {
             button = GetComponent<Button>();
+        }
+
+        private void Start()
+        {
+            EnsureInjected();
         }
 
         private void OnEnable()
@@ -43,10 +54,36 @@ namespace Game.Runtime.UI.Panels
         {
             if (publisher == null)
             {
-                Debug.LogWarning("[PanelCloseButton] No publisher injected — close request dropped.");
+                Debug.LogWarning("[PanelCloseButton] No publisher injected — close request dropped.", this);
                 return;
             }
             publisher.Publish(new PanelCloseRequestedSignal());
+        }
+
+        // Late-inject fallback — see PanelOpenButton.EnsureInjected for
+        // rationale. Idempotent; cost bounded by LifetimeScope count.
+        private void EnsureInjected()
+        {
+            if (publisher != null) return;
+
+            LifetimeScope[] scopes = FindObjectsByType<LifetimeScope>(FindObjectsSortMode.None);
+            for (int i = 0; i < scopes.Length; i++)
+            {
+                LifetimeScope scope = scopes[i];
+                if (scope == null || scope.Container == null) continue;
+
+                scope.Container.Inject(this);
+                if (publisher != null)
+                {
+#if UNITY_EDITOR
+                    Debug.LogWarning(
+                        "[PanelCloseButton] Late-injected via '" + scope.name +
+                        "' — primary InjectAllInScenes pass missed this instance.",
+                        this);
+#endif
+                    return;
+                }
+            }
         }
     }
 }
