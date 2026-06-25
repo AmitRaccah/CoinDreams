@@ -12,7 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5f5f8413613ab8842a8326c139902611, type: 3}
   m_Name: Shop
   m_EditorClassIdentifier: Assembly-CSharp::BuildingDefinitionSO
-  DisplayName: Shop
+  DisplayName: Shop Stand
   BuildingID: shop
   uiIcon: {fileID: 21300000, guid: 4771fe97ee2d3c349b1ba68966fbf836, type: 3}
   upgradeSteps:

@@ -40,6 +40,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 2923619788237474557}
+  - component: {fileID: 610000000000000004}
   m_Layer: 0
   m_Name: Shop_Stand_Full_Upgrade
   m_TagString: Untagged
@@ -66,6 +67,25 @@ Transform:
   - {fileID: 1039558441941636462}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &610000000000000004
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5865368077859908194}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 234e88a30a9476a4aaa14adc9a3c93aa, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingVisualController
+  buildingDefinition: {fileID: 11400000, guid: 9d5fa2d9e1c01a14883eacb269266abc, type: 2}
+  partObjects: []
+  levelVisuals: []
+  usePartObjectsAsLevelVisuals: 1
+  combineLevelMeshesOnAwake: 0
+  autoCollectChildrenWhenEmpty: 1
+  applyLevelZeroOnAwake: 1
 --- !u!1 &7876221223783658088
 GameObject:
   m_ObjectHideFlags: 0

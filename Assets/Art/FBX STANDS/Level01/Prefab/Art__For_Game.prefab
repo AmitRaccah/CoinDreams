@@ -2988,7 +2988,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 234e88a30a9476a4aaa14adc9a3c93aa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingVisualController
-  buildingDefinition: {fileID: 11400000, guid: af00c2c25de169e4897d5911dd1dac57, type: 2}
+  buildingDefinition: {fileID: 0}
   partObjects:
   - {fileID: 5778253223091571419}
   - {fileID: 7610378893962973900}
@@ -6484,7 +6484,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 234e88a30a9476a4aaa14adc9a3c93aa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingVisualController
-  buildingDefinition: {fileID: 11400000, guid: 9d5fa2d9e1c01a14883eacb269266abc, type: 2}
+  buildingDefinition: {fileID: 0}
   partObjects:
   - {fileID: 4003207661439088762}
   - {fileID: 2075652885767941049}
@@ -9261,7 +9261,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 234e88a30a9476a4aaa14adc9a3c93aa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingVisualController
-  buildingDefinition: {fileID: 11400000, guid: d16cc7cc7300c9642915d3cf6678ac61, type: 2}
+  buildingDefinition: {fileID: 0}
   partObjects:
   - {fileID: 3793901132418940970}
   - {fileID: 6399706374042758624}
