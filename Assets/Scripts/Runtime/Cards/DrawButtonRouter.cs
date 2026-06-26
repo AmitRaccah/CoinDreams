@@ -47,9 +47,6 @@ namespace Game.Runtime.Cards
             IVoodooSessionStateReader? reader = sessionStateReader;
             bool transitioning = reader != null && reader.IsTransitioning;
             bool hasSession = reader != null && reader.HasActiveSession;
-            Debug.Log("[DrawButtonRouter T=" + Time.time.ToString("F3")
-                + "] click transitioning=" + transitioning
-                + " hasSession=" + hasSession);
 
             if (transitioning) return;
 

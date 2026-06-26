@@ -47,6 +47,7 @@ namespace Game.Composition
             TryRegisterInHierarchy<CardDrawWorkflowController>(builder);
             TryRegisterInHierarchy<DrawHudPresenter>(builder);
             TryRegisterInHierarchy<DrawActionPresenter>(builder);
+            TryRegisterDrawCardPresentation(builder);
             TryRegisterInHierarchy<VillageUpgradeRuntime>(builder);
             // 3D doll lives in this scene — subscribes to voodoo signals
             // brokered in the persistent parent scope.
@@ -94,6 +95,20 @@ namespace Game.Composition
                 Debug.LogWarning(
                     $"[GameplayLifetimeScope] Skipped registration of {typeof(T).Name} — no instance in any loaded scene.");
             }
+        }
+
+        private static void TryRegisterDrawCardPresentation(IContainerBuilder builder)
+        {
+            if (Object.FindAnyObjectByType<DrawCardPresentationPresenter>() != null)
+            {
+                builder.RegisterComponentInHierarchy<DrawCardPresentationPresenter>()
+                    .As<IDrawCardPresentation>()
+                    .AsSelf();
+                return;
+            }
+
+            builder.Register<NullDrawCardPresentation>(Lifetime.Scoped)
+                .As<IDrawCardPresentation>();
         }
 
         // Same opt-in pattern as TryRegisterInHierarchy but uses RegisterComponent

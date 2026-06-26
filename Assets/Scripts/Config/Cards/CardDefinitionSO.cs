@@ -8,6 +8,7 @@ namespace Game.Config.Cards
     {
         [SerializeField] private string cardId = "card";
         [SerializeField] private int weight = 1;
+        [SerializeField] private Sprite cardSprite;
         [SerializeField] private List<RewardEffectConfig> effectConfigs = new List<RewardEffectConfig>();
 
         public string CardId
@@ -18,6 +19,11 @@ namespace Game.Config.Cards
         public int Weight
         {
             get { return weight; }
+        }
+
+        public Sprite CardSprite
+        {
+            get { return cardSprite; }
         }
 
         public List<RewardEffectConfig> EffectConfigs

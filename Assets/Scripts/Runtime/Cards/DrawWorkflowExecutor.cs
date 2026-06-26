@@ -1,5 +1,7 @@
 using System;
 using System.Threading.Tasks;
+using Cysharp.Threading.Tasks;
+using Game.Domain.Cards;
 using Game.Runtime.Cameras;
 using UnityEngine;
 
@@ -9,6 +11,7 @@ namespace Game.Runtime.Cards
     {
         private readonly ICameraTransitionService cameraTransitionService;
         private readonly IDrawGameActions drawGameActions;
+        private readonly IDrawCardPresentation drawCardPresentation;
         private readonly CardDrawWorkflowStateMachine workflowState;
         private readonly Transform cardBoardAnchor;
         private readonly Transform cityViewAnchor;
@@ -19,6 +22,7 @@ namespace Game.Runtime.Cards
         public DrawWorkflowExecutor(
             ICameraTransitionService cameraTransitionService,
             IDrawGameActions drawGameActions,
+            IDrawCardPresentation drawCardPresentation,
             CardDrawWorkflowStateMachine workflowState,
             Transform cardBoardAnchor,
             Transform cityViewAnchor,
@@ -27,6 +31,7 @@ namespace Game.Runtime.Cards
         {
             this.cameraTransitionService = cameraTransitionService;
             this.drawGameActions = drawGameActions;
+            this.drawCardPresentation = drawCardPresentation;
             this.workflowState = workflowState;
             this.cardBoardAnchor = cardBoardAnchor;
             this.cityViewAnchor = cityViewAnchor;
@@ -82,7 +87,11 @@ namespace Game.Runtime.Cards
 
             try
             {
-                await drawGameActions.TryDrawAsync();
+                float drawStartedAt = Time.realtimeSinceStartup;
+                float drawLockSeconds = drawCardPresentation.BeginDraw();
+                AuthoritativeDrawResult result = await drawGameActions.TryDrawAsync();
+                float revealLockSeconds = drawCardPresentation.Present(result);
+                await WaitForPresentationLockAsync(drawStartedAt, drawLockSeconds, revealLockSeconds);
             }
             catch (OperationCanceledException)
             {
@@ -97,6 +106,25 @@ namespace Game.Runtime.Cards
             {
                 workflowState.CompleteDraw();
             }
+        }
+
+        private static async UniTask WaitForPresentationLockAsync(
+            float drawStartedAt,
+            float drawLockSeconds,
+            float revealLockSeconds)
+        {
+            float elapsed = Time.realtimeSinceStartup - drawStartedAt;
+            float remainingDrawSeconds = Mathf.Max(0f, drawLockSeconds - elapsed);
+            float waitSeconds = Mathf.Max(remainingDrawSeconds, revealLockSeconds);
+            if (waitSeconds <= 0f)
+            {
+                return;
+            }
+
+            await UniTask.Delay(
+                TimeSpan.FromSeconds(waitSeconds),
+                DelayType.Realtime,
+                PlayerLoopTiming.Update);
         }
 
         public async Task ReturnToCityAsync()

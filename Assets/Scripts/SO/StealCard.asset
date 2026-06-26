@@ -14,6 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Config.Cards.CardDefinitionSO
   cardId: Steal
   weight: 1
+  cardSprite: {fileID: 21300000, guid: 8fb0f499d463f12459892d2dff097979, type: 3}
   effectConfigs:
   - effectType: 2
     intValue: 0
