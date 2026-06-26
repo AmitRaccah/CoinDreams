@@ -38,6 +38,7 @@ namespace Game.Runtime.Cards
         [Inject] private ISubscriber<DrawRequestedSignal>? drawSubscriber;
         [Inject] private ISubscriber<ReturnRequestedSignal>? returnSubscriber;
         [Inject] private ICameraViewModeWriter? cameraViewModeWriter;
+        [Inject] private IDrawCardPresentation? drawCardPresentation;
 
         private IDisposable? drawSubscription;
         private IDisposable? returnSubscription;
@@ -64,6 +65,7 @@ namespace Game.Runtime.Cards
                 this.executor = new DrawWorkflowExecutor(
                     this.cameraTransitionService,
                     this.drawGameActions,
+                    this.drawCardPresentation ?? new NullDrawCardPresentation(),
                     this.workflowState,
                     this.cardBoardAnchor,
                     this.cityViewAnchor,

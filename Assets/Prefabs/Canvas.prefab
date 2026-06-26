@@ -5224,6 +5224,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: ResultsPanel
       objectReference: {fileID: 0}
+    - target: {fileID: 2069940078703757686, guid: fb34a4ee7660ec34d9caff3b5ff244c1, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 6375827663531233475, guid: fb34a4ee7660ec34d9caff3b5ff244c1, type: 3}
       propertyPath: m_Pivot.x
       value: 0
