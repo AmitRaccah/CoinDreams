@@ -12,12 +12,14 @@ namespace Game.Runtime.Village
             BuildingLevelVisual[] configuredLevelVisuals,
             GameObject[] partObjects,
             bool usePartObjectsAsLevelVisuals,
+            int directPartObjectLevelCount,
             bool combineMeshes)
         {
             levelRoots = BuildLevelRoots(
                 configuredLevelVisuals,
                 partObjects,
-                usePartObjectsAsLevelVisuals);
+                usePartObjectsAsLevelVisuals,
+                directPartObjectLevelCount);
 
             IsValid = HasAnyLevelRoot(levelRoots);
             if (!IsValid || !combineMeshes)
@@ -102,7 +104,8 @@ namespace Game.Runtime.Village
         private static GameObject[] BuildLevelRoots(
             BuildingLevelVisual[] configuredLevelVisuals,
             GameObject[] partObjects,
-            bool usePartObjectsAsLevelVisuals)
+            bool usePartObjectsAsLevelVisuals,
+            int directPartObjectLevelCount)
         {
             int configuredCount = configuredLevelVisuals != null ? configuredLevelVisuals.Length : 0;
             if (configuredCount > 0)
@@ -122,6 +125,13 @@ namespace Game.Runtime.Village
             if (!usePartObjectsAsLevelVisuals || partObjects == null || partObjects.Length == 0)
             {
                 return Array.Empty<GameObject>();
+            }
+
+            if (directPartObjectLevelCount > 0 && partObjects.Length == directPartObjectLevelCount)
+            {
+                GameObject[] directLevelRoots = new GameObject[partObjects.Length];
+                Array.Copy(partObjects, directLevelRoots, partObjects.Length);
+                return directLevelRoots;
             }
 
             GameObject[] partLevelRoots = new GameObject[partObjects.Length + 1];

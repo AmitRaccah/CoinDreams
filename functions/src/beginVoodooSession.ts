@@ -45,6 +45,36 @@ function sanitizeMultiplier(raw: unknown): number {
     return ALLOWED_THIEF_MULTIPLIERS.includes(raw) ? raw : 1;
 }
 
+/**
+ * Eligibility rules for showing a player as a steal target. Centralised so
+ * new constraints (banned users, recent-victim cooldown, regional
+ * matchmaking) plug in by adding a single line here instead of fattening
+ * the handler.
+ *
+ * Today's rules:
+ *   1. Cannot steal from self.
+ *   2. Cannot steal from a player who has NEITHER coins NOR shields. A stab
+ *      against such a victim is a pure no-op: stealEngine reports
+ *      VictimEmpty on every call, leaving the thief with nothing to take
+ *      and nothing to chip away at. Players with shields BUT no coins are
+ *      still valid — the stab decrements their shield (a meaningful
+ *      outcome), even though no coins move.
+ */
+function isEligibleVictim(
+    docId: string,
+    docData: Record<string, unknown>,
+    callerUid: string,
+): boolean {
+    if (docId === callerUid) {
+        return false;
+    }
+    const rawCoins = docData["coins"];
+    const coins = typeof rawCoins === "number" && Number.isFinite(rawCoins) ? rawCoins : 0;
+    const rawShields = docData["shields"];
+    const shields = typeof rawShields === "number" && Number.isFinite(rawShields) ? rawShields : 0;
+    return coins > 0 || shields > 0;
+}
+
 export const beginVoodooSession = onCall<unknown, Promise<VoodooSessionBeginResult>>(
     { region: "us-central1" },
     async (request: CallableRequest<unknown>): Promise<VoodooSessionBeginResult> => {
@@ -73,9 +103,11 @@ export const beginVoodooSession = onCall<unknown, Promise<VoodooSessionBeginResu
             .limit(VICTIM_SAMPLE_LIMIT)
             .get();
 
-        const candidates = playerDocs.docs.filter((doc) => doc.id !== callerUid);
+        const candidates = playerDocs.docs.filter((doc) =>
+            isEligibleVictim(doc.id, doc.data() as Record<string, unknown>, callerUid),
+        );
         if (candidates.length === 0) {
-            throw new HttpsError("failed-precondition", "No victims available.");
+            throw new HttpsError("failed-precondition", "No eligible victims available.");
         }
 
         const pick = candidates[Math.floor(Math.random() * candidates.length)];

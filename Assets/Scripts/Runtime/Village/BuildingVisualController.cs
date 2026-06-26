@@ -111,6 +111,7 @@ namespace Game.Runtime.Village
                     levelVisuals,
                     resolvedPartObjects,
                     usePartObjectsAsLevelVisuals,
+                    GetExpectedLevelVisualCount(),
                     combineLevelMeshesOnAwake);
 
                 if (levelApplier.IsValid)
@@ -161,6 +162,16 @@ namespace Game.Runtime.Village
             }
 
             return collected;
+        }
+
+        private int GetExpectedLevelVisualCount()
+        {
+            if (buildingDefinition == null || buildingDefinition.upgradeSteps == null)
+            {
+                return 0;
+            }
+
+            return buildingDefinition.upgradeSteps.Count + 1;
         }
     }
 }

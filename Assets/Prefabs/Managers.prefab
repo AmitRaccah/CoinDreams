@@ -260,10 +260,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.VillageUpgradeRuntime
   villageDefinition: {fileID: 11400000, guid: 03dbec92c331c2e48a8842e3ee8a5ec0, type: 2}
   applyVisualsOnAwake: 1
-  buildingVisualControllers:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  buildingVisualControllers: []
 --- !u!1 &6854415798825427032
 GameObject:
   m_ObjectHideFlags: 0
