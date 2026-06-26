@@ -17,12 +17,9 @@ namespace Game.Runtime.Bootstrap.UI
         [SerializeField] private CanvasGroup progressUIGroup;
 
         [Header("Backdrop Layers")]
-        [Tooltip("Solid-colour background that fills the whole splash for " +
-            "phase 1 (typically opaque black). Always at alpha 1.")]
-        [SerializeField] private Image blackBackground;
-        [Tooltip("Wide intro art shown during phase 2. The CanvasGroup " +
-            "below drives its fade-in.")]
-        [SerializeField] private Image loadingBackground;
+        [Tooltip("CanvasGroup on the wide intro-art Image. Driven by " +
+            "FadeInLoadingBackgroundStep in phase 2. The Image itself is " +
+            "configured in the scene; this presenter only animates alpha.")]
         [SerializeField] private CanvasGroup loadingBackgroundCanvasGroup;
 
         [Header("Logo Overlay (Phase 1)")]
