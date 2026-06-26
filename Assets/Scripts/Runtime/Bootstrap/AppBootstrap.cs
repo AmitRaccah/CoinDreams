@@ -52,7 +52,10 @@ namespace Game.Runtime.Bootstrap
         private async UniTask RunBootSequenceAsync(CancellationToken ct)
         {
             ISceneLoader loader = new UnitySceneLoader();
-            BootContext context = new BootContext(loader, null, SetStatusOnSplash);
+            // splashView IS the ISplashLogoPresenter implementation. Passing
+            // it through the context lets bootstrap steps render logos
+            // without coupling to the concrete view.
+            BootContext context = new BootContext(loader, null, SetStatusOnSplash, splashView);
 
             float totalWeight = 0f;
             int i;
