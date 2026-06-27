@@ -1,7 +1,7 @@
 #nullable enable
 
 using System;
-using Game.Composition.Signals;
+using Game.Signals;
 using Game.Runtime.Player;
 using MessagePipe;
 using UnityEngine;

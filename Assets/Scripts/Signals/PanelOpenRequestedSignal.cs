@@ -1,4 +1,4 @@
-namespace Game.Composition.Signals
+namespace Game.Signals
 {
     /// <summary>
     /// Fired by a UI source (typically a button on a side rail) asking the

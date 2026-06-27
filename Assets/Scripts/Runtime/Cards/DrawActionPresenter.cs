@@ -1,7 +1,7 @@
 #nullable enable
 using System;
 using System.Threading.Tasks;
-using Game.Composition.Signals;
+using Game.Signals;
 using Game.Config.Cards;
 using Game.Domain.Cards;
 using Game.Runtime.Player;

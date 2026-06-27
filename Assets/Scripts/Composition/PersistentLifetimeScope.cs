@@ -1,7 +1,7 @@
 #nullable enable
 
 using System;
-using Game.Composition.Signals;
+using Game.Signals;
 using Game.Config.Cards;
 using Game.Domain.Steal;
 using Game.Domain.Time;

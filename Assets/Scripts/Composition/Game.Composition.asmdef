@@ -6,7 +6,7 @@
         "Game.Config",
         "Game.Infrastructure",
         "Game.Runtime",
-        "Game.Composition.Signals",
+        "Game.Signals",
         "VContainer",
         "MessagePipe",
         "MessagePipe.VContainer"

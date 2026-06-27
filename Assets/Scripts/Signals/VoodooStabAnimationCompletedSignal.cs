@@ -1,4 +1,4 @@
-namespace Game.Composition.Signals
+namespace Game.Signals
 {
     /// <summary>
     /// Published by the 3D doll presenter AFTER the per-stab Feel chain has

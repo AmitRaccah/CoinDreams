@@ -3,7 +3,7 @@
 using System;
 using System.Threading;
 using Cysharp.Threading.Tasks;
-using Game.Composition.Signals;
+using Game.Signals;
 using MessagePipe;
 using MoreMountains.Feedbacks;
 using UnityEngine;

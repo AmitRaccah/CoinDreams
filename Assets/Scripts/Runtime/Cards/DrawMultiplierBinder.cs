@@ -1,6 +1,6 @@
 #nullable enable
 
-using Game.Composition.Signals;
+using Game.Signals;
 using Game.Domain.Cards;
 using MessagePipe;
 using TMPro;

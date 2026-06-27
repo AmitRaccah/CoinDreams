@@ -1,4 +1,4 @@
-namespace Game.Composition.Signals
+namespace Game.Signals
 {
     /// <summary>
     /// Fired by a panel's own close button (or any source) asking the

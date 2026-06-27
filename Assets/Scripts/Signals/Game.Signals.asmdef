@@ -1,6 +1,6 @@
 {
-    "name": "Game.Composition.Signals",
-    "rootNamespace": "Game.Composition.Signals",
+    "name": "Game.Signals",
+    "rootNamespace": "Game.Signals",
     "references": [],
     "includePlatforms": [],
     "excludePlatforms": [],
@@ -10,5 +10,5 @@
     "autoReferenced": true,
     "defineConstraints": [],
     "versionDefines": [],
-    "noEngineReferences": false
+    "noEngineReferences": true
 }

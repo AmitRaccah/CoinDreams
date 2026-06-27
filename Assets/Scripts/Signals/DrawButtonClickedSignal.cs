@@ -1,4 +1,4 @@
-namespace Game.Composition.Signals
+namespace Game.Signals
 {
     public readonly struct DrawButtonClickedSignal
     {

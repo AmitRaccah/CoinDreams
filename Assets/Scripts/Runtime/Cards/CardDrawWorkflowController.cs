@@ -3,7 +3,7 @@
 using System;
 using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
-using Game.Composition.Signals;
+using Game.Signals;
 using Game.Infrastructure.Persistence;
 using Game.Runtime.Cameras;
 using MessagePipe;

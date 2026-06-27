@@ -2,7 +2,7 @@
 
 using System;
 using Cysharp.Threading.Tasks;
-using Game.Composition.Signals;
+using Game.Signals;
 using Game.Domain.Player.Voodoo;
 using Game.Runtime.Player;
 using Game.Runtime.Steal.Phases;

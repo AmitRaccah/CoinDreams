@@ -5,7 +5,7 @@
         "Game.Domain",
         "Game.Config",
         "Game.Infrastructure",
-        "Game.Composition.Signals",
+        "Game.Signals",
         "VContainer",
         "MessagePipe",
         "UniTask",

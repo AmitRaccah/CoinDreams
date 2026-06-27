@@ -1,7 +1,7 @@
 #nullable enable
 
 using System;
-using Game.Composition.Signals;
+using Game.Signals;
 using MessagePipe;
 using TMPro;
 using UnityEngine;

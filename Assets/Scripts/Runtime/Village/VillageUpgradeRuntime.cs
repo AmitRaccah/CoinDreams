@@ -2,7 +2,7 @@
 
 using System;
 using System.Threading.Tasks;
-using Game.Composition.Signals;
+using Game.Signals;
 using Game.Config.Village;
 using Game.Domain.Economy;
 using Game.Domain.Village;

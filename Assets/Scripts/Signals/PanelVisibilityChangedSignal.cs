@@ -1,4 +1,4 @@
-namespace Game.Composition.Signals
+namespace Game.Signals
 {
     /// <summary>
     /// Fired by <c>PanelNavigator</c> after every successful Show / Hide so
