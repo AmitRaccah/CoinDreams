@@ -9,10 +9,9 @@
   <Project Path="Firebase.Functions.csproj" />
   <Project Path="Game.Config.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
-  <Project Path="Lofelt.NiceVibrations.Demo.csproj" />
   <Project Path="Game.Signals.csproj" />
   <Project Path="Lofelt.NiceVibrations.Editor.csproj" />
   <Project Path="Game.Composition.csproj" />
-  <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Game.Editor.csproj" />
+  <Project Path="Assembly-CSharp.csproj" />
 </Solution>

@@ -2081,11 +2081,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 315806403802382493, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -0.525
       objectReference: {fileID: 0}
     - target: {fileID: 721328196316074244, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.068
+      objectReference: {fileID: 0}
+    - target: {fileID: 1048857885528590449, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1342206418552934941, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2249,7 +2253,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8767655162933184934, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -1.475
       objectReference: {fileID: 0}
     - target: {fileID: 8940775567403630030, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
       propertyPath: m_LocalPosition.x
@@ -2275,6 +2279,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3407855088549863043, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
       insertIndex: 1
       addedObject: {fileID: 2014328962}
+    - targetCorrespondingSourceObject: {fileID: 7915893154494714092, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 8253243339674920247, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
 --- !u!95 &2014328958 stripped
 Animator:
