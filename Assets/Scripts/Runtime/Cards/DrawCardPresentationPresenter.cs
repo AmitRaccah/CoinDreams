@@ -40,7 +40,7 @@ namespace Game.Runtime.Cards
             return Play(drawFeedbacks);
         }
 
-        public float Present(AuthoritativeDrawResult result)
+        public float Present(AuthoritativeDrawResult result, int multiplier)
         {
             if (result == null || !result.IsSuccess)
             {
@@ -50,10 +50,7 @@ namespace Game.Runtime.Cards
             Sprite? sprite = ResolveSprite(result.DrawnCardId);
             SetCardSprite(sprite != null ? sprite : missingCardSprite);
 
-            if (cardLabel != null)
-            {
-                cardLabel.SetText(result.DrawnCardId);
-            }
+            DisplayCardLabel(result.DrawnCardId, multiplier);
 
             return Play(revealFeedbacks);
         }
@@ -92,7 +89,49 @@ namespace Game.Runtime.Cards
             cardImage.enabled = sprite != null;
         }
 
-        private Sprite? ResolveSprite(string cardId)
+        // Picks the first reward effect on the card and renders the
+        // multiplied amount + a short label (COINS / ENERGY / SHIELDS) so the
+        // player sees what they actually receive rather than the card's base
+        // value. Falls back to the raw card ID for cards without effects or
+        // for the LaunchSteal effect (no numeric amount to show).
+        //
+        // TMP_Text.SetText(string, float) is zero-allocation — TMP parses the
+        // format string and writes the number into its internal char buffer
+        // without producing a managed string per call.
+        private void DisplayCardLabel(string cardId, int multiplier)
+        {
+            if (cardLabel == null) return;
+
+            int safeMultiplier = multiplier > 0 ? multiplier : 1;
+            CardDefinitionSO? definition = FindDefinition(cardId);
+            RewardEffectConfig? effect = ResolvePrimaryEffect(definition);
+
+            if (effect == null)
+            {
+                cardLabel.SetText(cardId);
+                return;
+            }
+
+            int multipliedAmount = effect.IntValue * safeMultiplier;
+
+            switch (effect.EffectType)
+            {
+                case RewardEffectType.AddCoins:
+                    cardLabel.SetText("{0:0} COINS", multipliedAmount);
+                    break;
+                case RewardEffectType.AddEnergy:
+                    cardLabel.SetText("{0:0} ENERGY", multipliedAmount);
+                    break;
+                case RewardEffectType.AddShields:
+                    cardLabel.SetText("{0:0} SHIELDS", multipliedAmount);
+                    break;
+                default:
+                    cardLabel.SetText(cardId);
+                    break;
+            }
+        }
+
+        private CardDefinitionSO? FindDefinition(string cardId)
         {
             if (cards == null || string.IsNullOrWhiteSpace(cardId))
             {
@@ -102,18 +141,33 @@ namespace Game.Runtime.Cards
             for (int i = 0; i < cards.Count; i++)
             {
                 CardDefinitionSO? definition = cards[i];
-                if (definition == null)
-                {
-                    continue;
-                }
-
+                if (definition == null) continue;
                 if (string.Equals(definition.CardId, cardId, StringComparison.Ordinal))
                 {
-                    return definition.CardSprite;
+                    return definition;
                 }
             }
-
             return null;
+        }
+
+        private static RewardEffectConfig? ResolvePrimaryEffect(CardDefinitionSO? definition)
+        {
+            if (definition == null) return null;
+            List<RewardEffectConfig> configs = definition.EffectConfigs;
+            if (configs == null) return null;
+            for (int i = 0; i < configs.Count; i++)
+            {
+                RewardEffectConfig config = configs[i];
+                if (config == null) continue;
+                return config;
+            }
+            return null;
+        }
+
+        private Sprite? ResolveSprite(string cardId)
+        {
+            CardDefinitionSO? definition = FindDefinition(cardId);
+            return definition != null ? definition.CardSprite : null;
         }
 
         private static float Play(MMF_Player? feedbacks)

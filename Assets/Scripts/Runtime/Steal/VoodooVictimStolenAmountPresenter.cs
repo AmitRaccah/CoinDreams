@@ -49,9 +49,6 @@ namespace Game.Runtime.Steal
 
         private void OnEnable()
         {
-            Log("OnEnable sessionStartedSubscriber=" + (sessionStartedSubscriber != null)
-                + " animationCompletedSubscriber=" + (animationCompletedSubscriber != null)
-                + " amountText=" + (amountText != null));
             if (sessionStartedSubscriber != null && startedSubscription == null)
             {
                 startedSubscription = sessionStartedSubscriber.Subscribe(HandleSessionStarted);
@@ -80,50 +77,29 @@ namespace Game.Runtime.Steal
 
         private void HandleSessionStarted(VoodooSessionStartedSignal signal)
         {
-            Log("SessionStarted RECEIVED amountText=" + (amountText != null)
-                + " activeBefore=" + (amountText != null && amountText.gameObject.activeSelf));
             if (amountText == null) return;
             runningTotal = 0;
             // SetText with format string + float arg → TMP formats into its
             // internal char buffer, zero string allocation per update.
             amountText.SetText("{0:0}", runningTotal);
             amountText.gameObject.SetActive(true);
-            Log("SessionStarted set text=\"0\" + SetActive(true)");
         }
 
         private void HandleSessionEnded(VoodooSessionEndedSignal signal)
         {
-            Log("SessionEnded RECEIVED amountText=" + (amountText != null));
             if (amountText == null) return;
             amountText.gameObject.SetActive(false);
         }
 
         private void HandleAnimationCompleted(VoodooStabAnimationCompletedSignal signal)
         {
-            Log("AnimationCompleted RECEIVED stolen=" + signal.StolenAmount
-                + " runningTotal=" + runningTotal
-                + " amountText=" + (amountText != null));
             if (amountText == null) return;
             // Ignore zero-amount stabs (victim was already empty) — still
             // counts toward the doll's stab budget but adds nothing to
             // display.
-            if (signal.StolenAmount <= 0)
-            {
-                Log("AnimationCompleted SKIPPED (stolen<=0)");
-                return;
-            }
+            if (signal.StolenAmount <= 0) return;
             runningTotal += signal.StolenAmount;
             amountText.SetText("{0:0}", runningTotal);
-            Log("AnimationCompleted set text=\"" + runningTotal + "\"");
-        }
-
-        // [Conditional] strips Log() call sites in player builds — zero GC
-        // from string concat in the argument expression. Editor still sees
-        // the diagnostics so we can confirm DI + subscription + signal flow.
-        [System.Diagnostics.Conditional("UNITY_EDITOR")]
-        private void Log(string message)
-        {
-            Debug.Log("[VoodooVictimStolenAmountPresenter T=" + Time.time.ToString("F3") + "] " + message, this);
         }
     }
 }

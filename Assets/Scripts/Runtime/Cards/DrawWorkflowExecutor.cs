@@ -109,7 +109,7 @@ namespace Game.Runtime.Cards
                 float drawStartedAt = Time.realtimeSinceStartup;
                 float drawLockSeconds = drawCardPresentation.BeginDraw();
                 CardDrawContext context = await drawGameActions.TryDrawAsync();
-                float revealLockSeconds = drawCardPresentation.Present(context.Result);
+                float revealLockSeconds = drawCardPresentation.Present(context.Result, context.Multiplier);
 
                 // Filter active effects without LINQ — index loop, no
                 // closures, no iterator allocation. Scratch list reused
