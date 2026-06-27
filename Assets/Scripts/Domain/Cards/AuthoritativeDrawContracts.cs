@@ -72,6 +72,33 @@ namespace Game.Domain.Cards
             get { return !string.IsNullOrWhiteSpace(DrawId); }
         }
 
+        /// <summary>
+        /// Energy this draw actually costs: base cost scaled by the (already
+        /// validated) multiplier, clamped to int. SINGLE source of truth for
+        /// draw price — the engine's spend and the client's pre-draw
+        /// affordability gate both read it, so the two can never disagree.
+        /// </summary>
+        public int EffectiveDrawCost
+        {
+            get { return ScaleDrawCost(DrawCost, RequestedMultiplier); }
+        }
+
+        public static int ScaleDrawCost(int drawCost, int multiplier)
+        {
+            if (drawCost <= 0)
+            {
+                return 0;
+            }
+
+            long scaled = (long)drawCost * multiplier;
+            if (scaled > int.MaxValue)
+            {
+                return int.MaxValue;
+            }
+
+            return (int)scaled;
+        }
+
         private static bool IsAllowedMultiplier(int candidate)
         {
             int i;

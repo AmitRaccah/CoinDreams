@@ -111,6 +111,28 @@ namespace Game.Runtime.Cards
             }
         }
 
+        public CardDrawContext? TryRejectUnaffordableDraw()
+        {
+            // No player/config yet → let TryDrawAsync's precondition path
+            // surface the failure instead of guessing affordability here.
+            if (playerRuntimeContext == null || cardDrawConfig == null)
+            {
+                return null;
+            }
+
+            // Same price the engine will charge (single source of truth), so the
+            // gate and the spend can never disagree on cost.
+            int cost = AuthoritativeDrawRequest.ScaleDrawCost(cardDrawConfig.DrawCost, pendingMultiplier);
+            if (playerRuntimeContext.EnergyView.GetCurrent() >= cost)
+            {
+                return null;
+            }
+
+            return new CardDrawContext(
+                AuthoritativeDrawResult.NotEnoughEnergy(playerRuntimeContext.CreateSnapshot()),
+                pendingMultiplier);
+        }
+
         public void PublishResult(AuthoritativeDrawResult result)
         {
             if (result == null) return;

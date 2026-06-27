@@ -94,7 +94,7 @@ namespace Game.Domain.Cards
                 stealCardLauncher);
 
             ICardDeck deck = new WeightedRandomCardDeck(runtimeCards, randomSource);
-            int effectiveDrawCost = ScaleDrawCost(request.DrawCost, request.RequestedMultiplier);
+            int effectiveDrawCost = request.EffectiveDrawCost;
             DrawCardUseCase drawUseCase = new DrawCardUseCase(
                 profile.Energy,
                 deck,
@@ -224,22 +224,6 @@ namespace Game.Domain.Cards
             }
 
             return effects.ToArray();
-        }
-
-        private static int ScaleDrawCost(int drawCost, int multiplier)
-        {
-            if (drawCost <= 0)
-            {
-                return 0;
-            }
-
-            long scaled = (long)drawCost * multiplier;
-            if (scaled > int.MaxValue)
-            {
-                return int.MaxValue;
-            }
-
-            return (int)scaled;
         }
 
         private sealed class CapturingStealCardLauncher : IStealCardLauncher

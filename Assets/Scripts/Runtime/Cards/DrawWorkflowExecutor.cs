@@ -106,6 +106,19 @@ namespace Game.Runtime.Cards
             snapshotService?.BeginDeferredApply();
             try
             {
+                // Affordability gate BEFORE any optimistic animation. A draw the
+                // player can't afford shows only the failure feedback — never the
+                // draw animation — and commits nothing.
+                CardDrawContext? rejection = drawGameActions.TryRejectUnaffordableDraw();
+                if (rejection.HasValue)
+                {
+                    CardDrawContext rejected = rejection.Value;
+                    float failLockSeconds = drawCardPresentation.Present(rejected.Result, rejected.Multiplier);
+                    await WaitForPresentationLockAsync(Time.realtimeSinceStartup, 0f, failLockSeconds);
+                    drawGameActions.PublishResult(rejected.Result);
+                    return;
+                }
+
                 float drawStartedAt = Time.realtimeSinceStartup;
                 float drawLockSeconds = drawCardPresentation.BeginDraw();
                 CardDrawContext context = await drawGameActions.TryDrawAsync();

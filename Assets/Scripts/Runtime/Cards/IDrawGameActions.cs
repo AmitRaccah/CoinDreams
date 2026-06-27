@@ -29,6 +29,16 @@ namespace Game.Runtime.Cards
         Task<CardDrawContext> TryDrawAsync();
 
         /// <summary>
+        /// Pure pre-draw affordability gate. Returns a rejection context (a
+        /// non-success result + the active multiplier) when the player can't
+        /// afford the draw at the current multiplier, so the caller can show
+        /// ONLY the failure feedback and skip the optimistic draw animation.
+        /// Returns null when the draw may proceed. Does not spend energy or
+        /// mutate state.
+        /// </summary>
+        CardDrawContext? TryRejectUnaffordableDraw();
+
+        /// <summary>
         /// Pushes the result to the HUD sink (coin/energy counters update,
         /// reward popups, etc.). Called by the workflow executor after the
         /// card animation lands. Idempotent — safe to call twice (the
