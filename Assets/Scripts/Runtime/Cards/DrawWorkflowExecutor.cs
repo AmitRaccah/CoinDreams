@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Game.Domain.Cards;
@@ -14,6 +15,7 @@ namespace Game.Runtime.Cards
         private readonly IDrawGameActions drawGameActions;
         private readonly IDrawCardPresentation drawCardPresentation;
         private readonly IPlayerSnapshotService snapshotService;
+        private readonly IReadOnlyList<ICardDrawEffect> effects;
         private readonly CardDrawWorkflowStateMachine workflowState;
         private readonly Transform cardBoardAnchor;
         private readonly Transform cityViewAnchor;
@@ -21,11 +23,17 @@ namespace Game.Runtime.Cards
         private readonly UnityEngine.Object logContext;
         private CameraPose? lastCityPose;
 
+        // Scratch buffer reused across draws — no per-draw List allocation.
+        // Capacity 8 covers any reasonable card-type fanout; List<T> grows
+        // on demand if a future expansion needs more.
+        private readonly List<ICardDrawEffect> activeEffectsBuffer = new List<ICardDrawEffect>(8);
+
         public DrawWorkflowExecutor(
             ICameraTransitionService cameraTransitionService,
             IDrawGameActions drawGameActions,
             IDrawCardPresentation drawCardPresentation,
             IPlayerSnapshotService snapshotService,
+            IReadOnlyList<ICardDrawEffect> effects,
             CardDrawWorkflowStateMachine workflowState,
             Transform cardBoardAnchor,
             Transform cityViewAnchor,
@@ -36,6 +44,7 @@ namespace Game.Runtime.Cards
             this.drawGameActions = drawGameActions;
             this.drawCardPresentation = drawCardPresentation;
             this.snapshotService = snapshotService;
+            this.effects = effects ?? Array.Empty<ICardDrawEffect>();
             this.workflowState = workflowState;
             this.cardBoardAnchor = cardBoardAnchor;
             this.cityViewAnchor = cityViewAnchor;
@@ -89,25 +98,64 @@ namespace Game.Runtime.Cards
                 return;
             }
 
-            // Open a snapshot-apply deferral window for the entire flow.
-            // Both the direct service apply (inside TryDrawAsync) and the
-            // Firestore live-sync listener (fires async on commit) target
-            // PlayerSnapshotService.OnAuthoritativeSnapshotApplied — the
-            // deferral buffers BOTH paths and replays the newest snapshot
-            // once we close the window, so the HUD coin counter only
-            // moves after the card visual has landed.
+            // Snapshot deferral wraps the entire flow so HUD coin/energy
+            // updates from the live-sync listener (and the direct service
+            // apply) are buffered until after the visual + effect commits.
+            // Together with the effect Prepare/Apply split this guarantees
+            // the player sees no value change until the card lands.
             snapshotService?.BeginDeferredApply();
             try
             {
                 float drawStartedAt = Time.realtimeSinceStartup;
                 float drawLockSeconds = drawCardPresentation.BeginDraw();
-                AuthoritativeDrawResult result = await drawGameActions.TryDrawAsync();
-                float revealLockSeconds = drawCardPresentation.Present(result);
-                await WaitForPresentationLockAsync(drawStartedAt, drawLockSeconds, revealLockSeconds);
-                // Fires the steal launcher + result-published signal AFTER
-                // the visual lock. Snapshot still buffered — it's flushed
-                // in the finally below.
-                drawGameActions.ApplyResult(result);
+                CardDrawContext context = await drawGameActions.TryDrawAsync();
+                float revealLockSeconds = drawCardPresentation.Present(context.Result);
+
+                // Filter active effects without LINQ — index loop, no
+                // closures, no iterator allocation. Scratch list reused
+                // across draws (Clear keeps the backing array).
+                activeEffectsBuffer.Clear();
+                int effectCount = effects.Count;
+                for (int i = 0; i < effectCount; i++)
+                {
+                    ICardDrawEffect effect = effects[i];
+                    if (effect.ShouldRun(in context))
+                    {
+                        activeEffectsBuffer.Add(effect);
+                    }
+                }
+                int activeCount = activeEffectsBuffer.Count;
+
+                // Parallel wait set: one Prepare per active effect + the
+                // animation lock. Single UniTask[] alloc per draw (size 1
+                // when no effects active, N+1 otherwise). Per-draw alloc
+                // is fine — draws are user-paced, not per-frame.
+                if (activeCount > 0)
+                {
+                    UniTask[] parallel = new UniTask[activeCount + 1];
+                    for (int i = 0; i < activeCount; i++)
+                    {
+                        parallel[i] = activeEffectsBuffer[i].PrepareAsync(context, default);
+                    }
+                    parallel[activeCount] = WaitForPresentationLockAsync(
+                        drawStartedAt, drawLockSeconds, revealLockSeconds);
+                    await UniTask.WhenAll(parallel);
+                }
+                else
+                {
+                    await WaitForPresentationLockAsync(
+                        drawStartedAt, drawLockSeconds, revealLockSeconds);
+                }
+
+                // Commit: HUD publish first (always), then card-type-
+                // specific Apply in registration order. Both run AFTER the
+                // visual lock so signals fire and the doll appears the
+                // instant the card lands.
+                drawGameActions.PublishResult(context.Result);
+                for (int i = 0; i < activeCount; i++)
+                {
+                    activeEffectsBuffer[i].Apply(in context);
+                }
             }
             catch (OperationCanceledException)
             {
@@ -120,9 +168,9 @@ namespace Game.Runtime.Cards
             }
             finally
             {
-                // Close the deferral — applies the buffered snapshot (if any).
-                // Wrapped in its own try so a flush failure can't swallow the
-                // earlier exception path.
+                // Close the snapshot deferral — flushes the latest buffered
+                // snapshot to the HUD. Wrapped so a flush failure can't
+                // swallow an earlier exception.
                 try
                 {
                     snapshotService?.EndDeferredApply();

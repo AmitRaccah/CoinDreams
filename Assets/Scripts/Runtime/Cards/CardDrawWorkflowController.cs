@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Collections.Generic;
 using Cysharp.Threading.Tasks;
 using Game.Composition.Signals;
 using Game.Infrastructure.Persistence;
@@ -41,6 +42,7 @@ namespace Game.Runtime.Cards
         [Inject] private ICameraViewModeWriter? cameraViewModeWriter;
         [Inject] private IDrawCardPresentation? drawCardPresentation;
         [Inject] private IPlayerSnapshotService? snapshotService;
+        [Inject] private IReadOnlyList<ICardDrawEffect>? cardDrawEffects;
 
         private IDisposable? drawSubscription;
         private IDisposable? returnSubscription;
@@ -69,6 +71,7 @@ namespace Game.Runtime.Cards
                     this.drawGameActions,
                     this.drawCardPresentation ?? new NullDrawCardPresentation(),
                     this.snapshotService!,
+                    this.cardDrawEffects ?? Array.Empty<ICardDrawEffect>(),
                     this.workflowState,
                     this.cardBoardAnchor,
                     this.cityViewAnchor,

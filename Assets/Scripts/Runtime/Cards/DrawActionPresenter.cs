@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using Game.Composition.Signals;
 using Game.Config.Cards;
 using Game.Domain.Cards;
-using Game.Domain.Steal;
 using Game.Runtime.Player;
 using MessagePipe;
 using UnityEngine;
@@ -22,7 +21,9 @@ namespace Game.Runtime.Cards
         [Inject] private IAuthoritativeDrawService? authoritativeDrawService;
         [Inject] private CardDrawConfigSO? cardDrawConfig;
         [Inject] private ISubscriber<MultiplierChangeRequestedSignal>? multiplierSubscriber;
-        [Inject] private IStealCardLauncher? stealCardLauncher;
+        // Steal launcher injection removed — StealCardEffect now owns the
+        // steal-card trigger path end-to-end (BeginVoodooSession during the
+        // animation, session-started signal at the end of the animation).
 
         private IDrawResultSink? drawResultSink;
         private AuthoritativeDrawRequest? drawRequest;
@@ -67,17 +68,22 @@ namespace Game.Runtime.Cards
             }
         }
 
-        public async Task<AuthoritativeDrawResult> TryDrawAsync()
+        public async Task<CardDrawContext> TryDrawAsync()
         {
+            // Capture the multiplier in effect at the moment the draw is
+            // attempted. Threaded through CardDrawContext so a UI change
+            // mid-flight can't race with the steal effect's prepared session.
+            int multiplierAtDraw = pendingMultiplier;
+
             // Preconditions ARE published immediately — there's no card
             // animation to wait for when the draw can't even start, and
             // the HUD needs to show the "syncing..." / "deck invalid"
             // message right away. Only the SUCCESS path is gated; the
-            // executor calls ApplyResult once the visual lock releases.
+            // executor calls PublishResult once the visual lock releases.
             if (!TryPrepareDraw(out AuthoritativeDrawResult? preconditionFailure))
             {
                 PublishResult(preconditionFailure!);
-                return preconditionFailure!;
+                return new CardDrawContext(preconditionFailure!, multiplierAtDraw);
             }
 
             isDrawInFlight = true;
@@ -89,13 +95,13 @@ namespace Game.Runtime.Cards
                     result = AuthoritativeDrawResult.Error("Draw failed.");
                 }
 
-                return result;
+                return new CardDrawContext(result, multiplierAtDraw);
             }
             catch (System.Exception exception)
             {
                 AuthoritativeDrawResult errorResult = AuthoritativeDrawResult.Error("Draw failed.");
                 Debug.LogError("[DrawActionPresenter] Failed: " + exception.Message, this);
-                return errorResult;
+                return new CardDrawContext(errorResult, multiplierAtDraw);
             }
             finally
             {
@@ -105,11 +111,17 @@ namespace Game.Runtime.Cards
             }
         }
 
-        public void ApplyResult(AuthoritativeDrawResult result)
+        public void PublishResult(AuthoritativeDrawResult result)
         {
             if (result == null) return;
-            PublishResult(result);
-            FireStealLauncherIfNeeded(result);
+            ResolveDrawResultSink();
+
+            if (drawResultSink == null)
+            {
+                return;
+            }
+
+            drawResultSink.Present(result);
         }
 
         private bool TryPrepareDraw(out AuthoritativeDrawResult? failureResult)
@@ -189,34 +201,6 @@ namespace Game.Runtime.Cards
             }
 
             drawResultSink = GetComponent<IDrawResultSink>();
-        }
-
-        // Bridges the engine's StealTriggerId into the live IStealCardLauncher.
-        // The engine itself runs against a no-op CapturingStealCardLauncher so it
-        // can return a pure result; the side effect (publishing the trigger
-        // signal that opens a voodoo session) lives here, on the client side.
-        private void FireStealLauncherIfNeeded(AuthoritativeDrawResult result)
-        {
-            if (result == null || !result.IsSuccess) return;
-            if (string.IsNullOrEmpty(result.StealTriggerId)) return;
-            if (stealCardLauncher == null)
-            {
-                Debug.LogWarning("[DrawActionPresenter] StealCardLauncher is not injected — voodoo session will not start.", this);
-                return;
-            }
-            stealCardLauncher.Launch(result.StealTriggerId, pendingMultiplier);
-        }
-
-        private void PublishResult(AuthoritativeDrawResult result)
-        {
-            ResolveDrawResultSink();
-
-            if (drawResultSink == null)
-            {
-                return;
-            }
-
-            drawResultSink.Present(result);
         }
     }
 }

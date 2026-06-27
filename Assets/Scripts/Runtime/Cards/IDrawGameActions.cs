@@ -6,30 +6,35 @@ using Game.Domain.Cards;
 namespace Game.Runtime.Cards
 {
     /// <summary>
-    /// Authoritative entry point for "draw a card" gameplay actions. Implementations
-    /// reconcile against the persistence layer and return the canonical result.
-    /// Restored as a standalone file after it was co-located with the deleted
-    /// IDrawAnimator interface.
+    /// Authoritative entry point for "draw a card" gameplay actions. Owns
+    /// two responsibilities only: invoking the server draw call (returns
+    /// the result + the multiplier in effect at the moment of the draw,
+    /// bundled in a <see cref="CardDrawContext"/>) and pushing the result
+    /// to the HUD sink. All card-type-specific side effects (steal trigger,
+    /// future attack/bonus/jackpot) live in <see cref="ICardDrawEffect"/>
+    /// implementations that the workflow executor orchestrates.
     /// </summary>
     public interface IDrawGameActions
     {
         /// <summary>
-        /// Calls the server-authoritative draw service and returns the canonical
-        /// result. Does NOT publish to the HUD or fire the steal launcher — the
-        /// caller decides when to apply, which lets the workflow executor gate
-        /// the side-effects behind the card draw animation lock (industry
-        /// "universal pre-animation" pattern: server runs in parallel with the
-        /// visual; result is applied only when the visual lands).
+        /// Calls the server-authoritative draw service and returns a
+        /// context carrying the canonical result alongside the draw
+        /// multiplier captured at request time. Does NOT publish to the
+        /// HUD on the success path — the caller decides when to commit so
+        /// the workflow executor can gate side effects behind the card
+        /// animation lock. Precondition failures (no energy, deck invalid,
+        /// etc.) ARE published immediately so the user sees feedback
+        /// without waiting on the animation.
         /// </summary>
-        Task<AuthoritativeDrawResult> TryDrawAsync();
+        Task<CardDrawContext> TryDrawAsync();
 
         /// <summary>
-        /// Publishes the result to the HUD (coin/energy counters update) and,
-        /// for a LaunchSteal effect, fires the steal launcher (which opens the
-        /// voodoo session). Call this AFTER the card draw visual has completed,
-        /// so the reward feels like it's coming from the card itself rather
-        /// than appearing mid-animation.
+        /// Pushes the result to the HUD sink (coin/energy counters update,
+        /// reward popups, etc.). Called by the workflow executor after the
+        /// card animation lands. Idempotent — safe to call twice (the
+        /// precondition path early-publishes for fast feedback and the
+        /// executor publishes again after the lock).
         /// </summary>
-        void ApplyResult(AuthoritativeDrawResult result);
+        void PublishResult(AuthoritativeDrawResult result);
     }
 }

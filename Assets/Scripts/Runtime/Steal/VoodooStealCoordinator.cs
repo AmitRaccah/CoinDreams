@@ -4,7 +4,6 @@ using System;
 using Cysharp.Threading.Tasks;
 using Game.Composition.Signals;
 using Game.Domain.Player.Voodoo;
-using Game.Domain.Steal;
 using Game.Runtime.Player;
 using Game.Runtime.Steal.Phases;
 using MessagePipe;
@@ -14,39 +13,35 @@ using VContainer;
 namespace Game.Runtime.Steal
 {
     /// <summary>
-    /// Signal-to-phase dispatcher for the voodoo-steal mini-game. Routes
-    /// incoming signals to the right phase, enforces single-flight per
-    /// phase, and forwards mutations to <see cref="VoodooSessionState"/> —
-    /// which is the single source of truth for "is a session active" and
-    /// the publisher of the reader events.
-    ///
-    /// Subscribes to two signals: <see cref="StealCardTriggeredSignal"/>
-    /// fires the entry phase; <see cref="VoodooStabRequestedSignal"/>
-    /// fires the action phase and, if the action returns a session-ending
-    /// outcome, chains to the exit phase.
+    /// Signal-to-phase dispatcher for the voodoo-steal mini-game. With the
+    /// card-effect refactor the ENTRY path moved out of this class — the
+    /// <c>StealCardEffect</c> now drives <c>VoodooEntryPhase.BeginAsync</c>
+    /// during the card animation (parallel) and <c>PublishStarted</c>
+    /// once the visual lands. The coordinator listens to the resulting
+    /// session-started signal and stores the active session in
+    /// <see cref="VoodooSessionState"/>; it still owns the STAB / EXIT
+    /// dispatch and single-flight gating after that point.
     ///
     /// SRP — this class only:
-    ///   1. routes incoming signals to the right phase
-    ///   2. enforces single-flight per phase
-    ///   3. holds the post-action settle delay window
-    ///   4. drives <see cref="VoodooSessionState"/> mutations at the right
-    ///      moments of the phase lifecycle
+    ///   1. captures the started session into <see cref="VoodooSessionState"/>
+    ///   2. routes stab + animation-completed signals to the action / exit phases
+    ///   3. enforces single-flight per phase
+    ///   4. holds the post-action settle delay window
     /// All visual / network / signal-publish work lives in the phases;
     /// all state ownership lives in VoodooSessionState.
     /// </summary>
     [DisallowMultipleComponent]
     public sealed class VoodooStealCoordinator : MonoBehaviour
     {
-        [Inject] private VoodooEntryPhase? entryPhase;
         [Inject] private VoodooActionPhase? actionPhase;
         [Inject] private VoodooExitPhase? exitPhase;
         [Inject] private PlayerRuntimeContext? playerRuntimeContext;
         [Inject] private VoodooSessionState? state;
-        [Inject] private ISubscriber<StealCardTriggeredSignal>? cardTriggeredSubscriber;
+        [Inject] private ISubscriber<VoodooSessionStartedSignal>? sessionStartedSubscriber;
         [Inject] private ISubscriber<VoodooStabRequestedSignal>? stabRequestedSubscriber;
         [Inject] private ISubscriber<VoodooStabAnimationCompletedSignal>? animationCompletedSubscriber;
 
-        private IDisposable? cardTriggeredSubscription;
+        private IDisposable? sessionStartedSubscription;
         private IDisposable? stabRequestedSubscription;
         private IDisposable? animationCompletedSubscription;
         private bool isContextSubscribed;
@@ -82,9 +77,9 @@ namespace Game.Runtime.Steal
         {
             SubscribeToRuntimeContextEvents();
 
-            if (cardTriggeredSubscriber != null && cardTriggeredSubscription == null)
+            if (sessionStartedSubscriber != null && sessionStartedSubscription == null)
             {
-                cardTriggeredSubscription = cardTriggeredSubscriber.Subscribe(HandleCardTriggered);
+                sessionStartedSubscription = sessionStartedSubscriber.Subscribe(HandleSessionStarted);
             }
 
             if (stabRequestedSubscriber != null && stabRequestedSubscription == null)
@@ -102,8 +97,8 @@ namespace Game.Runtime.Steal
         {
             UnsubscribeFromRuntimeContextEvents();
 
-            cardTriggeredSubscription?.Dispose();
-            cardTriggeredSubscription = null;
+            sessionStartedSubscription?.Dispose();
+            sessionStartedSubscription = null;
 
             stabRequestedSubscription?.Dispose();
             stabRequestedSubscription = null;
@@ -116,8 +111,8 @@ namespace Game.Runtime.Steal
         {
             // Defensive: if OnDisable was skipped (domain reload edge case)
             // the subscriptions would leak — dispose again here as a safety net.
-            cardTriggeredSubscription?.Dispose();
-            cardTriggeredSubscription = null;
+            sessionStartedSubscription?.Dispose();
+            sessionStartedSubscription = null;
 
             stabRequestedSubscription?.Dispose();
             stabRequestedSubscription = null;
@@ -128,50 +123,31 @@ namespace Game.Runtime.Steal
             UnsubscribeFromRuntimeContextEvents();
         }
 
-        // async void is OK here — this is the boundary between an event-bus
-        // callback (which must be void) and the async timeline. The timeline
-        // catches its own exceptions; the outer try/catch is a safety net.
-        private async void HandleCardTriggered(StealCardTriggeredSignal signal)
+        // The session-started signal is fired by VoodooEntryPhase.PublishStarted —
+        // called either by StealCardEffect.Apply at the end of the card
+        // animation (production path) or by AutoStartVoodooSession in the
+        // 0.1_Steal test scene. Both paths converge here so the active
+        // session is owned by VoodooSessionState in exactly one place.
+        private void HandleSessionStarted(VoodooSessionStartedSignal signal)
         {
-            Log("CardTriggered RECEIVED multiplier=" + signal.Multiplier);
-            if (entryPhase == null || state == null) return;
+            Log("SessionStarted RECEIVED sessionId=" + signal.SessionId);
+            if (state == null) return;
 
-            // Re-entrancy guard: ignore card triggers while a Begin call is
-            // in flight or a session is already active.
-            if (state.EntryInFlight || state.HasActiveSession)
+            // Re-entrancy guard: if a session is already active (e.g. a stale
+            // signal arrives during teardown) keep the existing one.
+            if (state.HasActiveSession)
             {
-                Log("CardTriggered DROPPED entryInFlight=" + state.EntryInFlight
-                    + " hasActive=" + state.HasActiveSession);
+                Log("SessionStarted DROPPED hasActive=true");
                 return;
             }
 
-            state.SetEntryInFlight(true);
-            Log("Entry BEGIN (entryInFlight=true, IsTransitioning=true)");
-            try
-            {
-                VoodooSession? session = await entryPhase.RunAsync(
-                    signal.Multiplier,
-                    this.GetCancellationTokenOnDestroy());
-
-                if (session != null)
-                {
-                    state.SetActiveSession(session);
-                    Log("Entry END session=" + session.SessionId);
-                }
-                else
-                {
-                    Log("Entry END no session returned");
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.LogError("[VoodooStealCoordinator] Entry phase threw: " + ex);
-            }
-            finally
-            {
-                state.SetEntryInFlight(false);
-                Log("Entry FINALLY (entryInFlight=false)");
-            }
+            VoodooSession session = new VoodooSession(
+                signal.SessionId,
+                signal.VictimPlayerId,
+                signal.VictimDisplayName,
+                signal.MaxStabs);
+            state.SetActiveSession(session);
+            Log("SessionStarted stored session=" + session.SessionId);
         }
 
         private async void HandleStabRequested(VoodooStabRequestedSignal signal)

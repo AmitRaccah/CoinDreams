@@ -32,7 +32,6 @@ namespace Game.Composition
             builder.RegisterMessageBroker<DrawRequestedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<ReturnRequestedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<VillageUpgradeRequestedSignal>(messagePipeOptions);
-            builder.RegisterMessageBroker<StealCardTriggeredSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<VoodooSessionStartedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<VoodooSessionEndedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<VoodooStabRequestedSignal>(messagePipeOptions);
@@ -84,7 +83,13 @@ namespace Game.Composition
 
             builder.Register<TimeProvider>(Lifetime.Singleton).As<ITimeProvider>();
             builder.Register<UiNavigatorStub>(Lifetime.Singleton).As<IUiNavigator>();
-            builder.Register<VoodooStealCardLauncher>(Lifetime.Singleton).As<IStealCardLauncher>();
+            // Card-draw side effects. Each is registered as ICardDrawEffect
+            // so the workflow executor can inject IReadOnlyList<ICardDrawEffect>
+            // and orchestrate them generically (filter → prepare-in-parallel
+            // with the card animation → apply at the end). Adding new card
+            // types (attack, bonus, jackpot, ...) requires only a new class
+            // + one Register line here — zero changes to the executor.
+            builder.Register<StealCardEffect>(Lifetime.Singleton).As<ICardDrawEffect>();
 
             // ===== Persistence (Phase 2 split) =====
             if (persistenceSettings == null)

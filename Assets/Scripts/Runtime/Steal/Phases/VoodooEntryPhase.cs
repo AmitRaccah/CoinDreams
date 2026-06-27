@@ -13,14 +13,19 @@ using VContainer;
 namespace Game.Runtime.Steal.Phases
 {
     /// <summary>
-    /// Entry phase of the voodoo-steal mini-game. Calls the server to begin
-    /// a session, on success publishes the session-started signal (which
-    /// kicks off presenter cinematics) and returns the new session to the
-    /// coordinator that owns its lifetime. Future steps (doll appear,
-    /// audio, VFX) slot inside RunAsync without touching callers.
+    /// Entry phase of the voodoo-steal mini-game. Split into two distinct
+    /// steps so a card-draw effect can start the server RPC during the card
+    /// animation (parallel) and reveal the session only when the visual
+    /// lands.
     ///
-    /// SRP: only this one sequence. State ownership is the coordinator's;
-    /// visual reaction is the presenters' (driven by the published signal).
+    /// <see cref="BeginAsync"/> performs the BeginVoodooSession RPC and
+    /// returns the new session (no signal yet). <see cref="PublishStarted"/>
+    /// fires the session-started signal that drives presenter cinematics
+    /// and is captured by the coordinator to set the active session.
+    ///
+    /// SRP: only this one sequence. State ownership remains with whoever
+    /// holds the returned session; visual reaction is the presenters' (and
+    /// the coordinator's state listener).
     /// </summary>
     public sealed class VoodooEntryPhase
     {
@@ -37,15 +42,15 @@ namespace Game.Runtime.Steal.Phases
         }
 
         /// <summary>
-        /// Runs the entry sequence. Returns the new session on success or
-        /// null if the server refused or threw. The session is NOT stored
-        /// anywhere — the caller takes ownership.
+        /// Runs the BeginVoodooSession RPC. Returns the new session on
+        /// success, null on server refusal / cancellation / exception. Does
+        /// NOT publish the session-started signal — call
+        /// <see cref="PublishStarted"/> separately when the visual lands.
         /// </summary>
-        public async UniTask<VoodooSession?> RunAsync(int thiefMultiplier, CancellationToken ct)
+        public async UniTask<VoodooSession?> BeginAsync(int thiefMultiplier, CancellationToken ct)
         {
-            // Forward the multiplier the draw landed with so every stab in
-            // this session amplifies the thief's gain. Floor to 1 so a bad
-            // signal value never causes a server-side InvalidArgument throw.
+            // Floor to 1 so a bad signal value never causes a server-side
+            // InvalidArgument throw.
             int multiplier = thiefMultiplier > 0 ? thiefMultiplier : 1;
 
             try
@@ -62,16 +67,6 @@ namespace Game.Runtime.Steal.Phases
                     return null;
                 }
 
-                // Publish first: presenters react to this and play their
-                // cinematics. The coordinator stores the returned session
-                // immediately after we return, so any subsequent button
-                // press will see HasActiveSession=true.
-                sessionStartedPublisher.Publish(new VoodooSessionStartedSignal(
-                    response.SessionId,
-                    response.VictimPlayerId,
-                    response.VictimDisplayName,
-                    response.MaxStabs));
-
                 return new VoodooSession(
                     response.SessionId,
                     response.VictimPlayerId,
@@ -80,7 +75,7 @@ namespace Game.Runtime.Steal.Phases
             }
             catch (OperationCanceledException)
             {
-                // Component teardown mid-request — swallow, the coordinator
+                // Component teardown mid-request — swallow, the caller
                 // handles cleanup.
                 return null;
             }
@@ -89,6 +84,22 @@ namespace Game.Runtime.Steal.Phases
                 Debug.LogError("[VoodooEntryPhase] BeginVoodooSession threw: " + ex);
                 return null;
             }
+        }
+
+        /// <summary>
+        /// Publishes the session-started signal for an already-begun session.
+        /// Presenters react to this and play their cinematics; the
+        /// coordinator captures the session and stores it in
+        /// <see cref="Game.Runtime.Steal.VoodooSessionState"/>.
+        /// </summary>
+        public void PublishStarted(VoodooSession session)
+        {
+            if (session == null) return;
+            sessionStartedPublisher.Publish(new VoodooSessionStartedSignal(
+                session.SessionId,
+                session.VictimPlayerId,
+                session.VictimDisplayName,
+                session.MaxStabs));
         }
 
         // [Conditional] strips Log() call sites in player builds — zero GC
