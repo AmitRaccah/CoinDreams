@@ -1162,31 +1162,13 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 795184579}
-  - component: {fileID: 795184578}
-  - component: {fileID: 795184580}
   m_Layer: 0
-  m_Name: VoodooDoll3D
+  m_Name: VoodooSceneFeedbacks
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &795184578
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 795184576}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 4616629b6ea524d4987a3464b877c193, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Steal.Voodoo3DDollPresenter
-  stabAnimator: {fileID: 2014328958}
-  stabTriggerName: Stab
-  stabFeedbacks: {fileID: 897026664}
-  verboseLogging: 1
 --- !u!4 &795184579
 Transform:
   m_ObjectHideFlags: 0
@@ -1206,19 +1188,6 @@ Transform:
   - {fileID: 1668895631}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &795184580
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 795184576}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 8c463cd782e171f4baf91b31e80ee265, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Steal.VoodooVictimNamePresenter
-  nameText: {fileID: 1532242672}
 --- !u!1 &897026662
 GameObject:
   m_ObjectHideFlags: 0
@@ -1567,12 +1536,12 @@ GameObject:
   - component: {fileID: 1532242673}
   - component: {fileID: 1532242672}
   m_Layer: 0
-  m_Name: VictimName
+  m_Name: VictimNameAmount
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &1532242672
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -2098,6 +2067,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 315806403802382493, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 315806403802382493, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 315806403802382493, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 315806403802382493, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 721328196316074244, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.068
@@ -2250,6 +2235,22 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 8767655162933184934, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_AnchorMax.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8767655162933184934, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_AnchorMin.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8767655162933184934, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8767655162933184934, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 8940775567403630030, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
       propertyPath: m_LocalPosition.x
       value: -0.5373838
@@ -2274,6 +2275,12 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3407855088549863043, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
       insertIndex: 1
       addedObject: {fileID: 2014328962}
+    - targetCorrespondingSourceObject: {fileID: 7915893154494714092, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 8253243339674920247, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
 --- !u!95 &2014328958 stripped
 Animator:

@@ -52,9 +52,10 @@ namespace Game.Composition
             // 3D doll lives in this scene — subscribes to voodoo signals
             // brokered in the persistent parent scope.
             TryRegisterInHierarchy<Voodoo3DDollPresenter>(builder);
-            // Victim-name presenter shares the doll's GameObject (same scene),
-            // subscribes to the same persistent-scope signals.
+            // Voodoo presenters live on the loaded PF_Doll_Voodo root and
+            // subscribe to the same persistent-scope signals.
             TryRegisterInHierarchy<VoodooVictimNamePresenter>(builder);
+            TryRegisterInHierarchy<VoodooVictimStolenAmountPresenter>(builder);
             // Buildings panel / Presenter / panel buttons are NOT registered
             // as services — they're "drop-on" MonoBehaviours whose [Inject]
             // fields just need filling. PersistentLifetimeScope already runs
@@ -86,9 +87,19 @@ namespace Game.Composition
 
         private static void TryRegisterInHierarchy<T>(IContainerBuilder builder) where T : Component
         {
-            if (Object.FindAnyObjectByType<T>() != null)
+            T? instance = Object.FindAnyObjectByType<T>();
+            if (instance == null)
             {
-                builder.RegisterComponentInHierarchy<T>();
+                T[] inactiveCandidates = Object.FindObjectsByType<T>(FindObjectsInactive.Include, FindObjectsSortMode.None);
+                if (inactiveCandidates.Length > 0)
+                {
+                    instance = inactiveCandidates[0];
+                }
+            }
+
+            if (instance != null)
+            {
+                builder.RegisterComponent(instance);
             }
             else
             {
