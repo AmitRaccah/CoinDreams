@@ -1,6 +1,7 @@
 #nullable enable
 
 using System;
+using System.Threading;
 using Cysharp.Threading.Tasks;
 using UnityEngine;
 using VContainer;
@@ -53,13 +54,13 @@ namespace Game.Infrastructure.Persistence
             }
         }
 
-        private void Start() => StartAsync().Forget(ex =>
+        private void Start() => StartAsync(this.GetCancellationTokenOnDestroy()).Forget(ex =>
         {
             if (ex is OperationCanceledException) return;
             Debug.LogException(ex, this);
         });
 
-        private async UniTask StartAsync()
+        private async UniTask StartAsync(CancellationToken cancellationToken)
         {
             if (auth == null || snapshotService == null || settings == null)
             {
@@ -76,6 +77,8 @@ namespace Game.Infrastructure.Persistence
                 return;
             }
 
+            cancellationToken.ThrowIfCancellationRequested();
+
             if (!settings.AutoLoadOnStart && settings.VerboseLogging)
             {
                 Debug.LogWarning(
@@ -87,6 +90,11 @@ namespace Game.Infrastructure.Persistence
                 settings.ForceFreshAnonymousIdentityOnStart,
                 settings.CreateRemoteDocumentIfMissing,
                 settings.VerboseLogging);
+
+            // Play may have been stopped mid-await; bail before (re)registering the
+            // Firestore listener so it can't outlive OnDestroy's Unsubscribe and leak
+            // into the next play session (domain reload is off).
+            cancellationToken.ThrowIfCancellationRequested();
 
             ActivateLiveSync();
         }

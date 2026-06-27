@@ -112,7 +112,8 @@ namespace Game.Composition
                 _ => new AutosaveScheduler(persistenceSettings.AutosaveIntervalSeconds),
                 Lifetime.Singleton);
 
-            builder.Register<FirebaseAuthService>(Lifetime.Singleton).As<IFirebaseAuthService>();
+            builder.Register<FirebaseAuthService>(Lifetime.Singleton)
+                .AsImplementedInterfaces();    // picks up IFirebaseAuthService + IDisposable (releases the Firestore live-sync listener on scope teardown)
 
             builder.Register<LocalSnapshotCache>(
                 _ => new LocalSnapshotCache(

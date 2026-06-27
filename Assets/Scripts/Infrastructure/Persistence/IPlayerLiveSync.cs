@@ -11,7 +11,7 @@ namespace Game.Infrastructure.Persistence
     /// chiefly cross-player steals that decrement the local player's shield
     /// or coin balance while they're idle.
     /// </summary>
-    public interface IPlayerLiveSync
+    public interface IPlayerLiveSync : IDisposable
     {
         /// <summary>
         /// Begin listening to the named player's document. Self-echoes

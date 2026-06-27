@@ -7,7 +7,7 @@ using UnityEngine;
 
 namespace Game.Infrastructure.Persistence
 {
-    public sealed class FirebaseAuthService : IFirebaseAuthService
+    public sealed class FirebaseAuthService : IFirebaseAuthService, IDisposable
     {
         private readonly FirebaseConnection connection = new FirebaseConnection();
         private readonly ITimeProvider timeProvider;
@@ -53,6 +53,12 @@ namespace Game.Infrastructure.Persistence
                 connection.Firestore,
                 playersCollectionName);
             return true;
+        }
+
+        public void Dispose()
+        {
+            liveSync?.Dispose();
+            liveSync = null;
         }
     }
 }
