@@ -1,0 +1,19 @@
+{
+    "name": "Game.Infrastructure",
+    "rootNamespace": "Game.Infrastructure",
+    "references": [
+        "Game.Domain",
+        "VContainer",
+        "UniTask",
+        "Firebase.Functions"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

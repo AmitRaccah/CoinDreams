@@ -124,7 +124,7 @@ MonoBehaviour:
       m_Calls:
       - m_Target: {fileID: 1306481751860992931}
         m_TargetAssemblyTypeName: Game.Runtime.Village.VillageUpgradeButtonHandler,
-          Assembly-CSharp
+          Game.Runtime
         m_MethodName: OnUpgradeClicked
         m_Mode: 1
         m_Arguments:
