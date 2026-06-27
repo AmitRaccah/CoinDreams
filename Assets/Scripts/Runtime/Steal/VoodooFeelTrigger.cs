@@ -1,5 +1,6 @@
 #nullable enable
 
+using System;
 using Game.Domain.Steal;
 using MoreMountains.Feedbacks;
 using UnityEngine;
@@ -46,16 +47,24 @@ namespace Game.Runtime.Steal
             "hiding panels/buttons that don't belong on screen during a " +
             "steal (Build button, Return button, Multiplier UI).")]
         [SerializeField] private MMF_Player? onSessionEnter;
+        [SerializeField] private MMF_Player[] onSessionEnterExtras = Array.Empty<MMF_Player>();
 
         [Tooltip("Played the frame a voodoo session ENDS. Use for: " +
             "restoring the panels/buttons that onSessionEnter hid.")]
         [SerializeField] private MMF_Player? onSessionExit;
+        [SerializeField] private MMF_Player[] onSessionExitExtras = Array.Empty<MMF_Player>();
 
         private IVoodooSessionStateReader? stateReader;
 
         [Inject]
         public void Construct(IVoodooSessionStateReader stateReader)
         {
+            if (this.stateReader != null)
+            {
+                this.stateReader.IsTransitioningChanged -= HandleTransitioningChanged;
+                this.stateReader.HasActiveSessionChanged -= HandleSessionChanged;
+            }
+
             this.stateReader = stateReader;
             stateReader.IsTransitioningChanged += HandleTransitioningChanged;
             stateReader.HasActiveSessionChanged += HandleSessionChanged;
@@ -85,10 +94,20 @@ namespace Game.Runtime.Steal
         {
             if (hasSession)
             {
-                onSessionEnter?.PlayFeedbacks();
+                PlayFeedbacks(onSessionEnter, onSessionEnterExtras);
                 return;
             }
-            onSessionExit?.PlayFeedbacks();
+            PlayFeedbacks(onSessionExit, onSessionExitExtras);
+        }
+
+        private static void PlayFeedbacks(MMF_Player? primary, MMF_Player[] extras)
+        {
+            primary?.PlayFeedbacks();
+
+            for (int i = 0; i < extras.Length; i++)
+            {
+                extras[i]?.PlayFeedbacks();
+            }
         }
     }
 }

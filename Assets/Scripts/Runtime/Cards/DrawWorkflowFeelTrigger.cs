@@ -48,9 +48,15 @@ namespace Game.Runtime.Cards
         [Inject]
         public void Construct(IDrawWorkflowStateReader stateReader)
         {
+            if (this.stateReader != null)
+            {
+                this.stateReader.StateChanged -= HandleStateChanged;
+            }
+
             this.stateReader = stateReader;
             this.lastState = stateReader.CurrentState;
             stateReader.StateChanged += HandleStateChanged;
+            SyncCurrentState();
         }
 
         private void OnDestroy()
@@ -91,6 +97,12 @@ namespace Game.Runtime.Cards
             }
 
             lastState = next;
+        }
+
+        private void SyncCurrentState()
+        {
+            if (stateReader == null) return;
+            FindChain(stateReader.CurrentState, enter: true)?.PlayFeedbacks();
         }
 
         // Linear scan. The bindings array is bounded by the enum's value
