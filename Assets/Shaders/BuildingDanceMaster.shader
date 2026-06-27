@@ -3,11 +3,17 @@ Shader "Game/Buildings/BuildingDanceLit"
     Properties
     {
         [Header(Surface)]
+        [MainColor] _BaseColor ("Base Color", Color) = (1, 1, 1, 1)
         [MainTexture] _BaseMap ("Albedo", 2D) = "white" {}
-        _NormalMap ("Normal Map", 2D) = "bump" {}
+        _BumpMap ("Normal Map", 2D) = "bump" {}
         _NormalStrength ("Normal Strength", Range(0, 2)) = 1
 
         _Smoothness ("Smoothness", Range(0, 1)) = 0.35
+
+        [Header(Emission)]
+        _EmissionMap ("Emission Map", 2D) = "white" {}
+        [HDR] _EmissionColor ("Emission Color", Color) = (0, 0, 0, 1)
+        _EmissionStrength ("Emission Strength", Range(0, 10)) = 1
 
         [Header(Building Height)]
         _BottomY ("Bottom Y", Float) = 0
@@ -74,20 +80,29 @@ Shader "Game/Buildings/BuildingDanceLit"
 
                 float2 uv : TEXCOORD3;
                 float4 shadowCoord : TEXCOORD4;
+                float2 normalUV : TEXCOORD5;
+                float2 emissionUV : TEXCOORD6;
             };
 
             TEXTURE2D(_BaseMap);
             SAMPLER(sampler_BaseMap);
 
-            TEXTURE2D(_NormalMap);
-            SAMPLER(sampler_NormalMap);
+            TEXTURE2D(_BumpMap);
+            SAMPLER(sampler_BumpMap);
+
+            TEXTURE2D(_EmissionMap);
+            SAMPLER(sampler_EmissionMap);
 
             CBUFFER_START(UnityPerMaterial)
+                float4 _BaseColor;
                 float4 _BaseMap_ST;
-                float4 _NormalMap_ST;
+                float4 _BumpMap_ST;
+                float4 _EmissionMap_ST;
+                float4 _EmissionColor;
 
                 float _NormalStrength;
                 float _Smoothness;
+                float _EmissionStrength;
 
                 float _BottomY;
                 float _TopY;
@@ -135,7 +150,7 @@ Shader "Game/Buildings/BuildingDanceLit"
 
             half3 GetNormalWS(Varyings input)
             {
-                half4 normalSample = SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, input.uv);
+                half4 normalSample = SAMPLE_TEXTURE2D(_BumpMap, sampler_BumpMap, input.normalUV);
                 half3 normalTS = UnpackNormalScale(normalSample, _NormalStrength);
 
                 half3 normalWS = normalize(input.normalWS);
@@ -164,6 +179,8 @@ Shader "Game/Buildings/BuildingDanceLit"
                 output.tangentWS = float4(normalInputs.tangentWS, input.tangentOS.w);
 
                 output.uv = TRANSFORM_TEX(input.uv, _BaseMap);
+                output.normalUV = TRANSFORM_TEX(input.uv, _BumpMap);
+                output.emissionUV = TRANSFORM_TEX(input.uv, _EmissionMap);
                 output.shadowCoord = TransformWorldToShadowCoord(positionInputs.positionWS);
 
                 return output;
@@ -172,6 +189,9 @@ Shader "Game/Buildings/BuildingDanceLit"
             half4 Frag(Varyings input) : SV_Target
             {
                 half4 albedoSample = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, input.uv);
+                half3 emission = SAMPLE_TEXTURE2D(_EmissionMap, sampler_EmissionMap, input.emissionUV).rgb
+                    * _EmissionColor.rgb
+                    * _EmissionStrength;
 
                 half3 normalWS = GetNormalWS(input);
 
@@ -187,14 +207,14 @@ Shader "Game/Buildings/BuildingDanceLit"
                 inputData.shadowMask = half4(1, 1, 1, 1);
 
                 SurfaceData surfaceData;
-                surfaceData.albedo = albedoSample.rgb;
-                surfaceData.alpha = 1;
+                surfaceData.albedo = albedoSample.rgb * _BaseColor.rgb;
+                surfaceData.alpha = albedoSample.a * _BaseColor.a;
 
                 surfaceData.metallic = 0;
                 surfaceData.specular = half3(0, 0, 0);
                 surfaceData.smoothness = _Smoothness;
                 surfaceData.occlusion = 1;
-                surfaceData.emission = half3(0, 0, 0);
+                surfaceData.emission = emission;
 
                 surfaceData.clearCoatMask = 0;
                 surfaceData.clearCoatSmoothness = 0;
