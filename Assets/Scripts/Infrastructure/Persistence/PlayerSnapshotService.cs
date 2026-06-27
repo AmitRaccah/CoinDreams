@@ -358,6 +358,42 @@ namespace Game.Infrastructure.Persistence
             }
         }
 
+        // Deferral state — when deferApplyDepth > 0, every incoming
+        // snapshot is buffered (newest wins) instead of immediately
+        // applied. The depth (vs a bool) survives accidental nested
+        // Begin calls if a future feature wraps draws inside another
+        // gated flow. EndDeferredApply on the LAST End flushes the buffer.
+        private int deferApplyDepth;
+        private PlayerProfileSnapshot deferredBufferedSnapshot;
+
+        public void BeginDeferredApply()
+        {
+            deferApplyDepth++;
+        }
+
+        public void EndDeferredApply()
+        {
+            if (deferApplyDepth <= 0)
+            {
+                // Defensive: an unbalanced End shouldn't poison state.
+                deferApplyDepth = 0;
+                return;
+            }
+
+            deferApplyDepth--;
+            if (deferApplyDepth > 0)
+            {
+                return;
+            }
+
+            PlayerProfileSnapshot toApply = deferredBufferedSnapshot;
+            deferredBufferedSnapshot = null;
+            if (toApply != null)
+            {
+                ApplySnapshotInternal(toApply);
+            }
+        }
+
         // Mirrors the authoritative-result snapshot-apply path
         // (old lines 286-293 in TryDrawAsync and lines 329-335 in TryUpgradeAsync — identical body).
         public void OnAuthoritativeSnapshotApplied(PlayerProfileSnapshot snapshot)
@@ -367,6 +403,21 @@ namespace Game.Infrastructure.Persistence
                 return;
             }
 
+            if (deferApplyDepth > 0)
+            {
+                // Latest wins — both the direct service apply (T≈server-
+                // response) and the Firestore live-sync listener (T≈server-
+                // commit) target the same post-result state; we only care
+                // about the final value, not the path that produced it.
+                deferredBufferedSnapshot = snapshot;
+                return;
+            }
+
+            ApplySnapshotInternal(snapshot);
+        }
+
+        private void ApplySnapshotInternal(PlayerProfileSnapshot snapshot)
+        {
             snapshot.playerId = auth.AuthenticatedPlayerId;
             LoadSnapshotWithoutTracking(snapshot);
             PersistToLocalCache(snapshot);

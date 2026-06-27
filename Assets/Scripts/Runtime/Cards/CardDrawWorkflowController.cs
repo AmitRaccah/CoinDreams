@@ -3,6 +3,7 @@
 using System;
 using Cysharp.Threading.Tasks;
 using Game.Composition.Signals;
+using Game.Infrastructure.Persistence;
 using Game.Runtime.Cameras;
 using MessagePipe;
 using UnityEngine;
@@ -39,6 +40,7 @@ namespace Game.Runtime.Cards
         [Inject] private ISubscriber<ReturnRequestedSignal>? returnSubscriber;
         [Inject] private ICameraViewModeWriter? cameraViewModeWriter;
         [Inject] private IDrawCardPresentation? drawCardPresentation;
+        [Inject] private IPlayerSnapshotService? snapshotService;
 
         private IDisposable? drawSubscription;
         private IDisposable? returnSubscription;
@@ -66,6 +68,7 @@ namespace Game.Runtime.Cards
                     this.cameraTransitionService,
                     this.drawGameActions,
                     this.drawCardPresentation ?? new NullDrawCardPresentation(),
+                    this.snapshotService!,
                     this.workflowState,
                     this.cardBoardAnchor,
                     this.cityViewAnchor,

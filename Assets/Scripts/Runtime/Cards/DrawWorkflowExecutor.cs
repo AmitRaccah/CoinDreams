@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using Cysharp.Threading.Tasks;
 using Game.Domain.Cards;
+using Game.Infrastructure.Persistence;
 using Game.Runtime.Cameras;
 using UnityEngine;
 
@@ -12,6 +13,7 @@ namespace Game.Runtime.Cards
         private readonly ICameraTransitionService cameraTransitionService;
         private readonly IDrawGameActions drawGameActions;
         private readonly IDrawCardPresentation drawCardPresentation;
+        private readonly IPlayerSnapshotService snapshotService;
         private readonly CardDrawWorkflowStateMachine workflowState;
         private readonly Transform cardBoardAnchor;
         private readonly Transform cityViewAnchor;
@@ -23,6 +25,7 @@ namespace Game.Runtime.Cards
             ICameraTransitionService cameraTransitionService,
             IDrawGameActions drawGameActions,
             IDrawCardPresentation drawCardPresentation,
+            IPlayerSnapshotService snapshotService,
             CardDrawWorkflowStateMachine workflowState,
             Transform cardBoardAnchor,
             Transform cityViewAnchor,
@@ -32,6 +35,7 @@ namespace Game.Runtime.Cards
             this.cameraTransitionService = cameraTransitionService;
             this.drawGameActions = drawGameActions;
             this.drawCardPresentation = drawCardPresentation;
+            this.snapshotService = snapshotService;
             this.workflowState = workflowState;
             this.cardBoardAnchor = cardBoardAnchor;
             this.cityViewAnchor = cityViewAnchor;
@@ -85,6 +89,14 @@ namespace Game.Runtime.Cards
                 return;
             }
 
+            // Open a snapshot-apply deferral window for the entire flow.
+            // Both the direct service apply (inside TryDrawAsync) and the
+            // Firestore live-sync listener (fires async on commit) target
+            // PlayerSnapshotService.OnAuthoritativeSnapshotApplied — the
+            // deferral buffers BOTH paths and replays the newest snapshot
+            // once we close the window, so the HUD coin counter only
+            // moves after the card visual has landed.
+            snapshotService?.BeginDeferredApply();
             try
             {
                 float drawStartedAt = Time.realtimeSinceStartup;
@@ -92,6 +104,10 @@ namespace Game.Runtime.Cards
                 AuthoritativeDrawResult result = await drawGameActions.TryDrawAsync();
                 float revealLockSeconds = drawCardPresentation.Present(result);
                 await WaitForPresentationLockAsync(drawStartedAt, drawLockSeconds, revealLockSeconds);
+                // Fires the steal launcher + result-published signal AFTER
+                // the visual lock. Snapshot still buffered — it's flushed
+                // in the finally below.
+                drawGameActions.ApplyResult(result);
             }
             catch (OperationCanceledException)
             {
@@ -104,6 +120,19 @@ namespace Game.Runtime.Cards
             }
             finally
             {
+                // Close the deferral — applies the buffered snapshot (if any).
+                // Wrapped in its own try so a flush failure can't swallow the
+                // earlier exception path.
+                try
+                {
+                    snapshotService?.EndDeferredApply();
+                }
+                catch (Exception flushException)
+                {
+                    Debug.LogError(
+                        "[DrawWorkflowExecutor] Snapshot flush failed: " + flushException.Message,
+                        logContext);
+                }
                 workflowState.CompleteDraw();
             }
         }

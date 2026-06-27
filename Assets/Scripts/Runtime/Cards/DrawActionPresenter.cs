@@ -69,6 +69,11 @@ namespace Game.Runtime.Cards
 
         public async Task<AuthoritativeDrawResult> TryDrawAsync()
         {
+            // Preconditions ARE published immediately — there's no card
+            // animation to wait for when the draw can't even start, and
+            // the HUD needs to show the "syncing..." / "deck invalid"
+            // message right away. Only the SUCCESS path is gated; the
+            // executor calls ApplyResult once the visual lock releases.
             if (!TryPrepareDraw(out AuthoritativeDrawResult? preconditionFailure))
             {
                 PublishResult(preconditionFailure!);
@@ -84,14 +89,11 @@ namespace Game.Runtime.Cards
                     result = AuthoritativeDrawResult.Error("Draw failed.");
                 }
 
-                PublishResult(result);
-                FireStealLauncherIfNeeded(result);
                 return result;
             }
             catch (System.Exception exception)
             {
                 AuthoritativeDrawResult errorResult = AuthoritativeDrawResult.Error("Draw failed.");
-                PublishResult(errorResult);
                 Debug.LogError("[DrawActionPresenter] Failed: " + exception.Message, this);
                 return errorResult;
             }
@@ -101,6 +103,13 @@ namespace Game.Runtime.Cards
                 pendingDrawId = null;
                 drawRequest = null;
             }
+        }
+
+        public void ApplyResult(AuthoritativeDrawResult result)
+        {
+            if (result == null) return;
+            PublishResult(result);
+            FireStealLauncherIfNeeded(result);
         }
 
         private bool TryPrepareDraw(out AuthoritativeDrawResult? failureResult)
