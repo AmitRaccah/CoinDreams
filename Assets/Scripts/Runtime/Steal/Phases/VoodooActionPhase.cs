@@ -58,13 +58,14 @@ namespace Game.Runtime.Steal.Phases
                 if (response.Status == VoodooStabStatus.Success
                     || response.Status == VoodooStabStatus.VictimEmpty)
                 {
-                    // Snapshot apply is intentionally SKIPPED here.
-                    // PlayerRuntimeContext.LoadSnapshot treats every refresh as
-                    // a profile replacement and fires ProfileReplaced, which
-                    // the coordinator listens to and ends the active session
-                    // — that closed the doll between every stab. The optimistic
-                    // HUD update via VoodooStabHudSync covers the player-facing
-                    // coin balance until the next routine load/autosave.
+                    // Snapshot apply is intentionally SKIPPED here. The cloud
+                    // function commits the new snapshot to Firestore before
+                    // returning, and FirestorePlayerLiveSync picks it up and
+                    // applies it via PlayerSnapshotService — the coordinator's
+                    // ProfileReplaced handler guards against tear-down on
+                    // same-player refresh (lastSeenPlayerId check), so the
+                    // session survives. Applying the response snapshot here
+                    // too would double the work and risk racing LiveSync.
 
                     // Publish defensively — a sync subscriber that triggers
                     // ProfileReplaced would null the session field mid-publish.

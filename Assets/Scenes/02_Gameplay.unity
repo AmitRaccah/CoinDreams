@@ -711,6 +711,52 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 17, y: 0, z: 0}
+--- !u!1 &518508577
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 518508579}
+  - component: {fileID: 518508578}
+  m_Layer: 0
+  m_Name: BuildButtonView
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 2147483647
+  m_IsActive: 1
+--- !u!114 &518508578
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 518508577}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe74741eb7074279922ab77441c56619, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  includeOrthographicSize: 1
+  orthographicSize: 2.7
+--- !u!4 &518508579
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 518508577}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0.19080895, y: 0.00011071046, z: 0.00015154544, w: 0.9816272}
+  m_LocalPosition: {x: -0.5, y: 9, z: -6.58}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 7889365933362419198}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &529590406
 GameObject:
   m_ObjectHideFlags: 0
@@ -773,6 +819,66 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &618414363
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 618414364}
+  - component: {fileID: 618414366}
+  - component: {fileID: 618414365}
+  m_Layer: 0
+  m_Name: UpgradeCameraView
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &618414364
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 618414363}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0.61, z: 2.148}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2014328959}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &618414365
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 618414363}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1f400ff38bf79d24289998fd6f6ef496, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Runtime.Village.BuildingUpgradeFocusPoint
+  upgradeVfx: {fileID: 730003837}
+--- !u!114 &618414366
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 618414363}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fe74741eb7074279922ab77441c56619, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Runtime.Cameras.CameraPoseAnchor
+  includeOrthographicSize: 0
+  orthographicSize: 2.71
 --- !u!1001 &661266166
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1524,6 +1630,77 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1404368064
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1404368065}
+  - component: {fileID: 1404368068}
+  - component: {fileID: 1404368067}
+  - component: {fileID: 1404368066}
+  m_Layer: 0
+  m_Name: VillageCameraControls
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1404368065
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1404368064}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 2703520434963553023}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1404368066
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1404368064}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 91bd82ad0cabcdb4db1793cb7829bedd, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Runtime.Village.VillageCameraPanelBridge
+--- !u!114 &1404368067
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1404368064}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 0c35fd6346a75ad4eb0d56f5b5029219, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Runtime.Village.BuildingFocusRegistry
+--- !u!114 &1404368068
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1404368064}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e9d147939937ec24984985e92b06b452, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Game.Runtime::Game.Runtime.Village.VillageCameraDirector
+  overviewAnchor: {fileID: 518508578}
 --- !u!1 &1532242671
 GameObject:
   m_ObjectHideFlags: 0
@@ -2274,21 +2451,23 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects:
     - {fileID: 657451894389602744, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 1543493459209439702, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 618414364}
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 3407855088549863043, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
       insertIndex: 1
       addedObject: {fileID: 2014328962}
-    - targetCorrespondingSourceObject: {fileID: 7915893154494714092, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
-    - targetCorrespondingSourceObject: {fileID: 8253243339674920247, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
 --- !u!95 &2014328958 stripped
 Animator:
   m_CorrespondingSourceObject: {fileID: 205442194091592527, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+  m_PrefabInstance: {fileID: 2014328957}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2014328959 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 1543493459209439702, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
   m_PrefabInstance: {fileID: 2014328957}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &2014328960 stripped
@@ -2541,9 +2720,17 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 5547111943962524519, guid: 1c3ab751fbee7be4dad704de597c2ff2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1404368065}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 1c3ab751fbee7be4dad704de597c2ff2, type: 3}
+--- !u!4 &2703520434963553023 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5547111943962524519, guid: 1c3ab751fbee7be4dad704de597c2ff2, type: 3}
+  m_PrefabInstance: {fileID: 2703520434963553022}
+  m_PrefabAsset: {fileID: 0}
 --- !u!198 &5284596464513767395 stripped
 ParticleSystem:
   m_CorrespondingSourceObject: {fileID: 5565790498727049170, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
@@ -2663,9 +2850,17 @@ PrefabInstance:
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
-    m_AddedGameObjects: []
+    m_AddedGameObjects:
+    - targetCorrespondingSourceObject: {fileID: 700120500770681428, guid: a4f408cf4ee68c042a743868eda8821d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 518508579}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: a4f408cf4ee68c042a743868eda8821d, type: 3}
+--- !u!4 &7889365933362419198 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 700120500770681428, guid: a4f408cf4ee68c042a743868eda8821d, type: 3}
+  m_PrefabInstance: {fileID: 7889365933362419197}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0

@@ -32,6 +32,38 @@ namespace Game.Composition
                 .As<ICameraViewModeWriter>()
                 .AsSelf();
 
+            // ===== Village build-camera flow (BUILD BUTTON VIEW + per-building focus) =====
+            // The director injects ICameraTransitionService (a sibling on the camera
+            // rig that was never container-registered — the card controller resolves
+            // it via GetComponent). VContainer ignores the `?` annotation and treats
+            // every [Inject] field as required, so a scene that had a director but no
+            // transition service would throw at scope build and take the whole scope
+            // down. Register the two together — and ONLY together — else fall back to
+            // a no-op director so the choreographer + panel bridge still resolve
+            // (test/legacy scenes simply run without camera choreography).
+            CameraTransitionService cameraTransition = Object.FindAnyObjectByType<CameraTransitionService>();
+            VillageCameraDirector cameraDirector = Object.FindAnyObjectByType<VillageCameraDirector>();
+            if (cameraTransition != null && cameraDirector != null)
+            {
+                builder.RegisterComponent(cameraTransition).As<ICameraTransitionService>();
+                builder.RegisterComponent(cameraDirector).As<IVillageCameraDirector>();
+            }
+            else
+            {
+                if (cameraDirector != null)
+                {
+                    Debug.LogWarning(
+                        "[GameplayLifetimeScope] VillageCameraDirector present but no CameraTransitionService found — "
+                        + "falling back to a no-op director (build-camera flow disabled).");
+                }
+
+                builder.Register<NullVillageCameraDirector>(Lifetime.Scoped)
+                    .As<IVillageCameraDirector>();
+            }
+
+            builder.Register<BuildingUpgradeChoreographer>(Lifetime.Scoped)
+                .As<IBuildingUpgradeChoreographer>();
+
             // Guard each registration: VContainer's RegisterComponentInHierarchy throws if no
             // matching component exists in the scope's scene. Skipping a missing component lets
             // the rest of the container build instead of taking down the whole scope.
@@ -70,6 +102,11 @@ namespace Game.Composition
                 PersistentLifetimeScope.InjectAllInScenes<BuildingsPanel>(container);
                 PersistentLifetimeScope.InjectAllInScenes<BuildingsPanelPresenter>(container);
                 PersistentLifetimeScope.InjectAllInScenes<ShieldsHudPresenter>(container);
+                // Build-camera bridge lives on the camera rig in 02_Gameplay and
+                // needs IVillageCameraDirector (this scope) + the persistent-scope
+                // PanelVisibilityChangedSignal subscriber. Inject here, same as the
+                // panels — it isn't a service anyone resolves, just a drop-on.
+                PersistentLifetimeScope.InjectAllInScenes<VillageCameraPanelBridge>(container);
                 // DrawWorkflowFeelTrigger may live in 01_Persistent (alongside
                 // the Canvas) but needs IDrawWorkflowStateReader, which is
                 // registered in THIS gameplay scope. Injecting from here

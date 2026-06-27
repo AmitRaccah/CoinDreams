@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using Cysharp.Threading.Tasks;
 using Game.Config.Village;
 using Game.Domain.Economy;
 using Game.Runtime.Player;
@@ -42,6 +43,10 @@ namespace Game.Runtime.UI.Buildings
 
         [Inject] private VillageUpgradeRuntime? upgradeRuntime;
         [Inject] private PlayerRuntimeContext? playerRuntimeContext;
+        // Optional in spirit — always resolves (null-object fallback in the
+        // gameplay scope). Wraps a successful upgrade with the camera + smoke
+        // choreography; never owns the upgrade decision itself.
+        [Inject] private IBuildingUpgradeChoreographer? choreographer;
 
         private readonly List<UpgradeObjectView> views = new List<UpgradeObjectView>();
         private IReadOnlyCurrencyWallet? wallet;
@@ -187,7 +192,20 @@ namespace Game.Runtime.UI.Buildings
             if (upgradeRuntime == null) return;
             try
             {
-                await upgradeRuntime.TryUpgradeByIndex(index);
+                // Only choreograph (camera fly-to + smoke) taps that will
+                // actually upgrade. Non-upgradable taps (maxed / can't afford)
+                // still hit the runtime so the failure feedback path is intact,
+                // but with no camera move or VFX. The authoritative call inside
+                // remains the real gate; CanUpgrade is just the local pre-check.
+                if (choreographer != null && CanUpgrade(index))
+                {
+                    string buildingId = ResolveBuildingId(index);
+                    await choreographer.RunAsync(buildingId, () => upgradeRuntime.TryUpgradeByIndex(index));
+                }
+                else
+                {
+                    await upgradeRuntime.TryUpgradeByIndex(index);
+                }
             }
             catch (Exception ex)
             {
@@ -199,6 +217,32 @@ namespace Game.Runtime.UI.Buildings
             // the whole panel — refreshing here keeps level/MAX in sync
             // even when the coin count didn't move.
             if (this != null) RefreshOne(index);
+        }
+
+        // Mirrors the affordability / max-level gate the view already computes,
+        // so we only run the choreography for taps that will succeed. Reads
+        // cost + levels from the runtime and balance from the wallet — no
+        // duplicated economy values live here.
+        private bool CanUpgrade(int index)
+        {
+            if (villageDefinition == null || upgradeRuntime == null || wallet == null) return false;
+            if (villageDefinition.buildings == null) return false;
+            if (index < 0 || index >= villageDefinition.buildings.Count) return false;
+
+            int currentLevel = upgradeRuntime.GetCurrentLevelByIndex(index);
+            int maxLevel = upgradeRuntime.GetMaxLevelByIndex(index);
+            if (currentLevel >= maxLevel) return false;
+
+            int cost = upgradeRuntime.GetNextCostByIndex(index);
+            return cost >= 0 && wallet.CanAfford(cost);
+        }
+
+        private string ResolveBuildingId(int index)
+        {
+            if (villageDefinition == null || villageDefinition.buildings == null) return string.Empty;
+            if (index < 0 || index >= villageDefinition.buildings.Count) return string.Empty;
+            BuildingDefinitionSO building = villageDefinition.buildings[index];
+            return building != null ? building.BuildingID : string.Empty;
         }
 
         private void SubscribeToWallet()

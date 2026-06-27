@@ -185,10 +185,6 @@ namespace Game.Composition
             {
                 builder.RegisterComponentInHierarchy<AutoStartVoodooSession>();
             }
-            if (UnityEngine.Object.FindAnyObjectByType<VoodooStabHudSync>() != null)
-            {
-                builder.RegisterComponentInHierarchy<VoodooStabHudSync>();
-            }
             // VoodooVictimNamePresenter is registered in GameplayLifetimeScope —
             // it lives on VoodooDoll3D in 02_Gameplay, so RegisterComponent-
             // InHierarchy from this persistent scope wouldn't find it
