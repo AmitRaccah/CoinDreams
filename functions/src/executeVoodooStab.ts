@@ -31,9 +31,6 @@ const STEAL_PERCENT_MIN = 0.005;
 /** Maximum fraction of victim coins stolen per stab. */
 const STEAL_PERCENT_MAX = 0.02;
 
-/** Absolute floor — even a poor victim yields at least this much. */
-const STEAL_ABSOLUTE_FLOOR = 100;
-
 /** Absolute ceiling — protects whales from getting drained too fast. */
 const STEAL_ABSOLUTE_CEILING = 100000;
 
@@ -76,11 +73,11 @@ function rollStealAmount(victimCoins: number): number {
     const percent =
         STEAL_PERCENT_MIN + Math.random() * (STEAL_PERCENT_MAX - STEAL_PERCENT_MIN);
     const rawAmount = percent * victimCoins;
-    const clamped = Math.max(
-        STEAL_ABSOLUTE_FLOOR,
-        Math.min(STEAL_ABSOLUTE_CEILING, Math.floor(rawAmount))
-    );
-    return clamped;
+    // Pure percentage of the victim's balance — no flat floor. A low roll on a
+    // small balance can floor to 0; that stab simply yields nothing (it is still
+    // consumed), which is acceptable by design. The ceiling only caps how fast a
+    // whale can be drained.
+    return Math.min(STEAL_ABSOLUTE_CEILING, Math.floor(rawAmount));
 }
 
 /** Result for non-success paths that still need to return a typed Result. */
@@ -175,13 +172,13 @@ export const executeVoodooStab = onCall<VoodooStabRequest, Promise<VoodooStabRes
 
                 const rolledAmount = rollStealAmount(victimData.snapshot.coins);
 
-                // The engine handles the cases where rolledAmount > victim.coins
-                // (clamps to AppliedPartially) or victim.coins == 0
-                // (VictimEmpty). For the truly-empty-victim case we still
-                // want a non-zero request so the dedup stamp lands.
+                // requestedAmount is the raw percentage roll (no flat floor).
+                // The engine clamps it to the victim's balance and reports
+                // VictimEmpty when nothing can be taken (a 0 roll, or an
+                // already-empty victim) — that stab is still consumed.
                 const stealRequest: AuthoritativeStealRequest = {
                     impactId,
-                    requestedAmount: rolledAmount > 0 ? rolledAmount : STEAL_ABSOLUTE_FLOOR,
+                    requestedAmount: rolledAmount,
                     thiefPlayerId: callerUid,
                     victimPlayerId: session.victimId,
                     createdAtUtcTicks: nowUtcTicks(),

@@ -34,6 +34,14 @@ const STEAL_SESSIONS_COLLECTION = "stealSessions";
  */
 const VICTIM_SAMPLE_LIMIT = 50;
 
+/**
+ * Minimum balance a player must hold to be surfaced as a steal target. Each
+ * stab takes only a percentage of the victim's coins (no flat floor), so a
+ * near-empty victim would hand the thief almost nothing across all three
+ * stabs. This keeps every surfaced victim worth the session.
+ */
+const MIN_VICTIM_COINS = 100;
+
 /** Whitelist for the draw-multiplier (mirrors AuthoritativeDrawRequest.AllowedMultipliers in C#). */
 const ALLOWED_THIEF_MULTIPLIERS: readonly number[] = [1, 2, 4, 8];
 
@@ -53,12 +61,11 @@ function sanitizeMultiplier(raw: unknown): number {
  *
  * Today's rules:
  *   1. Cannot steal from self.
- *   2. Cannot steal from a player who has NEITHER coins NOR shields. A stab
- *      against such a victim is a pure no-op: stealEngine reports
- *      VictimEmpty on every call, leaving the thief with nothing to take
- *      and nothing to chip away at. Players with shields BUT no coins are
- *      still valid — the stab decrements their shield (a meaningful
- *      outcome), even though no coins move.
+ *   2. Must hold at least MIN_VICTIM_COINS. Each stab takes only a percentage
+ *      of the victim's balance (no flat floor), so a near-empty victim would
+ *      yield close to nothing across all three stabs. The threshold keeps
+ *      every surfaced victim worth the session. (A victim who also holds a
+ *      shield stays eligible: the stab deflects but still advances the game.)
  */
 function isEligibleVictim(
     docId: string,
@@ -70,9 +77,7 @@ function isEligibleVictim(
     }
     const rawCoins = docData["coins"];
     const coins = typeof rawCoins === "number" && Number.isFinite(rawCoins) ? rawCoins : 0;
-    const rawShields = docData["shields"];
-    const shields = typeof rawShields === "number" && Number.isFinite(rawShields) ? rawShields : 0;
-    return coins > 0 || shields > 0;
+    return coins >= MIN_VICTIM_COINS;
 }
 
 export const beginVoodooSession = onCall<unknown, Promise<VoodooSessionBeginResult>>(
