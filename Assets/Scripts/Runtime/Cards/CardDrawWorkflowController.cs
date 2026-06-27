@@ -40,6 +40,7 @@ namespace Game.Runtime.Cards
         [Inject] private ISubscriber<DrawRequestedSignal>? drawSubscriber;
         [Inject] private ISubscriber<ReturnRequestedSignal>? returnSubscriber;
         [Inject] private ICameraViewModeWriter? cameraViewModeWriter;
+        [Inject] private ICameraCityPoseMemory? cityPoseMemory;
         [Inject] private IDrawCardPresentation? drawCardPresentation;
         [Inject] private IPlayerSnapshotService? snapshotService;
         [Inject] private IReadOnlyList<ICardDrawEffect>? cardDrawEffects;
@@ -76,6 +77,7 @@ namespace Game.Runtime.Cards
                     this.cardBoardAnchor,
                     this.cityViewAnchor,
                     this.cameraViewModeWriter,
+                    this.cityPoseMemory,
                     this);
             }
 

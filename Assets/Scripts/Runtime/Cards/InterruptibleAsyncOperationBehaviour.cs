@@ -30,11 +30,16 @@ namespace Game.Runtime.Cards
                     new ArgumentNullException(nameof(coroutineFactory)));
             }
 
+            // Interrupt any in-flight operation so the newest request wins — true to
+            // the class name. Previously this returned the FIRST operation's Task and
+            // never started the new coroutine, so a second concurrent caller silently
+            // piggybacked on the running operation: pressing DRAW while the village
+            // camera was still gliding back to City made the draw await the village
+            // exit instead of moving to the card board. The interrupted awaiter now
+            // observes cancellation (TaskCanceledException).
             if (activeOperationCoroutine != null)
             {
-                return activeOperationCompletionSource != null
-                    ? activeOperationCompletionSource.Task
-                    : Task.CompletedTask;
+                CancelOperation("Operation interrupted by a newer request.");
             }
 
             IEnumerator coroutine;
