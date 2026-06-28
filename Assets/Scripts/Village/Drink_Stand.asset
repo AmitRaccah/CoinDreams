@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::BuildingDefinitionSO
   DisplayName: Drink Stand
   BuildingID: drink_stand
-  uiIcon: {fileID: 21300000, guid: b9aec2a6147dd9244adc0c5b2457b83e, type: 3}
+  uiIcon: {fileID: 21300000, guid: 7371cbd8b660e1e46bd195e94315db38, type: 3}
   upgradeSteps:
   - upgradeCost: 10
     nextLevelPartStates:
