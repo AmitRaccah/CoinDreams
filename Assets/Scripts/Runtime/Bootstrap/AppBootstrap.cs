@@ -7,6 +7,7 @@ namespace Game.Runtime.Bootstrap
     using Game.Runtime.Bootstrap.UI;
     using Game.Runtime.Scenes;
     using UnityEngine;
+    using UnityEngine.Rendering;
 
     [DisallowMultipleComponent]
     public sealed class AppBootstrap : MonoBehaviour
@@ -18,6 +19,11 @@ namespace Game.Runtime.Bootstrap
         [SerializeField] private List<BootstrapStepAsset> steps = new List<BootstrapStepAsset>();
 
         private CancellationTokenSource cts;
+
+        private void Awake()
+        {
+            ConfigureMobileFrameRate();
+        }
 
         private async void Start()
         {
@@ -130,6 +136,15 @@ namespace Game.Runtime.Bootstrap
             }
 
             splashView.SetStatus(text);
+        }
+
+        private static void ConfigureMobileFrameRate()
+        {
+#if UNITY_ANDROID || UNITY_IOS
+            QualitySettings.vSyncCount = 0;
+            Application.targetFrameRate = 60;
+            OnDemandRendering.renderFrameInterval = 1;
+#endif
         }
     }
 }
