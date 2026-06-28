@@ -32,6 +32,13 @@ namespace Game.Composition
                 .As<ICameraViewModeWriter>()
                 .AsSelf();
 
+            // One shared "pose to return to when going back to City", used by BOTH
+            // the card-draw flow and the village build-camera flow. Replaces the
+            // per-flow lastCityPose snapshots that diverged when one flow
+            // interrupted the other mid-transition (caused a camera jump on return).
+            builder.Register<CameraCityPoseMemory>(Lifetime.Scoped)
+                .As<ICameraCityPoseMemory>();
+
             // ===== Village build-camera flow (BUILD BUTTON VIEW + per-building focus) =====
             // The director injects ICameraTransitionService (a sibling on the camera
             // rig that was never container-registered — the card controller resolves

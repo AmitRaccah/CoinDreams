@@ -1,5 +1,6 @@
 #nullable enable
 
+using System;
 using Cysharp.Threading.Tasks;
 using Game.Runtime.Cameras;
 using Game.Runtime.Cards;
@@ -28,10 +29,10 @@ namespace Game.Runtime.Village
         [Inject] private ICameraTransitionService? transition;
         [Inject] private ICameraViewModeWriter? modeWriter;
         [Inject] private ICameraViewModeReader? modeReader;
+        [Inject] private ICameraCityPoseMemory? cityPoseMemory;
 
         private BuildingFocusRegistry? registry;
         private bool registryResolved;
-        private CameraPose? lastCityPose;
 
         public async UniTask EnterOverviewAsync()
         {
@@ -47,7 +48,7 @@ namespace Game.Runtime.Village
             // the pose we must restore on exit.
             if (modeReader == null || modeReader.IsCityView)
             {
-                lastCityPose = transition.CurrentPose;
+                cityPoseMemory?.Capture(transition.CurrentPose);
             }
 
             modeWriter?.SetMode(CameraViewMode.Transitioning);
@@ -90,18 +91,24 @@ namespace Game.Runtime.Village
             modeWriter?.SetMode(CameraViewMode.Transitioning);
             try
             {
-                if (lastCityPose.HasValue)
+                if (cityPoseMemory != null && cityPoseMemory.HasPose)
                 {
-                    await transition.StartTransitionAsync(lastCityPose.Value);
+                    await transition.StartTransitionAsync(cityPoseMemory.Pose);
                 }
             }
-            finally
+            catch (OperationCanceledException)
             {
-                // Always hand control back to touch, even if the transition was
-                // interrupted — otherwise the camera would stay input-locked.
-                lastCityPose = null;
-                modeWriter?.SetMode(CameraViewMode.City);
+                // Interrupted by another camera flow (e.g. DRAW pressed mid-exit).
+                // That flow now owns the camera + view-mode AND the shared city
+                // pose — do NOT clear it or stomp the mode. Leave both to the new
+                // owner so its own return lands on the real city pose.
+                return;
             }
+
+            // Reached the city pose cleanly — release the shared pose and hand
+            // control back to touch.
+            cityPoseMemory?.Clear();
+            modeWriter?.SetMode(CameraViewMode.City);
         }
 
         public BuildingUpgradeFocusPoint? GetFocusPoint(string buildingId)

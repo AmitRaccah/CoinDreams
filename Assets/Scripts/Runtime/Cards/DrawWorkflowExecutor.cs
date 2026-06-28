@@ -20,8 +20,8 @@ namespace Game.Runtime.Cards
         private readonly Transform cardBoardAnchor;
         private readonly Transform cityViewAnchor;
         private readonly ICameraViewModeWriter cameraViewModeWriter;
+        private readonly ICameraCityPoseMemory cityPoseMemory;
         private readonly UnityEngine.Object logContext;
-        private CameraPose? lastCityPose;
 
         // Scratch buffer reused across draws — no per-draw List allocation.
         // Capacity 8 covers any reasonable card-type fanout; List<T> grows
@@ -38,6 +38,7 @@ namespace Game.Runtime.Cards
             Transform cardBoardAnchor,
             Transform cityViewAnchor,
             ICameraViewModeWriter cameraViewModeWriter,
+            ICameraCityPoseMemory cityPoseMemory,
             UnityEngine.Object logContext)
         {
             this.cameraTransitionService = cameraTransitionService;
@@ -49,6 +50,7 @@ namespace Game.Runtime.Cards
             this.cardBoardAnchor = cardBoardAnchor;
             this.cityViewAnchor = cityViewAnchor;
             this.cameraViewModeWriter = cameraViewModeWriter;
+            this.cityPoseMemory = cityPoseMemory;
             this.logContext = logContext;
         }
 
@@ -66,7 +68,7 @@ namespace Game.Runtime.Cards
 
             try
             {
-                lastCityPose = cameraTransitionService.CurrentPose;
+                cityPoseMemory?.Capture(cameraTransitionService.CurrentPose);
                 cameraViewModeWriter?.SetMode(CameraViewMode.Transitioning);
                 await cameraTransitionService.StartTransitionAsync(cardBoardAnchor);
                 workflowState.CompleteMoveToBoard(true);
@@ -233,9 +235,9 @@ namespace Game.Runtime.Cards
             try
             {
                 cameraViewModeWriter?.SetMode(CameraViewMode.Transitioning);
-                if (lastCityPose.HasValue)
+                if (cityPoseMemory != null && cityPoseMemory.HasPose)
                 {
-                    await cameraTransitionService.StartTransitionAsync(lastCityPose.Value);
+                    await cameraTransitionService.StartTransitionAsync(cityPoseMemory.Pose);
                 }
                 else
                 {
@@ -258,7 +260,7 @@ namespace Game.Runtime.Cards
                 workflowState.CompleteReturn();
                 if (returnedToCity)
                 {
-                    lastCityPose = null;
+                    cityPoseMemory?.Clear();
                 }
 
                 cameraViewModeWriter?.SetMode(returnedToCity ? CameraViewMode.City : CameraViewMode.Board);
