@@ -2174,7 +2174,7 @@ PrefabInstance:
     - target: {fileID: 3667867926310871257, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
       propertyPath: upgradeVfx
       value: 
-      objectReference: {fileID: 730003837}
+      objectReference: {fileID: 2014328959}
     - target: {fileID: 6216838076769368437, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
       propertyPath: onSessionExit
       value: 
@@ -2233,6 +2233,17 @@ Animator:
   m_CorrespondingSourceObject: {fileID: 205442194091592527, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
   m_PrefabInstance: {fileID: 2014328957}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &2014328959 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 1632709705645758635, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+  m_PrefabInstance: {fileID: 2014328957}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6da43522623d4704e979466dc7650b65, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: MoreMountains.Tools::MoreMountains.Feedbacks.MMF_Player
 --- !u!1 &2014328960 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1048857885528590449, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
