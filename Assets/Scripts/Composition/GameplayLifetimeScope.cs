@@ -114,6 +114,7 @@ namespace Game.Composition
                 // PanelVisibilityChangedSignal subscriber. Inject here, same as the
                 // panels — it isn't a service anyone resolves, just a drop-on.
                 PersistentLifetimeScope.InjectAllInScenes<VillageCameraPanelBridge>(container);
+                PersistentLifetimeScope.InjectAllInScenes<StageCoinGainFeedbackTrigger>(container);
                 // DrawWorkflowFeelTrigger may live in 01_Persistent (alongside
                 // the Canvas) but needs IDrawWorkflowStateReader, which is
                 // registered in THIS gameplay scope. Injecting from here
