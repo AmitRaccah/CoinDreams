@@ -266,7 +266,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 5885705448538723709, guid: df15ae0fcc7c1fa47a4873f30a990dcd, type: 3}
       propertyPath: m_Name
-      value: Fire_Purple 1
+      value: Fire_Green
       objectReference: {fileID: 0}
     - target: {fileID: 5885705448538818909, guid: df15ae0fcc7c1fa47a4873f30a990dcd, type: 3}
       propertyPath: m_LocalPosition.x
@@ -307,6 +307,18 @@ PrefabInstance:
     - target: {fileID: 5885705448538818909, guid: df15ae0fcc7c1fa47a4873f30a990dcd, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5885705448552975389, guid: df15ae0fcc7c1fa47a4873f30a990dcd, type: 3}
+      propertyPath: InitialModule.startColor.maxColor.b
+      value: 0.1318975
+      objectReference: {fileID: 0}
+    - target: {fileID: 5885705448552975389, guid: df15ae0fcc7c1fa47a4873f30a990dcd, type: 3}
+      propertyPath: InitialModule.startColor.maxColor.g
+      value: 0.7169812
+      objectReference: {fileID: 0}
+    - target: {fileID: 5885705448552975389, guid: df15ae0fcc7c1fa47a4873f30a990dcd, type: 3}
+      propertyPath: InitialModule.startColor.maxColor.r
+      value: 0.34291124
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
