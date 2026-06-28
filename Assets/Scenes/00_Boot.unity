@@ -277,8 +277,6 @@ MonoBehaviour:
   progressBar: {fileID: 503}
   statusText: {fileID: 603}
   progressUIGroup: {fileID: 1684634206}
-  blackBackground: {fileID: 1226811855}
-  loadingBackground: {fileID: 277937999}
   loadingBackgroundCanvasGroup: {fileID: 277937998}
   logoImage: {fileID: 955308371}
   logoCanvasGroup: {fileID: 955308368}
