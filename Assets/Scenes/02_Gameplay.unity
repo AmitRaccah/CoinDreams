@@ -619,7 +619,7 @@ MonoBehaviour:
   m_VolumeFrameworkUpdateModeOption: 2
   m_RenderPostProcessing: 1
   m_Antialiasing: 2
-  m_AntialiasingQuality: 1
+  m_AntialiasingQuality: 2
   m_StopNaN: 0
   m_Dithering: 1
   m_ClearDepth: 1
@@ -2167,6 +2167,34 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 739602336475779278, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: simulationSpeed
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 739602336475779278, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: InitialModule.maxNumParticles
+      value: 1500
+      objectReference: {fileID: 0}
+    - target: {fileID: 739602336475779278, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: EmissionModule.rateOverTime.scalar
+      value: 1500
+      objectReference: {fileID: 0}
+    - target: {fileID: 739602336475779278, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: InitialModule.startLifetime.scalar
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 739602336490984846, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 4.34917
+      objectReference: {fileID: 0}
+    - target: {fileID: 739602336490984846, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 4.34917
+      objectReference: {fileID: 0}
+    - target: {fileID: 739602336490984846, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 4.34917
+      objectReference: {fileID: 0}
     - target: {fileID: 2229356656796734096, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
       propertyPath: m_Name
       value: Map
@@ -2183,6 +2211,10 @@ PrefabInstance:
       propertyPath: onSessionEnter
       value: 
       objectReference: {fileID: 730003837}
+    - target: {fileID: 6226257819057724288, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: InitialModule.maxNumParticles
+      value: 1500
+      objectReference: {fileID: 0}
     - target: {fileID: 7334633684844530493, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -2477,9 +2509,41 @@ PrefabInstance:
       propertyPath: m_Name
       value: CameraViews
       objectReference: {fileID: 0}
+    - target: {fileID: 4094997067394060932, guid: a4f408cf4ee68c042a743868eda8821d, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -1.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4094997067394060932, guid: a4f408cf4ee68c042a743868eda8821d, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 47.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4094997067394060932, guid: a4f408cf4ee68c042a743868eda8821d, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: -38.1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4094997067394060932, guid: a4f408cf4ee68c042a743868eda8821d, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.97134215
+      objectReference: {fileID: 0}
+    - target: {fileID: 4094997067394060932, guid: a4f408cf4ee68c042a743868eda8821d, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.2376859
+      objectReference: {fileID: 0}
+    - target: {fileID: 4094997067394060932, guid: a4f408cf4ee68c042a743868eda8821d, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4094997067394060932, guid: a4f408cf4ee68c042a743868eda8821d, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4551834950147498784, guid: a4f408cf4ee68c042a743868eda8821d, type: 3}
+      propertyPath: orthographicSize
+      value: 9
+      objectReference: {fileID: 0}
     - target: {fileID: 8914401712532257452, guid: a4f408cf4ee68c042a743868eda8821d, type: 3}
       propertyPath: orthographicSize
-      value: 10
+      value: 37.2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
