@@ -41,6 +41,14 @@ namespace Game.Runtime.UI.Buildings
             "Field too — the SO isn't registered as a container service.")]
         [SerializeField] private VillageDefinitionSO? villageDefinition;
 
+        [Header("Input Lock")]
+        [Tooltip("Optional full-screen Image (stretched, transparent, Raycast Target ON, " +
+            "above every panel) enabled only while an upgrade choreography runs, so NOTHING " +
+            "else can be clicked until the building finishes upgrading. Start it disabled. " +
+            "Leave unset to rely on the choreographer's re-entrancy guard alone (the camera " +
+            "is still safe; other UI just isn't visually blocked).")]
+        [SerializeField] private GameObject? inputBlocker;
+
         [Inject] private VillageUpgradeRuntime? upgradeRuntime;
         [Inject] private PlayerRuntimeContext? playerRuntimeContext;
         // Optional in spirit — always resolves (null-object fallback in the
@@ -80,6 +88,9 @@ namespace Game.Runtime.UI.Buildings
         {
             UnsubscribeFromWallet();
             UnsubscribeFromProfileReplaced();
+            // Defensive: if the panel closes mid-upgrade, never leave the
+            // full-screen blocker up — it would freeze the entire UI.
+            SetInputBlocked(false);
         }
 
         private void OnDestroy()
@@ -190,6 +201,14 @@ namespace Game.Runtime.UI.Buildings
         private async void OnUpgradeClicked(int index)
         {
             if (upgradeRuntime == null) return;
+
+            // Hard lock: while an upgrade choreography is mid-flight, ignore every
+            // tap on every building. Without this, a second tap pulls the camera
+            // to a new target mid-transition (the "camera goes crazy" bug). The
+            // choreographer enforces the same guard internally; this early-out
+            // also skips the redundant authoritative call for the rejected tap.
+            if (choreographer != null && choreographer.IsBusy) return;
+
             try
             {
                 // Only choreograph (camera fly-to + smoke) taps that will
@@ -199,8 +218,18 @@ namespace Game.Runtime.UI.Buildings
                 // remains the real gate; CanUpgrade is just the local pre-check.
                 if (choreographer != null && CanUpgrade(index))
                 {
-                    string buildingId = ResolveBuildingId(index);
-                    await choreographer.RunAsync(buildingId, () => upgradeRuntime.TryUpgradeByIndex(index));
+                    // Raise the full-screen blocker for the whole sequence so no
+                    // other UI is clickable until the building finishes upgrading.
+                    SetInputBlocked(true);
+                    try
+                    {
+                        string buildingId = ResolveBuildingId(index);
+                        await choreographer.RunAsync(buildingId, () => upgradeRuntime.TryUpgradeByIndex(index));
+                    }
+                    finally
+                    {
+                        SetInputBlocked(false);
+                    }
                 }
                 else
                 {
@@ -290,6 +319,17 @@ namespace Game.Runtime.UI.Buildings
             if (playerRuntimeContext != null)
             {
                 wallet = playerRuntimeContext.CurrencyView;
+            }
+        }
+
+        // Toggles the optional full-screen raycast blocker. Null-safe (the field
+        // is optional) and Unity-destroyed-safe (the `!= null` check handles a
+        // blocker that was torn down with the panel mid-flight).
+        private void SetInputBlocked(bool blocked)
+        {
+            if (inputBlocker != null)
+            {
+                inputBlocker.SetActive(blocked);
             }
         }
     }
