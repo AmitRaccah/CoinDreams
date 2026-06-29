@@ -999,23 +999,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1607051842362557543, guid: d1d17702c2cfc614db5cbd247f4903aa, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2063448876316855435, guid: d1d17702c2cfc614db5cbd247f4903aa, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2063448876316855435, guid: d1d17702c2cfc614db5cbd247f4903aa, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2063448876316855435, guid: d1d17702c2cfc614db5cbd247f4903aa, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2063448876316855435, guid: d1d17702c2cfc614db5cbd247f4903aa, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -0.525
       objectReference: {fileID: 0}
     - target: {fileID: 3789281448070442801, guid: d1d17702c2cfc614db5cbd247f4903aa, type: 3}
       propertyPath: m_LocalPosition.z
@@ -1119,19 +1119,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7021068356864460208, guid: d1d17702c2cfc614db5cbd247f4903aa, type: 3}
       propertyPath: m_AnchorMax.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7021068356864460208, guid: d1d17702c2cfc614db5cbd247f4903aa, type: 3}
       propertyPath: m_AnchorMin.y
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7021068356864460208, guid: d1d17702c2cfc614db5cbd247f4903aa, type: 3}
       propertyPath: m_AnchoredPosition.x
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7021068356864460208, guid: d1d17702c2cfc614db5cbd247f4903aa, type: 3}
       propertyPath: m_AnchoredPosition.y
-      value: 0
+      value: -1.475
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
