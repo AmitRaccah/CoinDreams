@@ -99,19 +99,44 @@ export const beginVoodooSession = onCall<unknown, Promise<VoodooSessionBeginResu
 
         const db = getFirestore();
 
-        // TODO: MVP — `limit(50)` is NOT scalable past 50 players. Replace with
-        // a random-key field strategy (e.g. each player doc stores a random
-        // shard/bucket key and we range-query) or a Cloud Function-driven
-        // sharding service before production.
-        const playerDocs = await db
+        // Primary victim pool: players who clear MIN_VICTIM_COINS. Pushing the
+        // coins filter into the query (instead of sampling VICTIM_SAMPLE_LIMIT
+        // arbitrary docs and filtering in JS) is what keeps this working once
+        // the DB fills with fresh playtest accounts that start at 0 coins —
+        // those would otherwise crowd an unfiltered limit() window and starve
+        // the result even though funded victims exist further down.
+        //
+        // TODO: MVP — limit() still isn't a uniform random sample past
+        // VICTIM_SAMPLE_LIMIT eligible players. Replace with a random-key/shard
+        // strategy before scaling. For now (dozens of players) it's fine.
+        const eligibleDocs = await db
             .collection(PLAYERS_COLLECTION)
+            .where("coins", ">=", MIN_VICTIM_COINS)
             .limit(VICTIM_SAMPLE_LIMIT)
             .get();
 
-        const candidates = playerDocs.docs.filter((doc) =>
+        let candidates = eligibleDocs.docs.filter((doc) =>
             isEligibleVictim(doc.id, doc.data() as Record<string, unknown>, callerUid),
         );
+
+        // Fallback — a drawn Steal card must NEVER dead-end with "no victim".
+        // If nobody clears the threshold (a young DB, or every funded account
+        // got drained), surface the richest OTHER player regardless of the
+        // floor. A near-empty victim yields little per stab, but the session
+        // still opens, which is the contract the client relies on.
         if (candidates.length === 0) {
+            const richestDocs = await db
+                .collection(PLAYERS_COLLECTION)
+                .orderBy("coins", "desc")
+                .limit(VICTIM_SAMPLE_LIMIT)
+                .get();
+            candidates = richestDocs.docs.filter((doc) => doc.id !== callerUid);
+        }
+
+        if (candidates.length === 0) {
+            logger.warn("beginVoodooSession found no other player to target", {
+                uid: callerUid,
+            });
             throw new HttpsError("failed-precondition", "No eligible victims available.");
         }
 
