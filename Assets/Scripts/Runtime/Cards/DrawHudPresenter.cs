@@ -5,6 +5,7 @@ using Cysharp.Threading.Tasks;
 using Game.Domain.Cards;
 using Game.Domain.Economy;
 using Game.Domain.Energy;
+using Game.Runtime.Economy;
 using Game.Runtime.Player;
 using TMPro;
 using UnityEngine;
@@ -21,6 +22,10 @@ namespace Game.Runtime.Cards
 
         [Inject] private PlayerRuntimeContext? playerRuntimeContext;
         [Inject] private CardDrawHudReferences? hudReferences;
+        // Optional in spirit; always registered in PersistentLifetimeScope.
+        // Withholds the coin counter while a voodoo stab animation plays so the
+        // balance rises in sync with the doll, not when the server commits.
+        [Inject] private ICoinPresentationGate? coinPresentationGate;
 
         private Slider? energySlider;
         private TMP_Text? energyText;
@@ -35,6 +40,7 @@ namespace Game.Runtime.Cards
         private IReadOnlyCurrencyWallet? currencyService;
         private CancellationTokenSource? uiRefreshCts;
         private bool isSubscribed;
+        private bool gateSubscribed;
         private bool energyUiCacheInitialized;
         private bool coinsUiCacheInitialized;
         private bool timerUiCacheInitialized;
@@ -79,6 +85,7 @@ namespace Game.Runtime.Cards
         {
             SubscribeToRuntimeContextEvents();
             SubscribeToStateEvents();
+            SubscribeToCoinPresentationGate();
             StartUiRefreshLoop();
             RefreshAllUi();
         }
@@ -87,6 +94,7 @@ namespace Game.Runtime.Cards
         {
             StopUiRefreshLoop();
             UnsubscribeFromStateEvents();
+            UnsubscribeFromCoinPresentationGate();
             UnsubscribeFromRuntimeContextEvents();
         }
 
@@ -183,6 +191,18 @@ namespace Game.Runtime.Cards
 
         private void RefreshCoinsUi(int coins)
         {
+            // Single chokepoint for the coin counter — both the CoinsChanged
+            // event AND the periodic refresh loop route through here, so gating
+            // once here freezes the balance against every path while a voodoo
+            // stab animation plays. The cache is intentionally NOT advanced
+            // while held: on release, FlushCoinsUi re-reads the wallet and the
+            // stale cache makes the delta land in one update, in sync with the
+            // doll animation finishing.
+            if (coinPresentationGate != null && coinPresentationGate.IsHeld)
+            {
+                return;
+            }
+
             bool coinsChanged = !coinsUiCacheInitialized || cachedCoins != coins;
             if (coinsText != null && coinsChanged)
             {
@@ -191,6 +211,16 @@ namespace Game.Runtime.Cards
 
             cachedCoins = coins;
             coinsUiCacheInitialized = true;
+        }
+
+        // Called when the presentation gate releases (stab animation done).
+        // Re-reads the live wallet so the withheld balance lands now.
+        private void HandleCoinPresentationReleased()
+        {
+            if (currencyService != null)
+            {
+                RefreshCoinsUi(currencyService.GetCoins());
+            }
         }
 
         private void RefreshTimerUi(int secondsUntilNext)
@@ -249,6 +279,28 @@ namespace Game.Runtime.Cards
             energyService.EnergyChanged -= HandleEnergyChanged;
             currencyService.CoinsChanged -= HandleCoinsChanged;
             isSubscribed = false;
+        }
+
+        private void SubscribeToCoinPresentationGate()
+        {
+            if (gateSubscribed || coinPresentationGate == null)
+            {
+                return;
+            }
+
+            coinPresentationGate.Released += HandleCoinPresentationReleased;
+            gateSubscribed = true;
+        }
+
+        private void UnsubscribeFromCoinPresentationGate()
+        {
+            if (!gateSubscribed || coinPresentationGate == null)
+            {
+                return;
+            }
+
+            coinPresentationGate.Released -= HandleCoinPresentationReleased;
+            gateSubscribed = false;
         }
 
         private void SetResult(string message)

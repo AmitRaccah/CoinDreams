@@ -25,19 +25,20 @@ namespace Game.Runtime.Steal
     /// <see cref="HandleStabResolved"/> and feeds the pending TCS so
     /// AnimationCompleted at the end carries truthful data.
     ///
-    /// Timing source: the <see cref="stabAnimator"/>'s active clip length OR
-    /// the MMF <c>TotalDuration</c>, whichever is longer. MMF's Animation
-    /// Parameter feedback is fire-and-forget by default — flipping IsPlaying
-    /// false the frame it sets the trigger — but the designer can override
-    /// that by setting a Declared Duration on the feedback. Taking the max
-    /// covers both setups (animator-only, MMF-only, or both wired in
-    /// parallel).
+    /// Timing source: the MMF chain itself. The presenter holds the gate until
+    /// <see cref="stabFeedbacks"/>.IsPlaying goes false — MMF is the single
+    /// authority for "how long the stab lasts". Whatever the designer authors
+    /// (animation feedback, declared durations, holds, particles) defines the
+    /// length. If the stab clip is still fired by code (TriggerStabAnimator),
+    /// the MMF chain must be at least as long, or the gate releases before the
+    /// clip finishes — prefer moving the clip into the chain as an Animation
+    /// feedback so MMF both triggers AND times it.
     ///
     /// Single-rig assumption: the doll prefab owns the needle as a child
     /// and exposes ONE Animator that plays a unified stab clip (doll hit
-    /// reaction + needle thrust in one timeline). If a future rig splits
-    /// them, add a second SerializeField pair and union them in
-    /// <see cref="WaitForStabAsync"/>.
+    /// reaction + needle thrust in one timeline). With MMF as the timing
+    /// authority a split rig no longer needs code changes here — author both
+    /// clips into the one stab MMF chain and its duration covers them.
     ///
     /// Doll show/hide is intentionally NOT this class's job — the entry /
     /// exit Feel cinematics (planned) will handle visibility through motion.
@@ -45,12 +46,12 @@ namespace Game.Runtime.Steal
     [DisallowMultipleComponent]
     public sealed class Voodoo3DDollPresenter : MonoBehaviour
     {
-        [Header("Stab animation (timing source)")]
-        [Tooltip("Animator on the doll rig that plays the stab clip (doll + " +
-            "integrated needle as one timeline). The presenter reads " +
-            "GetCurrentAnimatorStateInfo(0).length on this to know how long " +
-            "to hold the gate before publishing AnimationCompleted. Leave " +
-            "null if MMF TotalDuration alone drives the timing.")]
+        [Header("Stab animation (optional — fired by code, timed by MMF)")]
+        [Tooltip("Animator on the doll rig that plays the stab clip. Triggered " +
+            "by code each stab, but it NO LONGER drives the gate timing — the " +
+            "MMF chain does. Make sure the MMF is at least as long as this clip, " +
+            "or move the clip into the chain as an Animation feedback. Leave " +
+            "null if the MMF chain plays the whole stab itself.")]
         [FormerlySerializedAs("dollAnimator")]
         [SerializeField] private Animator? stabAnimator;
 
@@ -60,10 +61,11 @@ namespace Game.Runtime.Steal
             "controller has an Idle→Stab transition gated by a Trigger.")]
         [SerializeField] private string stabTriggerName = "";
 
-        [Header("Stab polish (optional)")]
-        [Tooltip("Optional MMF chain for polish ONLY (sound, particles, " +
-            "screen shake). The Animator is triggered directly by code now, " +
-            "so you do NOT need an Animation Parameter feedback in here.")]
+        [Header("Stab feedbacks (timing authority)")]
+        [Tooltip("The MMF chain that plays AND times the whole stab. The gate " +
+            "stays closed until this chain finishes (IsPlaying=false), so it " +
+            "must cover the full stab visual — animation, particles, sound, " +
+            "shake. This is the single source of truth for stab length.")]
         [FormerlySerializedAs("dollFeedbacks")]
         [SerializeField] private MMF_Player? stabFeedbacks;
 
@@ -89,6 +91,11 @@ namespace Game.Runtime.Steal
         // server result.
         private UniTaskCompletionSource<VoodooStabResolvedSignal>? pendingResolved;
         private bool stabInFlight;
+
+        // Cached so the per-stab WaitWhile doesn't allocate a fresh closure
+        // each time. Click-driven, not a hot path, but the gate is the one
+        // place we touch on every stab — keep it allocation-free.
+        private Func<bool>? stabFeedbacksPlayingPredicate;
 
         private void OnEnable()
         {
@@ -155,12 +162,12 @@ namespace Game.Runtime.Steal
                 TriggerStabAnimator();
                 stabFeedbacks?.PlayFeedbacks();
 
-                await WaitForStabAsync();
+                await WaitForStabFeedbacksAsync();
 
-                // Animation has run its course. If the server is still in
+                // The MMF chain has run its course. If the server is still in
                 // flight (unusually slow round-trip), hold here until the
-                // result lands — normally a no-op since 5s of polish
-                // outlasts the ~4s network call.
+                // result lands — normally a no-op since the polish chain is
+                // authored to outlast the ~4s network call.
                 VoodooStabResolvedSignal result = await resolve.Task;
 
                 Log("Publishing AnimationCompleted sessionId=" + result.SessionId);
@@ -190,64 +197,37 @@ namespace Game.Runtime.Steal
             pendingResolved?.TrySetResult(signal);
         }
 
-        // Hold the gate for as long as the actual visuals run. Two frames of
-        // warm-up lets MMF tick its feedback (which calls SetTrigger
-        // internally) and the Animator process the trigger so its current
-        // state info reflects the new clip we're about to wait on.
+        // MMF is the single timing authority for the stab. Hold the gate until
+        // the feedbacks chain reports it has stopped playing — whatever the
+        // designer authored (animation feedback, declared durations, holds,
+        // particles) defines the length, and IsPlaying reflects exactly that.
+        // No Animator clip reads, no max() of two independent measurements:
+        // one source of truth.
         //
-        // Source of truth = the MAX of two independent measurements:
-        //   1. Animator clip length — reads the active state on each animator.
-        //   2. MMF TotalDuration — reads every feedback's reported duration,
-        //      including non-Animator effects (particles, shake, scale) that
-        //      keep going visually after the Animator state is "done".
-        // Either one alone is wrong: a designer who polishes via particles
-        // but leaves a 1-second stab clip would see the gate release while
-        // the visuals continue. Taking the max covers both setups.
-        private async UniTask WaitForStabAsync()
+        // Caveat that comes with this: the MMF chain must cover the full stab
+        // visual. If the doll clip is still fired by TriggerStabAnimator (code)
+        // but the chain is shorter, the gate releases early — wire the clip as
+        // an Animation feedback inside the chain, or add a Hold of equal length.
+        private async UniTask WaitForStabFeedbacksAsync()
         {
             CancellationToken ct = this.GetCancellationTokenOnDestroy();
 
-            Log("WaitForStab: awaiting 2 frames for MMF/Animator handoff");
-            await UniTask.DelayFrame(2, cancellationToken: ct);
-
-            float animLen = GetActiveClipLength(stabAnimator);
-            float mmfLen = stabFeedbacks != null ? stabFeedbacks.TotalDuration : 0f;
-            float length = Mathf.Max(animLen, mmfLen);
-
-            Log("WaitForStab: animLen=" + animLen.ToString("F3")
-                + " mmfLen=" + mmfLen.ToString("F3")
-                + " → wait=" + length.ToString("F3") + "s");
-
-            if (length <= 0f)
+            if (stabFeedbacks == null)
             {
                 Debug.LogWarning(
-                    "[Voodoo3DDollPresenter] No duration detected on animators or MMF. " +
-                    "Wire an Animator Controller or set MMF feedback durations, " +
-                    "or the input gate releases immediately and the player can spam-stab.",
+                    "[Voodoo3DDollPresenter] No MMF_Player wired on stabFeedbacks — the gate " +
+                    "releases immediately and the player can spam-stab. Assign the stab MMF chain.",
                     this);
                 return;
             }
 
-            await UniTask.Delay(TimeSpan.FromSeconds(length), cancellationToken: ct);
-            Log("WaitForStab: wait complete");
-        }
+            // PlayFeedbacks() (called just before this) sets IsPlaying
+            // synchronously, so there is no warm-up frame to wait for. The
+            // WaitWhile releases the frame the chain finishes.
+            stabFeedbacksPlayingPredicate ??= () => stabFeedbacks != null && stabFeedbacks.IsPlaying;
+            await UniTask.WaitWhile(stabFeedbacksPlayingPredicate, cancellationToken: ct);
 
-        // Pick the right state info: if the Animator is mid-transition the
-        // "current" state is still the source state; the length we want is
-        // the destination's. GetNextAnimatorStateInfo returns the destination
-        // info, falling back to current when no transition is in flight.
-        //
-        // Skips the read entirely when the Animator has no controller wired —
-        // calling state-info APIs in that case spams a Unity warning every
-        // frame.
-        private static float GetActiveClipLength(Animator? animator)
-        {
-            if (animator == null) return 0f;
-            if (animator.runtimeAnimatorController == null) return 0f;
-            AnimatorStateInfo info = animator.IsInTransition(0)
-                ? animator.GetNextAnimatorStateInfo(0)
-                : animator.GetCurrentAnimatorStateInfo(0);
-            return info.length;
+            Log("WaitForStab: MMF chain complete");
         }
 
         // Without this, an Animator whose default state has a single one-shot

@@ -199,6 +199,14 @@ namespace Game.Composition
 
             builder.Register<CloudFunctionsStealClient>(Lifetime.Singleton).As<IVoodooStealClient>();
 
+            // Coin-gain presentation gate: withholds the HUD balance bump and
+            // the coin-gain Feel chain while a stab animation plays, flushing
+            // them when the doll animation completes. Registered here (next to
+            // the stab signal brokers it listens to); the HUD + village coin
+            // presenters consume it through ICoinPresentationGate.
+            builder.Register<Game.Runtime.Steal.VoodooCoinPresentationGate>(Lifetime.Singleton)
+                .As<Game.Runtime.Economy.ICoinPresentationGate>();
+
             // Upcoming phases will add here:
             //   - IPlayerRepository (FirestorePlayerRepository) — blocked on Firebase init flow
             //   - MessagePipe broker + signals (EnergyChangedSignal, CoinsChangedSignal, ProfileReplacedSignal)
