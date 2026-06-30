@@ -16,7 +16,7 @@ MonoBehaviour:
   BuildingID: shop
   uiIcon: {fileID: 21300000, guid: 001e41b437ede404191ca2e081ba9b9f, type: 3}
   upgradeSteps:
-  - upgradeCost: 10
+  - upgradeCost: 50
     nextLevelPartStates:
     - partIndex: 0
       isActive: 1
@@ -27,7 +27,7 @@ MonoBehaviour:
     - partIndex: 2
       isActive: 0
       texture: {fileID: 0}
-  - upgradeCost: 20
+  - upgradeCost: 100
     nextLevelPartStates:
     - partIndex: 0
       isActive: 0
@@ -38,7 +38,7 @@ MonoBehaviour:
     - partIndex: 2
       isActive: 0
       texture: {fileID: 0}
-  - upgradeCost: 30
+  - upgradeCost: 150
     nextLevelPartStates:
     - partIndex: 0
       isActive: 0

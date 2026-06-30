@@ -16,20 +16,20 @@ MonoBehaviour:
   BuildingID: drink_stand
   uiIcon: {fileID: 21300000, guid: 7371cbd8b660e1e46bd195e94315db38, type: 3}
   upgradeSteps:
-  - upgradeCost: 10
-    nextLevelPartStates:
-    - partIndex: 0
-      isActive: 1
-      texture: {fileID: 0}
-    - partIndex: 1
-      isActive: 0
-      texture: {fileID: 0}
-    - partIndex: 2
-      isActive: 0
-      texture: {fileID: 0}
   - upgradeCost: 50
     nextLevelPartStates:
     - partIndex: 0
+      isActive: 1
+      texture: {fileID: 0}
+    - partIndex: 1
+      isActive: 0
+      texture: {fileID: 0}
+    - partIndex: 2
+      isActive: 0
+      texture: {fileID: 0}
+  - upgradeCost: 100
+    nextLevelPartStates:
+    - partIndex: 0
       isActive: 0
       texture: {fileID: 0}
     - partIndex: 1
@@ -38,7 +38,7 @@ MonoBehaviour:
     - partIndex: 2
       isActive: 0
       texture: {fileID: 0}
-  - upgradeCost: 90
+  - upgradeCost: 200
     nextLevelPartStates:
     - partIndex: 0
       isActive: 0

@@ -16,20 +16,20 @@ MonoBehaviour:
   BuildingID: photo_booth
   uiIcon: {fileID: 21300000, guid: 8a5859251e7e0ee4aa574e600e259401, type: 3}
   upgradeSteps:
-  - upgradeCost: 10
-    nextLevelPartStates:
-    - partIndex: 0
-      isActive: 1
-      texture: {fileID: 0}
-    - partIndex: 1
-      isActive: 0
-      texture: {fileID: 0}
-    - partIndex: 2
-      isActive: 0
-      texture: {fileID: 0}
   - upgradeCost: 50
     nextLevelPartStates:
     - partIndex: 0
+      isActive: 1
+      texture: {fileID: 0}
+    - partIndex: 1
+      isActive: 0
+      texture: {fileID: 0}
+    - partIndex: 2
+      isActive: 0
+      texture: {fileID: 0}
+  - upgradeCost: 100
+    nextLevelPartStates:
+    - partIndex: 0
       isActive: 0
       texture: {fileID: 0}
     - partIndex: 1
@@ -38,7 +38,7 @@ MonoBehaviour:
     - partIndex: 2
       isActive: 0
       texture: {fileID: 0}
-  - upgradeCost: 90
+  - upgradeCost: 150
     nextLevelPartStates:
     - partIndex: 0
       isActive: 0
