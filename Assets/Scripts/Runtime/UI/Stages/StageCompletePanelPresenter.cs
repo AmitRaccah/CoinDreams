@@ -84,6 +84,14 @@ namespace Game.Runtime.UI.Stages
 
         private void HandleStageCompleted(StageCompletedSignal signal)
         {
+            // TEMP diagnostic — remove once verified. If you see the runtime's
+            // "STAGE COMPLETE detected" log but NOT this one, the presenter isn't
+            // wired/injected (component missing in scene, or not picked up by
+            // GameplayLifetimeScope's InjectAllInScenes). If you see this but no
+            // panel, the EndPanelAppear MMF reference is missing/on an inactive object.
+            Debug.Log("[StageCompletePanelPresenter] StageCompletedSignal RECEIVED — playing EndPanelAppear "
+                + "(appear=" + (endPanelAppear == null ? "NULL!" : "ok") + ").", this);
+
             if (stageLabel != null)
             {
                 // CompletedStage is how many stages were already cleared (0 on the

@@ -178,6 +178,14 @@ namespace Game.Runtime.Village
             stageCompletionAnnounced = true;
 
             int completedStage = playerRuntimeContext?.Profile?.CurrentStage ?? 0;
+            // TEMP diagnostic — remove once the panel flow is verified. Tells you
+            // detection fired. If you DON'T see this after maxing all buildings,
+            // the problem is upstream (compile / ProfileReplaced / all-maxed check).
+            // The "publisher==null" note flags a DI/registration miss.
+            Debug.Log(
+                "[VillageUpgradeRuntime] STAGE COMPLETE detected — publishing StageCompletedSignal (stage="
+                + completedStage + ", publisher=" + (stageCompletedPublisher == null ? "NULL!" : "ok") + ")",
+                this);
             stageCompletedPublisher?.Publish(new StageCompletedSignal(completedStage));
         }
 
