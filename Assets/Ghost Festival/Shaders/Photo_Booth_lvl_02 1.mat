@@ -7,7 +7,7 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: Photo_Booth_lvl_02
+  m_Name: Photo_Booth_lvl_02 1
   m_Shader: {fileID: 4800000, guid: dc61cf96f35e1554aaa83c89f3eb8328, type: 3}
   m_Parent: {fileID: 0}
   m_ModifiedSerializedProperties: 0
