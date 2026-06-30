@@ -21,6 +21,6 @@ MonoBehaviour:
   verboseLogging: 0
   useLocalCache: 0
   localCacheFileName: player_save_cache.json
-  clearLocalCacheOnStart: 1
-  forceFreshAnonymousIdentityOnStart: 1
+  clearLocalCacheOnStart: 0
+  forceFreshAnonymousIdentityOnStart: 0
   playersCollectionName: players
