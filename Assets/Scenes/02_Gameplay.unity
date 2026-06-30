@@ -1200,6 +1200,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 478872564}
     - target: {fileID: 4803216821520754827, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: managedReferences[7447488732775579716].DeclaredDuration
+      value: 5.75
+      objectReference: {fileID: 0}
+    - target: {fileID: 4803216821520754827, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
       propertyPath: managedReferences[7447488809850109953].TargetAudioSource
       value: 
       objectReference: {fileID: 478872564}
