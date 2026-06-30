@@ -99,6 +99,7 @@ export async function loadSnapshot(
         shields: data.shields ?? 0,
         maxShields: data.maxShields && data.maxShields > 0 ? data.maxShields : DEFAULT_MAX_SHIELDS,
         villageLevels: Array.isArray(data.villageLevels) ? [...data.villageLevels] : [],
+        currentStage: data.currentStage ?? 0,
         processedImpactIds: Array.isArray(data.processedImpactIds) ? [...data.processedImpactIds] : [],
         updatedAtUtcTicks: data.updatedAtUtcTicks ?? 0,
         schemaVersion: data.schemaVersion ?? 0,

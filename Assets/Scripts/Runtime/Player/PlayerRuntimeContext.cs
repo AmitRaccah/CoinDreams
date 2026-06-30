@@ -329,6 +329,7 @@ namespace Game.Runtime.Player
                 shields,
                 village,
                 0,
+                0,
                 null);
 
             ReplaceProfile(initialProfile, false);

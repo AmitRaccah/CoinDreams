@@ -7,7 +7,7 @@ namespace Game.Infrastructure.Persistence
     [FirestoreData]
     public sealed class FirestorePlayerSaveDocument
     {
-        public const int CurrentSchemaVersion = 2;
+        public const int CurrentSchemaVersion = 3;
 
         [FirestoreProperty("playerId")]
         public string PlayerId { get; set; } = string.Empty;
@@ -50,6 +50,11 @@ namespace Game.Infrastructure.Persistence
         [FirestoreProperty("villageLevels")]
         public List<int> VillageLevels { get; set; } = new List<int>(0);
 
+        // Stage-progression counter. Server-authoritative (advanceStage); the
+        // client only reads it. Missing on pre-feature docs → defaults to 0.
+        [FirestoreProperty("currentStage")]
+        public int CurrentStage { get; set; }
+
         [FirestoreProperty("processedImpactIds")]
         public List<string> ProcessedImpactIds { get; set; } = new List<string>(0);
 
@@ -79,6 +84,7 @@ namespace Game.Infrastructure.Persistence
                 RegenIntervalSeconds = saveData.regenIntervalSeconds,
                 LastRegenUtcTicks = saveData.lastRegenUtcTicks,
                 VillageLevels = ToIntList(saveData.villageLevels),
+                CurrentStage = saveData.currentStage,
                 ProcessedImpactIds = ToStringList(saveData.processedImpactIds),
                 UpdatedAtUtcTicks = DateTime.UtcNow.Ticks
             };
@@ -101,6 +107,7 @@ namespace Game.Infrastructure.Persistence
             saveData.shields = Shields;
             saveData.maxShields = MaxShields;
             saveData.villageLevels = ToIntArray(VillageLevels);
+            saveData.currentStage = CurrentStage;
             saveData.processedImpactIds = ToStringArray(ProcessedImpactIds);
             return saveData;
         }

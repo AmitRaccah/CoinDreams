@@ -108,6 +108,11 @@ namespace Game.Composition
                 PersistentLifetimeScope.InjectAllInScenes<PanelCloseButton>(container);
                 PersistentLifetimeScope.InjectAllInScenes<BuildingsPanel>(container);
                 PersistentLifetimeScope.InjectAllInScenes<BuildingsPanelPresenter>(container);
+                // Stage-complete panel lives on the Canvas in 01_Persistent but
+                // needs VillageUpgradeRuntime, which is registered in THIS gameplay
+                // scope — inject from here so the resolve succeeds (same reason as
+                // BuildingsPanelPresenter above).
+                PersistentLifetimeScope.InjectAllInScenes<Game.Runtime.UI.Stages.StageCompletePanelPresenter>(container);
                 PersistentLifetimeScope.InjectAllInScenes<ShieldsHudPresenter>(container);
                 // Build-camera bridge lives on the camera rig in 02_Gameplay and
                 // needs IVillageCameraDirector (this scope) + the persistent-scope

@@ -32,6 +32,7 @@ namespace Game.Composition
             builder.RegisterMessageBroker<DrawRequestedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<ReturnRequestedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<VillageUpgradeRequestedSignal>(messagePipeOptions);
+            builder.RegisterMessageBroker<StageCompletedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<VoodooSessionStartedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<VoodooSessionEndedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<VoodooStabRequestedSignal>(messagePipeOptions);
@@ -198,6 +199,12 @@ namespace Game.Composition
             }
 
             builder.Register<CloudFunctionsStealClient>(Lifetime.Singleton).As<IVoodooStealClient>();
+
+            // Stage-advance authority lives ONLY in the cloud function; this is
+            // the client that calls it. The reset village/stage comes back via
+            // LiveSync, so there is no client-side advance engine to duplicate.
+            builder.Register<Game.Infrastructure.CloudFunctions.CloudFunctionsStageClient>(Lifetime.Singleton)
+                .As<Game.Domain.Stages.IStageAdvanceClient>();
 
             // Coin-gain presentation gate: withholds the HUD balance bump and
             // the coin-gain Feel chain while a stab animation plays, flushing

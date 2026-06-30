@@ -21,6 +21,9 @@ namespace Game.Domain.Player
         public int maxShields;
 
         public int[] villageLevels;
+        // Stage-progression counter (server-authoritative via advanceStage).
+        // 0 for pre-feature / fresh profiles.
+        public int currentStage;
         public string[] processedImpactIds;
 
         public PlayerProfileSnapshot()
@@ -38,6 +41,7 @@ namespace Game.Domain.Player
             maxShields = ShieldDefaults.DefaultMaxShields;
 
             villageLevels = Array.Empty<int>();
+            currentStage = 0;
             processedImpactIds = Array.Empty<string>();
         }
     }

@@ -28,6 +28,7 @@ namespace Game.Infrastructure.Persistence
 
         // Progress
         public int[] villageLevels;
+        public int currentStage;
 
         // Idempotency for async external impacts
         public string[] processedImpactIds;
@@ -54,6 +55,7 @@ namespace Game.Infrastructure.Persistence
             maxShields = ShieldDefaults.DefaultMaxShields;
 
             villageLevels = Array.Empty<int>();
+            currentStage = 0;
             processedImpactIds = Array.Empty<string>();
             savePending = false;
         }

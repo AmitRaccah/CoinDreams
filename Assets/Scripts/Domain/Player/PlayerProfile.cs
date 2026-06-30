@@ -19,6 +19,11 @@ namespace Game.Domain.Player
         private readonly VillageProgressState village;
         private readonly HashSet<string> processedImpactSet;
         private readonly Queue<string> processedImpactOrder;
+        // Carried scalar only — the client never advances the stage locally
+        // (the authoritative advanceStage Cloud Function does). We preserve it
+        // verbatim across FromSnapshot/CreateSnapshot so a client-side draw or
+        // upgrade never clobbers the stage the server set.
+        private readonly int currentStage;
         private int revision;
         private int batchedMutationDepth;
         private bool hasBatchedMutation;
@@ -32,6 +37,7 @@ namespace Game.Domain.Player
             ShieldService shields,
             VillageProgressState village,
             int revision,
+            int currentStage,
             IEnumerable<string> seedProcessedImpactIds)
         {
             if (currency == null)
@@ -61,6 +67,7 @@ namespace Game.Domain.Player
             this.shields = shields;
             this.village = village;
             this.revision = revision < 0 ? 0 : revision;
+            this.currentStage = currentStage < 0 ? 0 : currentStage;
             processedImpactSet = new HashSet<string>(StringComparer.Ordinal);
             processedImpactOrder = new Queue<string>();
             SeedProcessedImpactIds(seedProcessedImpactIds);
@@ -96,6 +103,11 @@ namespace Game.Domain.Player
         public int Revision
         {
             get { return revision; }
+        }
+
+        public int CurrentStage
+        {
+            get { return currentStage; }
         }
 
         public void EnsureVillageCapacity(int buildingCount)
@@ -257,6 +269,7 @@ namespace Game.Domain.Player
             snapshot.shields = shields.GetCurrent();
             snapshot.maxShields = shields.GetMax();
             snapshot.villageLevels = village.GetLevelsSnapshot();
+            snapshot.currentStage = currentStage;
             snapshot.processedImpactIds = CreateProcessedImpactIdsSnapshot();
             return snapshot;
         }
@@ -303,6 +316,7 @@ namespace Game.Domain.Player
                 shields,
                 village,
                 snapshot.revision,
+                snapshot.currentStage,
                 snapshot.processedImpactIds);
         }
 

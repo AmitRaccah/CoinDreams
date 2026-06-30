@@ -229,6 +229,44 @@ namespace Game.Domain.Village
             return catalog.GetMaxLevelByIndex(buildingIndex);
         }
 
+        /// <summary>
+        /// True when EVERY building has reached its max level — i.e. the stage
+        /// is complete and ready to advance. Pure query; no side effects. An
+        /// invalid service or an empty catalog returns false (nothing to clear).
+        /// The server re-validates this independently in advanceStage; this is
+        /// only the client-side trigger for the stage-complete UI.
+        /// </summary>
+        public bool AreAllBuildingsMaxed()
+        {
+            if (!isValid)
+            {
+                return false;
+            }
+
+            int buildingCount = catalog.BuildingCount;
+            if (buildingCount <= 0)
+            {
+                return false;
+            }
+
+            for (int i = 0; i < buildingCount; i++)
+            {
+                int currentLevel;
+                int maxLevel;
+                if (!TryGetCurrentAndMaxLevel(i, out currentLevel, out maxLevel))
+                {
+                    return false;
+                }
+
+                if (currentLevel < maxLevel)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
         private bool TryGetCurrentAndMaxLevel(int buildingIndex, out int currentLevel, out int maxLevel)
         {
             currentLevel = 0;

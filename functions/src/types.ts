@@ -43,6 +43,11 @@ export interface PlayerProfileSnapshot {
     maxShields: number;
 
     villageLevels: number[];
+    // Stage-progression counter. Increments each time the player completes a
+    // stage (all buildings maxed) and advances. The village resets to level 0
+    // on advance; this is the only field that records how many stages were
+    // cleared. Defaults to 0 for pre-feature documents.
+    currentStage: number;
     processedImpactIds: string[];
 
     // Server-stamped metadata (server-only for now; C# parity TODO).
@@ -136,6 +141,32 @@ export interface BuildingUpgradeResult {
 export interface AuthoritativeVillageUpgradeResult {
     upgradeResult: BuildingUpgradeResult;
     snapshot: PlayerProfileSnapshot | null;
+    message: string;
+}
+
+// ---------------------------------------------------------------------------
+// Stage advance — request/response types
+// ---------------------------------------------------------------------------
+
+// Reuses AuthoritativeVillageUpgradeCatalogData so the server can validate
+// "all buildings maxed" against the SAME catalog the upgrade flow sends —
+// max level per building = upgradeCostsByBuilding[i].length.
+export interface AuthoritativeStageAdvanceRequest {
+    catalog: AuthoritativeVillageUpgradeCatalogData;
+    stageAdvanceId: string; // idempotency key (one per advance attempt)
+}
+
+export enum StageAdvanceStatus {
+    Success = 0,
+    NotAllBuildingsMaxed = 1,
+    InvalidConfiguration = 2,
+    UnexpectedError = 3,
+}
+
+export interface AuthoritativeStageAdvanceResult {
+    status: StageAdvanceStatus;
+    snapshot: PlayerProfileSnapshot | null;
+    newStage: number;
     message: string;
 }
 

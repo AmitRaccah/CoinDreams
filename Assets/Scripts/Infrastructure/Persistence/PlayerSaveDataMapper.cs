@@ -24,6 +24,7 @@ namespace Game.Infrastructure.Persistence
             saveData.shields = snapshot.shields;
             saveData.maxShields = snapshot.maxShields;
             saveData.villageLevels = CopyIntArray(snapshot.villageLevels);
+            saveData.currentStage = snapshot.currentStage;
             saveData.processedImpactIds = CopyStringArray(snapshot.processedImpactIds);
             return saveData;
         }
@@ -57,6 +58,7 @@ namespace Game.Infrastructure.Persistence
             snapshot.shields = saveData.shields;
             snapshot.maxShields = saveData.maxShields;
             snapshot.villageLevels = CopyIntArray(saveData.villageLevels);
+            snapshot.currentStage = saveData.currentStage;
             snapshot.processedImpactIds = CopyStringArray(saveData.processedImpactIds);
             return snapshot;
         }
