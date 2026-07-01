@@ -9,6 +9,16 @@ ModelImporter:
       assembly: UnityEngine.CoreModule
       name: LVL02_Original_UVMap_1024
     second: {fileID: 2100000, guid: 4c895bc3a1569b34b8c640559ca09b57, type: 2}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: Drink_Stand_lvl02_BaseColor
+    second: {fileID: 2800000, guid: 012021cf0f893484b8dfebe3f9bf8cef, type: 3}
+  - first:
+      type: UnityEngine:Texture2D
+      assembly: UnityEngine.CoreModule
+      name: "\u200F\u200FEmission_Drink_Stand_Lvl02"
+    second: {fileID: 2800000, guid: eb8f6f5d7d3c2294184ba0f6e8439c0c, type: 3}
   materials:
     materialImportMode: 2
     materialName: 0
