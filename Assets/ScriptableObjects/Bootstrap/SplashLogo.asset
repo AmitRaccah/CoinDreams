@@ -14,7 +14,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Bootstrap.Steps.ShowSplashLogoStep
   displayName: Splash Logo
   weight: 1
-  logo: {fileID: 21300000, guid: bf31e0d9b6ee53c4d89733c583fd09ae, type: 3}
+  logo: {fileID: 21300000, guid: 7371cbd8b660e1e46bd195e94315db38, type: 3}
   fadeInSeconds: 0.4
   holdSeconds: 1.5
   fadeOutSeconds: 0.4

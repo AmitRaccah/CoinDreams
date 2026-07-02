@@ -2569,8 +2569,8 @@ MonoBehaviour:
         AnimateScaleDuration: 0.2
         AnimatePositionSpeed: 1
         RemapCurveZero: 1.1
-        RemapCurveOne: 0.1
-        Offset: 0.2
+        RemapCurveOne: 0
+        Offset: 0
         AnimateX: 1
         AnimateScaleTweenX:
           MMTweenDefinitionType: 1
@@ -3459,8 +3459,8 @@ MonoBehaviour:
         AnimateScaleDuration: 0.2
         AnimatePositionSpeed: 1
         RemapCurveZero: 1.1
-        RemapCurveOne: 0.1
-        Offset: 0.2
+        RemapCurveOne: 0
+        Offset: 0
         AnimateX: 1
         AnimateScaleTweenX:
           MMTweenDefinitionType: 1
