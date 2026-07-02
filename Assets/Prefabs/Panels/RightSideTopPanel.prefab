@@ -95,9 +95,9 @@ MonoBehaviour:
     m_Left: 0
     m_Right: 0
     m_Top: 0
-    m_Bottom: 140
+    m_Bottom: 125
   m_ChildAlignment: 4
-  m_Spacing: 0
+  m_Spacing: -50
   m_ChildForceExpandWidth: 1
   m_ChildForceExpandHeight: 1
   m_ChildControlWidth: 0
@@ -403,11 +403,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1693053658710339536, guid: 3c632dcf9eb54594589374c22e686046, type: 3}
       propertyPath: m_SizeDelta.x
-      value: 105
+      value: 102.5
       objectReference: {fileID: 0}
     - target: {fileID: 1693053658710339536, guid: 3c632dcf9eb54594589374c22e686046, type: 3}
       propertyPath: m_SizeDelta.y
-      value: 105
+      value: 102.5
       objectReference: {fileID: 0}
     - target: {fileID: 1693053658710339536, guid: 3c632dcf9eb54594589374c22e686046, type: 3}
       propertyPath: m_LocalPosition.x

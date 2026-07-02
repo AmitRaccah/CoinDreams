@@ -198,6 +198,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: CanvasBoot
       objectReference: {fileID: 0}
+    - target: {fileID: 2196833938845545379, guid: 2b744c43be616b44dae38ba687c46d50, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2667444842606793697, guid: 2b744c43be616b44dae38ba687c46d50, type: 3}
       propertyPath: m_Pivot.x
       value: 0
@@ -277,6 +281,14 @@ PrefabInstance:
     - target: {fileID: 2667444842606793697, guid: 2b744c43be616b44dae38ba687c46d50, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7619463286270758548, guid: 2b744c43be616b44dae38ba687c46d50, type: 3}
+      propertyPath: m_Color.a
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8565218267849968707, guid: 2b744c43be616b44dae38ba687c46d50, type: 3}
+      propertyPath: m_Color.a
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
