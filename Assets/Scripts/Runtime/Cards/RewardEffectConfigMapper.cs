@@ -16,36 +16,9 @@ namespace Game.Runtime.Cards
                 { RewardEffectType.AddShields, AuthoritativeDrawEffectType.AddShields }
             };
 
-        public static bool IsSupported(RewardEffectType effectType) =>
-            ConfigToAuthoritative.ContainsKey(effectType);
-
         public static bool TryMapToAuthoritativeType(
             RewardEffectType sourceType,
             out AuthoritativeDrawEffectType mappedType) =>
             ConfigToAuthoritative.TryGetValue(sourceType, out mappedType);
-
-        public static bool TryCreateRuntimeEffect(
-            RewardEffectConfig? config,
-            out IRewardEffect? effect)
-        {
-            effect = null;
-
-            if (config == null)
-            {
-                return false;
-            }
-
-            if (!TryMapToAuthoritativeType(config.EffectType, out AuthoritativeDrawEffectType authoritativeType))
-            {
-                return false;
-            }
-
-            AuthoritativeDrawEffectDefinition definition = new AuthoritativeDrawEffectDefinition(
-                authoritativeType,
-                config.IntValue,
-                config.StringValue);
-
-            return AuthoritativeEffectRegistry.TryCreate(definition, out effect);
-        }
     }
 }

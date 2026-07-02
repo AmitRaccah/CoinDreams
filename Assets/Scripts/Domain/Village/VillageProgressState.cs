@@ -107,7 +107,7 @@ namespace Game.Domain.Village
 
         public void SetLevels(int[] levels)
         {
-            // Grow-only: never shrink the building array implicitly. Use ResetLevels for explicit shrink.
+            // Grow-only: never shrink the building array implicitly.
             if (levels == null || levels.Length == 0)
             {
                 return;
@@ -142,17 +142,6 @@ namespace Game.Domain.Village
             }
 
             buildingLevels = copy;
-            NotifyChanged();
-        }
-
-        public void ResetLevels()
-        {
-            if (buildingLevels.Length == 0)
-            {
-                return;
-            }
-
-            buildingLevels = Array.Empty<int>();
             NotifyChanged();
         }
 

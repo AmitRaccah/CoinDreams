@@ -26,16 +26,6 @@ namespace Game.Runtime.Cards
 
         public CardDrawWorkflowState CurrentState { get; private set; } = CardDrawWorkflowState.Idle;
 
-        public bool IsBusy
-        {
-            get
-            {
-                return CurrentState == CardDrawWorkflowState.MovingToBoard
-                    || CurrentState == CardDrawWorkflowState.Drawing
-                    || CurrentState == CardDrawWorkflowState.ReturningToCity;
-            }
-        }
-
         public DrawWorkflowAction HandleDrawClicked()
         {
             if (CurrentState == CardDrawWorkflowState.Idle)
@@ -101,16 +91,6 @@ namespace Game.Runtime.Cards
                 return;
             }
 
-            Transition(CardDrawWorkflowState.Idle);
-        }
-
-        /// <summary>
-        /// Forces the state machine back to <see cref="CardDrawWorkflowState.Idle"/> without
-        /// validating the current state. Intended only for exception recovery paths where the
-        /// workflow has been aborted and the normal Complete* transitions cannot run.
-        /// </summary>
-        public void ResetToIdle()
-        {
             Transition(CardDrawWorkflowState.Idle);
         }
 

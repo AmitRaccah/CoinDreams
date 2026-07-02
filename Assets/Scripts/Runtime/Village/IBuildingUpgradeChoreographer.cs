@@ -24,6 +24,16 @@ namespace Game.Runtime.Village
         bool IsBusy { get; }
 
         /// <summary>
+        /// Raised once a choreography sequence has fully settled — the upgrade
+        /// applied AND the camera returned to the build button view (or the
+        /// no-focus fast path finished). Fires on every completion path (success,
+        /// no-focus, error, cancel) via the sequence's <c>finally</c>, so deferred
+        /// UI (the stage-complete panel) can reveal only after the sequence lands,
+        /// never mid-flight.
+        /// </summary>
+        event Action? SequenceCompleted;
+
+        /// <summary>
         /// Run the choreography around <paramref name="upgradeAction"/>. The
         /// action performs the authoritative upgrade (and applies the level);
         /// it is invoked once, inside the smoke window. Falls back to running

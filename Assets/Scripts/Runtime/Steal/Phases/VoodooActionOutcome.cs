@@ -19,7 +19,6 @@ namespace Game.Runtime.Steal.Phases
         public readonly bool Resolved;
 
         public readonly int StolenAmount;
-        public readonly int StabsRemaining;
 
         /// <summary>
         /// True when the doll just broke this stab — coordinator should run
@@ -39,22 +38,21 @@ namespace Game.Runtime.Steal.Phases
         /// </summary>
         public bool SessionShouldEnd => DollBroken || SessionExpired;
 
-        private VoodooActionOutcome(bool resolved, int stolen, int remaining, bool dollBroken, bool sessionExpired)
+        private VoodooActionOutcome(bool resolved, int stolen, bool dollBroken, bool sessionExpired)
         {
             Resolved = resolved;
             StolenAmount = stolen;
-            StabsRemaining = remaining;
             DollBroken = dollBroken;
             SessionExpired = sessionExpired;
         }
 
-        public static VoodooActionOutcome Stab(int stolen, int remaining, bool dollBroken)
-            => new VoodooActionOutcome(resolved: true, stolen, remaining, dollBroken, sessionExpired: false);
+        public static VoodooActionOutcome Stab(int stolen, bool dollBroken)
+            => new VoodooActionOutcome(resolved: true, stolen, dollBroken, sessionExpired: false);
 
         public static VoodooActionOutcome SessionGone()
-            => new VoodooActionOutcome(resolved: false, stolen: 0, remaining: 0, dollBroken: false, sessionExpired: true);
+            => new VoodooActionOutcome(resolved: false, stolen: 0, dollBroken: false, sessionExpired: true);
 
         public static VoodooActionOutcome NoOp()
-            => new VoodooActionOutcome(resolved: false, stolen: 0, remaining: 0, dollBroken: false, sessionExpired: false);
+            => new VoodooActionOutcome(resolved: false, stolen: 0, dollBroken: false, sessionExpired: false);
     }
 }

@@ -37,7 +37,6 @@ namespace Game.Runtime.UI.Panels
         private IDisposable? closeSubscription;
         private IPanel? currentPanel;
         private bool transitioning;
-        private bool lastVisibilityState;
 
         [Inject]
         public PanelNavigator(
@@ -164,16 +163,12 @@ namespace Game.Runtime.UI.Panels
         // Publishes the current visibility state so background-UI controllers
         // can react. We publish on every state-affecting transition (open
         // from idle, swap A→B, close to idle) — receivers are expected to be
-        // idempotent (SetActive is). The lastVisibilityState guard avoids
-        // republishing when the boolean side hasn't actually changed (panel
-        // swap keeps IsAnyPanelOpen=true), but key changes still fire so
-        // per-key listeners can adapt.
+        // idempotent (SetActive is).
         private void PublishVisibility()
         {
             bool isOpen = currentPanel != null;
             string key = currentPanel != null ? currentPanel.PanelKey : string.Empty;
             visibilityPublisher.Publish(new PanelVisibilityChangedSignal(isOpen, key));
-            lastVisibilityState = isOpen;
         }
     }
 }

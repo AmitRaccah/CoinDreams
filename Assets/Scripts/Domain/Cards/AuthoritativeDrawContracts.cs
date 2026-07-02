@@ -67,11 +67,6 @@ namespace Game.Domain.Cards
             DrawId = drawId ?? string.Empty;
         }
 
-        public bool IsValid
-        {
-            get { return !string.IsNullOrWhiteSpace(DrawId); }
-        }
-
         /// <summary>
         /// Energy this draw actually costs: base cost scaled by the (already
         /// validated) multiplier, clamped to int. SINGLE source of truth for

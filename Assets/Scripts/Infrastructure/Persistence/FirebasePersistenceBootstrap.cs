@@ -74,6 +74,10 @@ namespace Game.Infrastructure.Persistence
                 settings.PlayersCollectionName);
             if (!initialized)
             {
+                Debug.LogError(
+                    "[FirebasePersistenceBootstrap] Anonymous auth / Firebase init failed — IsReady stays false. "
+                    + "The Wait-For-Firebase boot step will time out and surface an error on the splash.",
+                    this);
                 return;
             }
 

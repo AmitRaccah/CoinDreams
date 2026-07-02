@@ -39,19 +39,6 @@ namespace Game.Domain.Village
             UpgradeRequestId = upgradeRequestId;
         }
 
-        public bool IsValid
-        {
-            get { return !string.IsNullOrWhiteSpace(UpgradeRequestId); }
-        }
-
-        public static AuthoritativeVillageUpgradeRequest ForBuildingId(
-            AuthoritativeVillageUpgradeCatalogData catalog,
-            string buildingId,
-            string upgradeRequestId)
-        {
-            return new AuthoritativeVillageUpgradeRequest(catalog, buildingId, -1, false, upgradeRequestId);
-        }
-
         public static AuthoritativeVillageUpgradeRequest ForBuildingIndex(
             AuthoritativeVillageUpgradeCatalogData catalog,
             int buildingIndex,
@@ -66,11 +53,6 @@ namespace Game.Domain.Village
         public readonly BuildingUpgradeResult UpgradeResult;
         public readonly PlayerProfileSnapshot Snapshot;
         public readonly string Message;
-
-        public bool IsSuccess
-        {
-            get { return UpgradeResult.Status == BuildingUpgradeStatus.Success; }
-        }
 
         private AuthoritativeVillageUpgradeResult(
             BuildingUpgradeResult upgradeResult,

@@ -16,16 +16,6 @@ namespace Game.Infrastructure.Persistence
                 : intervalSeconds;
         }
 
-        public float IntervalSeconds
-        {
-            get { return intervalSeconds; }
-        }
-
-        public bool IsDirty
-        {
-            get { return dirty; }
-        }
-
         public bool ShouldSave(float currentTime)
         {
             return dirty && !isSaving && currentTime >= nextSaveTime;

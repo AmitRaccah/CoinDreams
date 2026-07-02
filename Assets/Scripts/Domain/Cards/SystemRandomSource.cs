@@ -6,11 +6,6 @@ namespace Game.Domain.Cards
     {
         private readonly Random random;
 
-        public SystemRandomSource()
-        {
-            random = new Random();
-        }
-
         public SystemRandomSource(int seed)
         {
             random = new Random(seed);

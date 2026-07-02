@@ -14,6 +14,8 @@ namespace Game.Runtime.Village
 
         private bool isRunning;
 
+        public event Action? SequenceCompleted;
+
         public BuildingUpgradeChoreographer(IVillageCameraDirector cameraDirector)
         {
             this.cameraDirector = cameraDirector;
@@ -96,6 +98,11 @@ namespace Game.Runtime.Village
                 // Always release the lock — even on the no-camera fast path or an
                 // exception — so the panel never gets stuck permanently inert.
                 isRunning = false;
+
+                // Sequence has fully settled (upgrade applied + camera back at the
+                // build button view, or the no-camera path finished). Deferred UI
+                // — the stage-complete panel — reveals on this, never mid-flight.
+                SequenceCompleted?.Invoke();
             }
         }
     }
