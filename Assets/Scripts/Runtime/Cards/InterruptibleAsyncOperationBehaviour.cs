@@ -17,11 +17,6 @@ namespace Game.Runtime.Cards
             get { return activeOperationCoroutine != null; }
         }
 
-        public CancellationToken Token
-        {
-            get { return cancellationSource?.Token ?? new CancellationToken(true); }
-        }
-
         protected Task RunOperationAsync(Func<IEnumerator> coroutineFactory)
         {
             if (coroutineFactory == null)

@@ -5,7 +5,6 @@ namespace Game.Domain.Energy
 {
     public sealed class EnergyRegenCalculator
     {
-        private const long MaxFutureClockSkewTicks = TimeSpan.TicksPerHour;
         private const long TicksPerSecond = TimeSpan.TicksPerSecond;
 
         public int CalculateGainedEnergy(long nowTicks, long lastTicks, int intervalSeconds)
@@ -79,11 +78,6 @@ namespace Game.Domain.Energy
             }
 
             return seconds;
-        }
-
-        public static bool IsClockSkewed(long lastTicks, long nowTicks)
-        {
-            return lastTicks > nowTicks + MaxFutureClockSkewTicks;
         }
     }
 }

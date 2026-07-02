@@ -21,7 +21,6 @@ namespace Game.Runtime.Village
         [SerializeField] private VillageDefinitionSO villageDefinition = null!;
         [Inject] private PlayerRuntimeContext? playerRuntimeContext;
         [Inject] private IAuthoritativeVillageUpgradeService? authoritativeVillageUpgradeService;
-        [Inject] private ISubscriber<VillageUpgradeRequestedSignal>? upgradeRequestSubscriber;
         [Inject] private IPublisher<StageCompletedSignal>? stageCompletedPublisher;
         [Inject] private IStageAdvanceClient? stageAdvanceClient;
         [SerializeField] private bool applyVisualsOnAwake = true;
@@ -34,7 +33,6 @@ namespace Game.Runtime.Village
         private AuthoritativeVillageUpgradeCatalogData? authoritativeCatalogData;
         private VillageBuildingVisualBindings? visualBindings;
         private AuthoritativeVillageUpgradeExecutor? authoritativeUpgradeExecutor;
-        private IDisposable? upgradeSubscription;
         private bool initialized;
         private bool isContextSubscribed;
         // Latches the stage-complete announcement so it fires once per
@@ -62,31 +60,11 @@ namespace Game.Runtime.Village
         private void OnEnable()
         {
             SubscribeToRuntimeContextEvents();
-
-            if (upgradeRequestSubscriber != null && upgradeSubscription == null)
-            {
-                upgradeSubscription = upgradeRequestSubscriber.Subscribe(HandleUpgradeRequested);
-            }
         }
 
         private void OnDisable()
         {
             UnsubscribeFromRuntimeContextEvents();
-
-            upgradeSubscription?.Dispose();
-            upgradeSubscription = null;
-        }
-
-        private void HandleUpgradeRequested(VillageUpgradeRequestedSignal signal)
-        {
-            if (signal.UseIndex)
-            {
-                _ = TryUpgradeByIndex(signal.BuildingIndex);
-            }
-            else
-            {
-                _ = TryUpgrade(signal.BuildingId);
-            }
         }
 
         public void InitializeRuntime()
@@ -178,33 +156,7 @@ namespace Game.Runtime.Village
             stageCompletionAnnounced = true;
 
             int completedStage = playerRuntimeContext?.Profile?.CurrentStage ?? 0;
-            // TEMP diagnostic — remove once the panel flow is verified. Tells you
-            // detection fired. If you DON'T see this after maxing all buildings,
-            // the problem is upstream (compile / ProfileReplaced / all-maxed check).
-            // The "publisher==null" note flags a DI/registration miss.
-            Debug.Log(
-                "[VillageUpgradeRuntime] STAGE COMPLETE detected — publishing StageCompletedSignal (stage="
-                + completedStage + ", publisher=" + (stageCompletedPublisher == null ? "NULL!" : "ok") + ")",
-                this);
             stageCompletedPublisher?.Publish(new StageCompletedSignal(completedStage));
-        }
-
-        public async Task<BuildingUpgradeResult> TryUpgrade(string buildingId)
-        {
-            EnsureInitialized();
-
-            if (!IsReady)
-            {
-                return BuildingUpgradeResult.InvalidConfiguration();
-            }
-
-            int buildingIndex;
-            if (!upgradeService!.TryGetBuildingIndex(buildingId, out buildingIndex))
-            {
-                return BuildingUpgradeResult.InvalidConfiguration();
-            }
-
-            return await TryUpgradeAuthoritativeByIndexInternal(buildingIndex);
         }
 
         public async Task<BuildingUpgradeResult> TryUpgradeByIndex(int buildingIndex)

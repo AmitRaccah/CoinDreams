@@ -171,22 +171,5 @@ namespace Game.Composition
             builder.Register<NullDrawCardPresentation>(Lifetime.Scoped)
                 .As<IDrawCardPresentation>();
         }
-
-        // Same opt-in pattern as TryRegisterInHierarchy but uses RegisterComponent
-        // on the resolved instance so components living in another loaded scene
-        // (e.g. 01_Persistent) can still resolve gameplay-scope dependencies.
-        private static void TryRegisterInstance<T>(IContainerBuilder builder) where T : Component
-        {
-            T instance = Object.FindAnyObjectByType<T>();
-            if (instance != null)
-            {
-                builder.RegisterComponent(instance);
-            }
-            else
-            {
-                Debug.LogWarning(
-                    $"[GameplayLifetimeScope] Skipped registration of {typeof(T).Name} — no instance in any loaded scene.");
-            }
-        }
     }
 }

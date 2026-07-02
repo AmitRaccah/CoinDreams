@@ -56,6 +56,18 @@ namespace Game.Runtime.Steal
         [Inject]
         public void Construct(IVoodooSessionStateReader stateReader)
         {
+            // Idempotent: InjectAllInScenes runs the inject pass from BOTH the
+            // persistent and gameplay scopes, so Construct can fire more than once
+            // for a trigger living in 02_Gameplay. Unhook before re-hooking so the
+            // handlers never stack — with Domain Reload off the persistent session
+            // state would otherwise accumulate a handler per pass and the
+            // enter/exit feedback would fire twice, then N times.
+            if (this.stateReader != null)
+            {
+                this.stateReader.IsTransitioningChanged -= HandleTransitioningChanged;
+                this.stateReader.HasActiveSessionChanged -= HandleSessionChanged;
+            }
+
             this.stateReader = stateReader;
             stateReader.IsTransitioningChanged += HandleTransitioningChanged;
             stateReader.HasActiveSessionChanged += HandleSessionChanged;

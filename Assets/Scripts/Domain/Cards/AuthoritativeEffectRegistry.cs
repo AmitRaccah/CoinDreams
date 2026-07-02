@@ -33,8 +33,5 @@ namespace Game.Domain.Cards
             effect = factory(definition);
             return true;
         }
-
-        public static bool IsSupported(AuthoritativeDrawEffectType effectType) =>
-            Factories.ContainsKey(effectType);
     }
 }

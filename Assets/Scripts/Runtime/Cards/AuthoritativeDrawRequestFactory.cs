@@ -7,11 +7,6 @@ namespace Game.Runtime.Cards
 {
     public sealed class AuthoritativeDrawRequestFactory
     {
-        public AuthoritativeDrawRequest Create(int drawCost, int requestedMultiplier, CardDeckSO deckConfig)
-        {
-            return Create(drawCost, requestedMultiplier, deckConfig, Guid.NewGuid().ToString("N"));
-        }
-
         public AuthoritativeDrawRequest Create(
             int drawCost,
             int requestedMultiplier,

@@ -12,7 +12,6 @@ using Game.Runtime.Lifecycle;
 using Game.Runtime.Player;
 using Game.Runtime.Steal;
 using Game.Runtime.Steal.Phases;
-using Game.Runtime.UI;
 using MessagePipe;
 using UnityEngine;
 using VContainer;
@@ -31,7 +30,6 @@ namespace Game.Composition
             builder.RegisterMessageBroker<DrawButtonClickedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<DrawRequestedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<ReturnRequestedSignal>(messagePipeOptions);
-            builder.RegisterMessageBroker<VillageUpgradeRequestedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<StageCompletedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<VoodooSessionStartedSignal>(messagePipeOptions);
             builder.RegisterMessageBroker<VoodooSessionEndedSignal>(messagePipeOptions);
@@ -83,7 +81,6 @@ namespace Game.Composition
             // — DrawWorkflowFeelTrigger + VoodooFeelTrigger — registered above.
 
             builder.Register<TimeProvider>(Lifetime.Singleton).As<ITimeProvider>();
-            builder.Register<UiNavigatorStub>(Lifetime.Singleton).As<IUiNavigator>();
             // Card-draw side effects. Each is registered as ICardDrawEffect
             // so the workflow executor can inject IReadOnlyList<ICardDrawEffect>
             // and orchestrate them generically (filter → prepare-in-parallel

@@ -85,7 +85,6 @@ namespace Game.Runtime.Steal.Phases
 
                     return VoodooActionOutcome.Stab(
                         response.StolenAmount,
-                        response.StabsRemaining,
                         response.IsDollBroken);
                 }
 
