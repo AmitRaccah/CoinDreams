@@ -15,10 +15,10 @@ MonoBehaviour:
   active: 1
   postExposure:
     m_OverrideState: 1
-    m_Value: -0.15
+    m_Value: 1
   contrast:
     m_OverrideState: 1
-    m_Value: 18
+    m_Value: 6
   colorFilter:
     m_OverrideState: 0
     m_Value: {r: 1, g: 1, b: 1, a: 1}
@@ -49,7 +49,7 @@ MonoBehaviour:
     m_Value: 1.2
   intensity:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 2
   scatter:
     m_OverrideState: 1
     m_Value: 0.2
@@ -78,6 +78,28 @@ MonoBehaviour:
   dirtIntensity:
     m_OverrideState: 0
     m_Value: 0
+--- !u!114 &-99940264860583141
+MonoBehaviour:
+  m_ObjectHideFlags: 3
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 5485954d14dfb9a4c8ead8edb0ded5b1, type: 3}
+  m_Name: LiftGammaGain
+  m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.LiftGammaGain
+  active: 1
+  lift:
+    m_OverrideState: 0
+    m_Value: {x: 1, y: 0.96663463, z: 0.997948, w: 0}
+  gamma:
+    m_OverrideState: 1
+    m_Value: {x: 0.8689673, y: 1, z: 0.90797645, w: 0.0000000023441185}
+  gain:
+    m_OverrideState: 1
+    m_Value: {x: 1, y: 0.99000466, z: 0.897265, w: -0.08901242}
 --- !u!114 &11400000
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -96,6 +118,7 @@ MonoBehaviour:
   - {fileID: 1026149438187966856}
   - {fileID: 5424335330426579736}
   - {fileID: 8275950276605271206}
+  - {fileID: -99940264860583141}
 --- !u!114 &1026149438187966856
 MonoBehaviour:
   m_ObjectHideFlags: 3
@@ -130,13 +153,13 @@ MonoBehaviour:
   active: 1
   shadows:
     m_OverrideState: 1
-    m_Value: {x: 0.84130865, y: 0.46110702, z: 1, w: 1}
+    m_Value: {x: 0.9399413, y: 0.43551826, z: 1, w: 0.3769124}
   midtones:
-    m_OverrideState: 1
+    m_OverrideState: 0
     m_Value: {x: 0.92733306, y: 1, z: 0.9241879, w: 0.05078483}
   highlights:
     m_OverrideState: 1
-    m_Value: {x: 1, y: 0.91889244, z: 0.68804383, w: 0.18805046}
+    m_Value: {x: 1, y: 0.91889244, z: 0.68804383, w: -0.10124086}
   shadowsStart:
     m_OverrideState: 0
     m_Value: 0
