@@ -1129,6 +1129,26 @@ PrefabInstance:
       propertyPath: m_Name
       value: CanvasCard
       objectReference: {fileID: 0}
+    - target: {fileID: 8702182381608890833, guid: 7a8c757b61b989a418d3a39cd00c4809, type: 3}
+      propertyPath: m_Color.a
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8702182381608890833, guid: 7a8c757b61b989a418d3a39cd00c4809, type: 3}
+      propertyPath: m_Color.b
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8702182381608890833, guid: 7a8c757b61b989a418d3a39cd00c4809, type: 3}
+      propertyPath: m_Color.g
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8702182381608890833, guid: 7a8c757b61b989a418d3a39cd00c4809, type: 3}
+      propertyPath: m_Color.r
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8702182381608890833, guid: 7a8c757b61b989a418d3a39cd00c4809, type: 3}
+      propertyPath: m_Maskable
+      value: 1
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
