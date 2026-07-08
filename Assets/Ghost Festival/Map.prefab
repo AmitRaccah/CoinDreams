@@ -5184,6 +5184,14 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 7200000000000400002, guid: 1f9ecddddeda9964d99504072f14f5a6, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7200000000000400003, guid: 1f9ecddddeda9964d99504072f14f5a6, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7788766131917875016, guid: 1f9ecddddeda9964d99504072f14f5a6, type: 3}
       propertyPath: m_LocalPosition.y
       value: 0.035
@@ -6556,6 +6564,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 7334633684844530493}
     m_Modifications:
+    - target: {fileID: 2154543361244345306, guid: 31be04658bb009e429224fc56977c03f, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2279747154077302377, guid: 31be04658bb009e429224fc56977c03f, type: 3}
       propertyPath: m_LocalPosition.x
       value: -1.8312049
@@ -6639,6 +6651,10 @@ PrefabInstance:
     - target: {fileID: 2674765224903269697, guid: 31be04658bb009e429224fc56977c03f, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3896862179157953693, guid: 31be04658bb009e429224fc56977c03f, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4606414630399004255, guid: 31be04658bb009e429224fc56977c03f, type: 3}
       propertyPath: FeedbacksList.Array.size
@@ -7936,6 +7952,10 @@ PrefabInstance:
       propertyPath: managedReferences[6000034519167008769].AnimateRotationZ.m_Curve.Array.data[2].weightedMode
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4981197473127912316, guid: 31be04658bb009e429224fc56977c03f, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5058340294781782443, guid: 31be04658bb009e429224fc56977c03f, type: 3}
       propertyPath: m_Name
       value: Drink_Stands_Full_Upgrades
@@ -7946,6 +7966,10 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5791597498546930603, guid: 31be04658bb009e429224fc56977c03f, type: 3}
       propertyPath: includeOrthographicSize
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 6482583259294539728, guid: 31be04658bb009e429224fc56977c03f, type: 3}
+      propertyPath: m_IsActive
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7200000000000100000, guid: 31be04658bb009e429224fc56977c03f, type: 3}
