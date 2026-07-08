@@ -7948,6 +7948,18 @@ PrefabInstance:
       propertyPath: includeOrthographicSize
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 7200000000000100000, guid: 31be04658bb009e429224fc56977c03f, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7200000000000100001, guid: 31be04658bb009e429224fc56977c03f, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7200000000000100002, guid: 31be04658bb009e429224fc56977c03f, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7716824023388353456, guid: 31be04658bb009e429224fc56977c03f, type: 3}
       propertyPath: m_LocalScale.x
       value: 5.1261673

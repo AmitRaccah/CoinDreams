@@ -84,10 +84,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Game.Runtime.Village.BuildingVisualController
   buildingDefinition: {fileID: 11400000, guid: af00c2c25de169e4897d5911dd1dac57, type: 2}
   partObjects:
-  - {fileID: 7200000000000100000}
-  - {fileID: 7200000000000100001}
-  - {fileID: 7200000000000100002}
-  - {fileID: 7200000000000100003}
+  - {fileID: 6482583259294539728}
+  - {fileID: 2154543361244345306}
+  - {fileID: 3896862179157953693}
+  - {fileID: 4981197473127912316}
   levelVisuals: []
   usePartObjectsAsLevelVisuals: 1
   combineLevelMeshesOnAwake: 0
@@ -385,6 +385,11 @@ PrefabInstance:
       addedObject: {fileID: 8656767388935341974}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 664eba0c65a97b04b8064db558390434, type: 3}
+--- !u!1 &2154543361244345306 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1594051831671653775, guid: 664eba0c65a97b04b8064db558390434, type: 3}
+  m_PrefabInstance: {fileID: 862804866471081557}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &4380545729035171460 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 3977698086758793425, guid: 664eba0c65a97b04b8064db558390434, type: 3}
@@ -447,6 +452,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: f2e5d9a489018ca4387c82ba43375cd4, type: 3}
+--- !u!1 &3896862179157953693 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 3009435504124446984, guid: f2e5d9a489018ca4387c82ba43375cd4, type: 3}
+  m_PrefabInstance: {fileID: 2294520393401370005}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &6979283868537881239 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 9154872012685215490, guid: f2e5d9a489018ca4387c82ba43375cd4, type: 3}
@@ -512,6 +522,11 @@ PrefabInstance:
 --- !u!4 &1035524964494114165 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2897733139676559456, guid: 9c4db913868f6b446b001a527e9cca81, type: 3}
+  m_PrefabInstance: {fileID: 2767528526049707285}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1 &6482583259294539728 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 9196068589408426693, guid: 9c4db913868f6b446b001a527e9cca81, type: 3}
   m_PrefabInstance: {fileID: 2767528526049707285}
   m_PrefabAsset: {fileID: 0}
 --- !u!1001 &4231575484149775085
@@ -719,28 +734,13 @@ PrefabInstance:
       addedObject: {fileID: 4037615119500143782}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 34ab1c3214ce7e549adda8aecec25724, type: 3}
+--- !u!1 &4981197473127912316 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2500349717331867649, guid: 34ab1c3214ce7e549adda8aecec25724, type: 3}
+  m_PrefabInstance: {fileID: 7463522758845836157}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &8769361922675375437 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 2170957479262443056, guid: 34ab1c3214ce7e549adda8aecec25724, type: 3}
-  m_PrefabInstance: {fileID: 7463522758845836157}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &7200000000000100000 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 9196068589408426693, guid: 9c4db913868f6b446b001a527e9cca81, type: 3}
-  m_PrefabInstance: {fileID: 2767528526049707285}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &7200000000000100001 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 1594051831671653775, guid: 664eba0c65a97b04b8064db558390434, type: 3}
-  m_PrefabInstance: {fileID: 862804866471081557}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &7200000000000100002 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 3009435504124446984, guid: f2e5d9a489018ca4387c82ba43375cd4, type: 3}
-  m_PrefabInstance: {fileID: 2294520393401370005}
-  m_PrefabAsset: {fileID: 0}
---- !u!1 &7200000000000100003 stripped
-GameObject:
-  m_CorrespondingSourceObject: {fileID: 2500349717331867649, guid: 34ab1c3214ce7e549adda8aecec25724, type: 3}
   m_PrefabInstance: {fileID: 7463522758845836157}
   m_PrefabAsset: {fileID: 0}

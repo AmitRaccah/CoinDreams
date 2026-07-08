@@ -113,6 +113,7 @@ QualitySettings:
     terrainMaxTrees: 50
     excludedTargetPlatforms:
     - iPhone
+    - Standalone
   m_TextureMipmapLimitGroupNames: []
   m_PerPlatformDefaultQuality:
     Android: 0
