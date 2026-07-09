@@ -132,6 +132,7 @@ namespace Game.Composition
                 // a persistent-scope service; VContainer resolves parent-scope
                 // dependencies transparently.
                 PersistentLifetimeScope.InjectAllInScenes<Game.Runtime.Steal.VoodooFeelTrigger>(container);
+                PersistentLifetimeScope.InjectAllInScenes<Game.Runtime.Steal.VoodooStabCountImageFeelTrigger>(container);
             });
         }
 

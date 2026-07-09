@@ -73,6 +73,7 @@ namespace Game.Composition
                 // same scope — resolves cleanly without crossing scope
                 // boundaries.
                 InjectAllInScenes<Game.Runtime.Steal.VoodooFeelTrigger>(container);
+                InjectAllInScenes<Game.Runtime.Steal.VoodooStabCountImageFeelTrigger>(container);
             });
 
             // Button-click feedbacks are wired directly via UnityEvent →
