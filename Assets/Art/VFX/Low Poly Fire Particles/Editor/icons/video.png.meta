@@ -1,5 +1,12 @@
 fileFormatVersion: 2
 guid: e2315e1c0d1a9634fb2df87542122dc3
+AssetOrigin:
+  serializedVersion: 1
+  productId: 372598
+  packageName: VFX - Low Poly Fire Particles
+  packageVersion: 1.0.0
+  assetPath: Assets/Low Poly Fire Particles/Editor/icons/video.png
+  uploadId: 914898
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -141,10 +148,3 @@ TextureImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 372598
-  packageName: VFX - Low Poly Fire Particles
-  packageVersion: 1.0.0
-  assetPath: Assets/Low Poly Fire Particles/Editor/icons/video.png
-  uploadId: 914898

@@ -1,5 +1,12 @@
 fileFormatVersion: 2
 guid: 452ebbb68b13ba243b616ea70955a3ad
+AssetOrigin:
+  serializedVersion: 1
+  productId: 372598
+  packageName: VFX - Low Poly Fire Particles
+  packageVersion: 1.0.0
+  assetPath: Assets/Low Poly Fire Particles/Editor/icons/gameseed.png
+  uploadId: 914898
 TextureImporter:
   internalIDToNameTable: []
   externalObjects: {}
@@ -141,10 +148,3 @@ TextureImporter:
   userData: 
   assetBundleName: 
   assetBundleVariant: 
-AssetOrigin:
-  serializedVersion: 1
-  productId: 372598
-  packageName: VFX - Low Poly Fire Particles
-  packageVersion: 1.0.0
-  assetPath: Assets/Low Poly Fire Particles/Editor/icons/gameseed.png
-  uploadId: 914898

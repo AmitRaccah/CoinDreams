@@ -3790,6 +3790,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6161633282173151918, guid: d1d17702c2cfc614db5cbd247f4903aa, type: 3}
+      propertyPath: managedReferences[810546990754824192].Timing.InitialDelay
+      value: 5.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 6161633282173151918, guid: d1d17702c2cfc614db5cbd247f4903aa, type: 3}
       propertyPath: managedReferences[7447488809850109959].Timing.InitialDelay
       value: 5.5
       objectReference: {fileID: 0}
@@ -12359,14 +12363,14 @@ PrefabInstance:
     m_AddedComponents:
     - targetCorrespondingSourceObject: {fileID: 7414893277512606128, guid: 60e7a79a57da3f441896ae81af08dc88, type: 3}
       insertIndex: -1
-      addedObject: {fileID: 3231320666672934443}
+      addedObject: {fileID: 5194281937678612875}
   m_SourcePrefab: {fileID: 100100000, guid: 60e7a79a57da3f441896ae81af08dc88, type: 3}
 --- !u!1 &4465585608118179978 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 7414893277512606128, guid: 60e7a79a57da3f441896ae81af08dc88, type: 3}
   m_PrefabInstance: {fileID: 6565698865971411258}
   m_PrefabAsset: {fileID: 0}
---- !u!95 &3231320666672934443
+--- !u!95 &5194281937678612875
 Animator:
   serializedVersion: 7
   m_ObjectHideFlags: 0
