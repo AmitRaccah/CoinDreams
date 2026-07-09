@@ -3790,8 +3790,16 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6161633282173151918, guid: d1d17702c2cfc614db5cbd247f4903aa, type: 3}
+      propertyPath: managedReferences[7447488809850109959].MaxVolume
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6161633282173151918, guid: d1d17702c2cfc614db5cbd247f4903aa, type: 3}
+      propertyPath: managedReferences[7447488809850109959].MinVolume
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 6161633282173151918, guid: d1d17702c2cfc614db5cbd247f4903aa, type: 3}
       propertyPath: managedReferences[810546990754824192].Timing.InitialDelay
-      value: 5.5
+      value: 5.65
       objectReference: {fileID: 0}
     - target: {fileID: 6161633282173151918, guid: d1d17702c2cfc614db5cbd247f4903aa, type: 3}
       propertyPath: managedReferences[7447488809850109959].Timing.InitialDelay

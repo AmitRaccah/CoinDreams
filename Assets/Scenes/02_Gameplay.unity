@@ -668,21 +668,9 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 478872564}
     - target: {fileID: 5566918911364130488, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
-      propertyPath: managedReferences[7447488809850109959].MaxVolume
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 5566918911364130488, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
-      propertyPath: managedReferences[7447488809850109959].MinVolume
-      value: 2
-      objectReference: {fileID: 0}
-    - target: {fileID: 5566918911364130488, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
       propertyPath: managedReferences[7447488809850109959].TargetAudioSource
       value: 
       objectReference: {fileID: 478872564}
-    - target: {fileID: 5566918911364130488, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
-      propertyPath: managedReferences[810546990754824192].Timing.InitialDelay
-      value: 5.35
-      objectReference: {fileID: 0}
     - target: {fileID: 5790551055726982497, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
       propertyPath: managedReferences[7447488809850109955].TargetAudioSource
       value: 
@@ -742,7 +730,13 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 7915893154494714092, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
+    - targetCorrespondingSourceObject: {fileID: 8253243339674920247, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 0}
   m_SourcePrefab: {fileID: 100100000, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
 --- !u!1 &3001000001
 GameObject:
