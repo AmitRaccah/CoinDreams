@@ -363,6 +363,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 1254220167735930378, guid: 4fb6e22e458723045871b27a7c360245, type: 3}
   m_PrefabInstance: {fileID: 2004941591680139702}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &7887042197940838766 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8549693386608074968, guid: 4fb6e22e458723045871b27a7c360245, type: 3}
+  m_PrefabInstance: {fileID: 2004941591680139702}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2196427874581571514
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -860,6 +865,11 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 6036537978287901010, guid: 217f6bb2ea05f4d4b8365937fb2a112e, type: 3}
   m_PrefabInstance: {fileID: 2196427874581571514}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &6066728482444625767 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5353125100539879645, guid: 217f6bb2ea05f4d4b8365937fb2a112e, type: 3}
+  m_PrefabInstance: {fileID: 2196427874581571514}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &2450610231085138930
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -981,6 +991,11 @@ PrefabInstance:
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 3f962f6fecfe2534f901106a394bb010, type: 3}
+--- !u!1 &7322503051896808568 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 5160158426457794442, guid: 3f962f6fecfe2534f901106a394bb010, type: 3}
+  m_PrefabInstance: {fileID: 2450610231085138930}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &8859937957120510789 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 6410455860961577143, guid: 3f962f6fecfe2534f901106a394bb010, type: 3}
@@ -1150,6 +1165,11 @@ PrefabInstance:
       addedObject: {fileID: 2595375485390422444}
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: ed650ffe89d95db409673441194d15ca, type: 3}
+--- !u!1 &2470752545830621514 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 1680968446318324157, guid: ed650ffe89d95db409673441194d15ca, type: 3}
+  m_PrefabInstance: {fileID: 3826405729465661687}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &8863709508403487084 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 5627291074376866203, guid: ed650ffe89d95db409673441194d15ca, type: 3}
@@ -1219,6 +1239,26 @@ PrefabInstance:
       propertyPath: m_ConstrainProportionsScale
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 2883930518573408572, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: buildingDefinition
+      value: 
+      objectReference: {fileID: 11400000, guid: 7c3d70b9964646889637f0a0684dde4b, type: 2}
+    - target: {fileID: 2883930518573408572, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: 'partObjects.Array.data[0]'
+      value: 
+      objectReference: {fileID: 7322503051896808568}
+    - target: {fileID: 2883930518573408572, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: 'partObjects.Array.data[1]'
+      value: 
+      objectReference: {fileID: 2470752545830621514}
+    - target: {fileID: 2883930518573408572, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: 'partObjects.Array.data[2]'
+      value: 
+      objectReference: {fileID: 7887042197940838766}
+    - target: {fileID: 2883930518573408572, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: 'partObjects.Array.data[3]'
+      value: 
+      objectReference: {fileID: 6066728482444625767}
     - target: {fileID: 7309707512833231801, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: m_Name
       value: BuildingVariant_MusicStand Variant
