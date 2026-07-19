@@ -8239,7 +8239,7 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 3304965389380195371, guid: 2778527b118c20c4087f03353a6b6aad, type: 3}
       propertyPath: m_Name
-      value: BuildingVariant_MusicStand Variant 1
+      value: BuildingVariant_MusicStand Variant
       objectReference: {fileID: 0}
     - target: {fileID: 4956062911717165038, guid: 2778527b118c20c4087f03353a6b6aad, type: 3}
       propertyPath: m_LocalPosition.x
@@ -10307,15 +10307,15 @@ PrefabInstance:
     m_Modifications:
     - target: {fileID: 817554479757049490, guid: 961dffc43f3aa3143927047217ab89e8, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 3530577176395028212, guid: 961dffc43f3aa3143927047217ab89e8, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4216285638882527750, guid: 961dffc43f3aa3143927047217ab89e8, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4350436212487934401, guid: 961dffc43f3aa3143927047217ab89e8, type: 3}
       propertyPath: m_LocalScale.x

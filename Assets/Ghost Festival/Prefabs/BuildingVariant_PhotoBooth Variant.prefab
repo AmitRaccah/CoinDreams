@@ -111,6 +111,10 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 2883930518573408572, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: buildingDefinition
+      value: 
+      objectReference: {fileID: 11400000, guid: d16cc7cc7300c9642915d3cf6678ac61, type: 2}
+    - target: {fileID: 2883930518573408572, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: 'partObjects.Array.data[0]'
       value: 
       objectReference: {fileID: 7393051571756979590}
@@ -163,6 +167,10 @@ PrefabInstance:
     - target: {fileID: 3590086779210806917, guid: 5d78cb6cc48cc1d4395b0cf9ed211fdf, type: 3}
       propertyPath: m_Name
       value: Empty_Group_Photo_Booth_Lvl_01
+      objectReference: {fileID: 0}
+    - target: {fileID: 3590086779210806917, guid: 5d78cb6cc48cc1d4395b0cf9ed211fdf, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6347248354632030598, guid: 5d78cb6cc48cc1d4395b0cf9ed211fdf, type: 3}
       propertyPath: m_LocalScale.x
@@ -325,6 +333,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Empty_Group_Photo_Booth_Lvl_03
       objectReference: {fileID: 0}
+    - target: {fileID: 1674800832274237441, guid: 4ddf6140de0753048983bd34a2da73e9, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 2005336867861765889, guid: 4ddf6140de0753048983bd34a2da73e9, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0.487
@@ -442,6 +454,10 @@ PrefabInstance:
     - target: {fileID: 3503555277889278245, guid: 143f6ccd6f2d46042aae2aa5282d25b9, type: 3}
       propertyPath: m_Name
       value: Empty_Group_Photo_Booth_Lvl_02
+      objectReference: {fileID: 0}
+    - target: {fileID: 3503555277889278245, guid: 143f6ccd6f2d46042aae2aa5282d25b9, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 6190283679554918012, guid: 143f6ccd6f2d46042aae2aa5282d25b9, type: 3}
       propertyPath: m_LocalScale.x
