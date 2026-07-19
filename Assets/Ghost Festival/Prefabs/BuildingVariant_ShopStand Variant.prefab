@@ -493,9 +493,25 @@ PrefabInstance:
       propertyPath: 'partObjects.Array.data[3]'
       value: 
       objectReference: {fileID: 1061718601376198757}
+    - target: {fileID: 3073382426543111139, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 4.597
+      objectReference: {fileID: 0}
+    - target: {fileID: 3073382426543111139, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 4.597
+      objectReference: {fileID: 0}
+    - target: {fileID: 3073382426543111139, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 4.597
+      objectReference: {fileID: 0}
     - target: {fileID: 4634158822349444564, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: orthographicSize
       value: 7
+      objectReference: {fileID: 0}
+    - target: {fileID: 4634158822349444564, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: includeOrthographicSize
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7309707512833231801, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: m_Name

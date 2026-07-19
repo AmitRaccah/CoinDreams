@@ -320,7 +320,7 @@ MonoBehaviour:
         StopSystemOnInit: 1
         StopSystemOnReset: 1
         StopSystemOnStopFeedback: 1
-        DeclaredDuration: 0
+        DeclaredDuration: 3.7
         ForceSimulationSpeed: 0
         ForcedSimulationSpeed: {x: 0.1, y: 1}
 --- !u!1001 &6134423739357046210
@@ -379,6 +379,10 @@ PrefabInstance:
       propertyPath: upgradeVfx
       value: 
       objectReference: {fileID: 3828881676630736697}
+    - target: {fileID: 8747656579925187758, guid: 5b764c1e637dfa04fa6b7e7f42c346d1, type: 3}
+      propertyPath: cameraDwellDuration
+      value: 4
+      objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -452,6 +456,26 @@ PrefabInstance:
     - target: {fileID: 5885705448538818909, guid: df15ae0fcc7c1fa47a4873f30a990dcd, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 5885705448552975389, guid: df15ae0fcc7c1fa47a4873f30a990dcd, type: 3}
+      propertyPath: simulationSpeed
+      value: 1.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 5885705448552975389, guid: df15ae0fcc7c1fa47a4873f30a990dcd, type: 3}
+      propertyPath: InitialModule.maxNumParticles
+      value: 1500
+      objectReference: {fileID: 0}
+    - target: {fileID: 5885705448552975389, guid: df15ae0fcc7c1fa47a4873f30a990dcd, type: 3}
+      propertyPath: InitialModule.startSize.scalar
+      value: 0.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 5885705448552975389, guid: df15ae0fcc7c1fa47a4873f30a990dcd, type: 3}
+      propertyPath: EmissionModule.rateOverTime.scalar
+      value: 1500
+      objectReference: {fileID: 0}
+    - target: {fileID: 5885705448552975389, guid: df15ae0fcc7c1fa47a4873f30a990dcd, type: 3}
+      propertyPath: InitialModule.startLifetime.scalar
+      value: 0.5
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
