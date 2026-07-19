@@ -506,15 +506,39 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.13855
+      value: -1.83
       objectReference: {fileID: 0}
     - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.3153177
+      value: 4.237
       objectReference: {fileID: 0}
     - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 3.024198
+      value: 15.304
+      objectReference: {fileID: 0}
+    - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.060656175
+      objectReference: {fileID: 0}
+    - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.006910899
+      objectReference: {fileID: 0}
+    - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.99171865
+      objectReference: {fileID: 0}
+    - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.11299208
+      objectReference: {fileID: 0}
+    - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 13
+      objectReference: {fileID: 0}
+    - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 173
       objectReference: {fileID: 0}
     - target: {fileID: 2883930518573408572, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: buildingDefinition
@@ -536,6 +560,10 @@ PrefabInstance:
       propertyPath: 'partObjects.Array.data[3]'
       value: 
       objectReference: {fileID: 817554479757049490}
+    - target: {fileID: 4634158822349444564, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: orthographicSize
+      value: 7
+      objectReference: {fileID: 0}
     - target: {fileID: 7309707512833231801, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: m_Name
       value: BuildingVariant_DrinkStand Variant

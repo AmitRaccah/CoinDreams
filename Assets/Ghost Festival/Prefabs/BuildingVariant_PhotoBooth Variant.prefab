@@ -112,15 +112,39 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 4.627996
+      value: -1.65
       objectReference: {fileID: 0}
     - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 1.1089047
+      value: 4.12
       objectReference: {fileID: 0}
     - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 4.851737
+      value: 15.095
+      objectReference: {fileID: 0}
+    - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.056030367
+      objectReference: {fileID: 0}
+    - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.00671593
+      objectReference: {fileID: 0}
+    - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.9913108
+      objectReference: {fileID: 0}
+    - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.11882082
+      objectReference: {fileID: 0}
+    - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 13.67
+      objectReference: {fileID: 0}
+    - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 173.53
       objectReference: {fileID: 0}
     - target: {fileID: 2883930518573408572, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: buildingDefinition
@@ -142,6 +166,10 @@ PrefabInstance:
       propertyPath: 'partObjects.Array.data[3]'
       value: 
       objectReference: {fileID: 8661491188313626654}
+    - target: {fileID: 4634158822349444564, guid: 7bd7705d1548a6f45954469903378361, type: 3}
+      propertyPath: orthographicSize
+      value: 6.4
+      objectReference: {fileID: 0}
     - target: {fileID: 7309707512833231801, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: m_Name
       value: BuildingVariant_PhotoBooth Variant
