@@ -439,31 +439,31 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -1.83
+      value: -0.09000247
       objectReference: {fileID: 0}
     - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 4.237
+      value: 3.42
       objectReference: {fileID: 0}
     - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 15.304
+      value: 13.09019
       objectReference: {fileID: 0}
     - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.059790593
+      value: 0.0014887452
       objectReference: {fileID: 0}
     - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.006812278
+      value: 0.00016966462
       objectReference: {fileID: 0}
     - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: m_LocalRotation.y
-      value: 0.9917712
+      value: 0.99357086
       objectReference: {fileID: 0}
     - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: m_LocalRotation.z
-      value: -0.112998076
+      value: -0.11320292
       objectReference: {fileID: 0}
     - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: m_LocalEulerAnglesHint.x
@@ -471,7 +471,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1131384466136360982, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: m_LocalEulerAnglesHint.y
-      value: 173.1
+      value: 179.828
       objectReference: {fileID: 0}
     - target: {fileID: 2883930518573408572, guid: 7bd7705d1548a6f45954469903378361, type: 3}
       propertyPath: buildingDefinition

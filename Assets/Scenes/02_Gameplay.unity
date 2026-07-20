@@ -675,6 +675,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Map
       objectReference: {fileID: 0}
+    - target: {fileID: 2469267929626020676, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: orthographicSize
+      value: 7
+      objectReference: {fileID: 0}
     - target: {fileID: 4716205758454807056, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
       propertyPath: managedReferences[7447488809850109956].TargetAudioSource
       value: 
@@ -738,6 +742,38 @@ PrefabInstance:
     - target: {fileID: 7334633684844530493, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 7906122822035830406, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.09000247
+      objectReference: {fileID: 0}
+    - target: {fileID: 7906122822035830406, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 3.42
+      objectReference: {fileID: 0}
+    - target: {fileID: 7906122822035830406, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 13.09019
+      objectReference: {fileID: 0}
+    - target: {fileID: 7906122822035830406, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.0014887452
+      objectReference: {fileID: 0}
+    - target: {fileID: 7906122822035830406, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0.00016966462
+      objectReference: {fileID: 0}
+    - target: {fileID: 7906122822035830406, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.99357086
+      objectReference: {fileID: 0}
+    - target: {fileID: 7906122822035830406, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: -0.11320292
+      objectReference: {fileID: 0}
+    - target: {fileID: 7906122822035830406, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 179.828
       objectReference: {fileID: 0}
     - target: {fileID: 8136680071222841471, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
       propertyPath: managedReferences[7447488809850109954].TargetAudioSource
