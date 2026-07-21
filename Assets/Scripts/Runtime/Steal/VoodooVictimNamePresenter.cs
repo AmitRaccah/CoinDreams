@@ -24,33 +24,34 @@ namespace Game.Runtime.Steal
         [Header("Victim name display")]
         [SerializeField] private TMP_Text? nameText;
 
-        [Inject] private ISubscriber<VoodooSessionStartedSignal>? sessionStartedSubscriber;
-        [Inject] private ISubscriber<VoodooSessionEndedSignal>? sessionEndedSubscriber;
-
         private IDisposable? startedSubscription;
         private IDisposable? endedSubscription;
 
-        private void Awake()
+        [Inject]
+        public void Construct(
+            ISubscriber<VoodooSessionStartedSignal> sessionStartedSubscriber,
+            ISubscriber<VoodooSessionEndedSignal> sessionEndedSubscriber)
         {
+            DisposeSubscriptions();
+
             if (nameText != null)
             {
                 nameText.gameObject.SetActive(false);
             }
+
+            // The doll prefab starts inactive and is enabled by the session
+            // Feel chain. Subscribe during injection so the first synchronous
+            // session-start signal cannot be missed before OnEnable runs.
+            startedSubscription = sessionStartedSubscriber.Subscribe(HandleSessionStarted);
+            endedSubscription = sessionEndedSubscriber.Subscribe(HandleSessionEnded);
         }
 
-        private void OnEnable()
+        private void OnDestroy()
         {
-            if (sessionStartedSubscriber != null && startedSubscription == null)
-            {
-                startedSubscription = sessionStartedSubscriber.Subscribe(HandleSessionStarted);
-            }
-            if (sessionEndedSubscriber != null && endedSubscription == null)
-            {
-                endedSubscription = sessionEndedSubscriber.Subscribe(HandleSessionEnded);
-            }
+            DisposeSubscriptions();
         }
 
-        private void OnDisable()
+        private void DisposeSubscriptions()
         {
             startedSubscription?.Dispose();
             startedSubscription = null;

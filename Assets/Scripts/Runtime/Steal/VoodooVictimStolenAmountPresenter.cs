@@ -29,41 +29,39 @@ namespace Game.Runtime.Steal
         [Header("Stolen-amount display")]
         [SerializeField] private TMP_Text? amountText;
 
-        [Inject] private ISubscriber<VoodooSessionStartedSignal>? sessionStartedSubscriber;
-        [Inject] private ISubscriber<VoodooSessionEndedSignal>? sessionEndedSubscriber;
-        [Inject] private ISubscriber<VoodooStabAnimationCompletedSignal>? animationCompletedSubscriber;
-
         private IDisposable? startedSubscription;
         private IDisposable? endedSubscription;
         private IDisposable? animationCompletedSubscription;
 
         private int runningTotal;
 
-        private void Awake()
+        [Inject]
+        public void Construct(
+            ISubscriber<VoodooSessionStartedSignal> sessionStartedSubscriber,
+            ISubscriber<VoodooSessionEndedSignal> sessionEndedSubscriber,
+            ISubscriber<VoodooStabAnimationCompletedSignal> animationCompletedSubscriber)
         {
+            DisposeSubscriptions();
+
             if (amountText != null)
             {
                 amountText.gameObject.SetActive(false);
             }
+
+            // The doll prefab starts inactive and is enabled by the session
+            // Feel chain. Subscribe during injection so the first synchronous
+            // session-start signal cannot be missed before OnEnable runs.
+            startedSubscription = sessionStartedSubscriber.Subscribe(HandleSessionStarted);
+            endedSubscription = sessionEndedSubscriber.Subscribe(HandleSessionEnded);
+            animationCompletedSubscription = animationCompletedSubscriber.Subscribe(HandleAnimationCompleted);
         }
 
-        private void OnEnable()
+        private void OnDestroy()
         {
-            if (sessionStartedSubscriber != null && startedSubscription == null)
-            {
-                startedSubscription = sessionStartedSubscriber.Subscribe(HandleSessionStarted);
-            }
-            if (sessionEndedSubscriber != null && endedSubscription == null)
-            {
-                endedSubscription = sessionEndedSubscriber.Subscribe(HandleSessionEnded);
-            }
-            if (animationCompletedSubscriber != null && animationCompletedSubscription == null)
-            {
-                animationCompletedSubscription = animationCompletedSubscriber.Subscribe(HandleAnimationCompleted);
-            }
+            DisposeSubscriptions();
         }
 
-        private void OnDisable()
+        private void DisposeSubscriptions()
         {
             startedSubscription?.Dispose();
             startedSubscription = null;
