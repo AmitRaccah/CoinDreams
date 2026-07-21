@@ -679,6 +679,26 @@ PrefabInstance:
       propertyPath: orthographicSize
       value: 7
       objectReference: {fileID: 0}
+    - target: {fileID: 2483682083517045298, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.0033547934
+      objectReference: {fileID: 0}
+    - target: {fileID: 2483682083517045298, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.00016835013
+      objectReference: {fileID: 0}
+    - target: {fileID: 2483682083517045298, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.9596276
+      objectReference: {fileID: 0}
+    - target: {fileID: 2483682083517045298, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.2812736
+      objectReference: {fileID: 0}
+    - target: {fileID: 2483682083517045298, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 32.672
+      objectReference: {fileID: 0}
     - target: {fileID: 4716205758454807056, guid: 6a27d1f4403eb1a449b455efc1530748, type: 3}
       propertyPath: managedReferences[7447488809850109956].TargetAudioSource
       value: 

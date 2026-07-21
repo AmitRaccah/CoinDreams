@@ -2853,6 +2853,34 @@ PrefabInstance:
       propertyPath: m_Name
       value: BuildingVariant_ShopStand Variant
       objectReference: {fileID: 0}
+    - target: {fileID: 2972721726543247023, guid: c5f165cd59839da468c780db19f4c5bd, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: -0.0033547934
+      objectReference: {fileID: 0}
+    - target: {fileID: 2972721726543247023, guid: c5f165cd59839da468c780db19f4c5bd, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0.00016835013
+      objectReference: {fileID: 0}
+    - target: {fileID: 2972721726543247023, guid: c5f165cd59839da468c780db19f4c5bd, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 0.923432
+      objectReference: {fileID: 0}
+    - target: {fileID: 2972721726543247023, guid: c5f165cd59839da468c780db19f4c5bd, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2972721726543247023, guid: c5f165cd59839da468c780db19f4c5bd, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0.38376224
+      objectReference: {fileID: 0}
+    - target: {fileID: 2972721726543247023, guid: c5f165cd59839da468c780db19f4c5bd, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2972721726543247023, guid: c5f165cd59839da468c780db19f4c5bd, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 32.672
+      objectReference: {fileID: 0}
     - target: {fileID: 7302047831412222577, guid: c5f165cd59839da468c780db19f4c5bd, type: 3}
       propertyPath: m_LocalScale.x
       value: 4.186473
